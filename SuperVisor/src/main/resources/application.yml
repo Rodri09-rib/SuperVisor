@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/superviser
+    username: superviser
+    password: superviser
+  jpa:
+    hibernate:
+      ddl-auto: update  # O Spring cria as tabelas no banco de dados automaticamente para nós
+    show-sql: true      # Mostra as consultas no console para aprendizado
+api:
+  security:
+    token:
+      secret: "***SEGREDO-REMOVIDO-DO-HISTORICO***" # Usado para gerar os tokens
