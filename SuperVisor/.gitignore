@@ -1,0 +1,48 @@
+# ==========================================
+# Java / Spring Boot
+# ==========================================
+*.class
+*.log
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ==========================================
+# Maven (Ferramenta de Build)
+# ==========================================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# ==========================================
+# IntelliJ IDEA (Sua IDE)
+# ==========================================
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ==========================================
+# Eclipse / VS Code (Caso outros programadores abram seu código)
+# ==========================================
+.settings/
+.project
+.classpath
+.factorypath
+.vscode/
+
+# ==========================================
+# Arquivos de Sistema Operacional (Windows / Mac)
+# ==========================================
+.DS_Store
+Thumbs.db
