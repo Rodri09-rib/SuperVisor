@@ -19,9 +19,9 @@ public class EditionScale {
     @JoinColumn(name = "created_by_id")
     private User createdBy;
 
-public EditionScale(){
+ public EditionScale(){
 
-}
+ }
 
     public EditionScale(Long id, String name, LocalDate initialDate, LocalDate endDate, EditionStatus status, User createdBy) {
         this.id = id;
