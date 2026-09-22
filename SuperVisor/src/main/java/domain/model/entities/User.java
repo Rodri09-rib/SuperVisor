@@ -17,9 +17,13 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+
     @Column(unique = true)
     private String email;
     private String password;
+
+    @Enumerated(EnumType.STRING)
+    private UserProfile profile;
 
     public User (){
     }
@@ -32,8 +36,41 @@ public class User implements UserDetails {
         this.profile = profile;
     }
 
-    @Enumerated(EnumType.STRING)
-    UserProfile profile;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public UserProfile getProfile() {
+        return profile;
+    }
+
+    public void setProfile(UserProfile profile) {
+        this.profile = profile;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

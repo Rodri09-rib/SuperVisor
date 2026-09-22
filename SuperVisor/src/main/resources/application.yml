@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/superviser
+    url: jdbc:postgresql://localhost:5432/supervisor
     username: REDACTED
     password: REDACTED
   jpa:
