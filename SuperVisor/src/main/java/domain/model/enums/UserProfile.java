@@ -2,7 +2,8 @@ package domain.model.enums;
 
 public enum UserProfile {
 
-    SUPERVISOR,
-    ANALISTA;
+    DRAFT,
+    PUBLISHED,
+    COMPLETED;
 
 }
