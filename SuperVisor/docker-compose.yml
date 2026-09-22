@@ -1,4 +1,4 @@
-git
+
 services:
   db:
     image: postgres:16
