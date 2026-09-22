@@ -7,6 +7,8 @@ import java.time.LocalDate;
 
 public class EditionScale {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
     private LocalDate initialDate;
