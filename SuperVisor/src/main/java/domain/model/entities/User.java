@@ -26,6 +26,7 @@ public class User implements UserDetails {
     private UserProfile profile;
 
     public User (){
+
     }
 
     public User(Long id, String name, String email, String password, UserProfile profile) {
