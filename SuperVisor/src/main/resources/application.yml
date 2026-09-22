@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/superviser
-    username: superviser
-    password: superviser
+    url: jdbc:postgresql://localhost:5432/supervisor
+    username: supervisor
+    password: supervisor
   jpa:
     hibernate:
       ddl-auto: update  # O Spring cria as tabelas no banco de dados automaticamente para nós

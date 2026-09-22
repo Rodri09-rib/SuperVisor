@@ -3,9 +3,9 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: SuperVisor
-      POSTGRES_USER: SuperVisor
-      POSTGRES_PASSWORD: SuperVisor
+      POSTGRES_DB: supervisor
+      POSTGRES_USER: supervisor
+      POSTGRES_PASSWORD: supervisor
     ports:
       - "5432:5432"
     volumes:
