@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 
 @Entity
+@Table(name = "tb_exchange_request")
 public class ExchangeRequest {
 
 

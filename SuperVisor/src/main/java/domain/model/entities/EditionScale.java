@@ -1,10 +1,13 @@
 package domain.model.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import domain.model.enums.EditionStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
+@Entity
+@Table(name = "tb_edition_scale")
 public class EditionScale {
 
     @Id
@@ -17,6 +20,7 @@ public class EditionScale {
     @Enumerated(EnumType.STRING)
     private EditionStatus status;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "created_by_id")
     private User createdBy;
