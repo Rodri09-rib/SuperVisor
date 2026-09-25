@@ -15,7 +15,7 @@ import java.time.ZoneOffset;
     @Service
     public class TokenService {
 
-        // Vai buscar a senha secreta ao application.yml
+
         @Value("${api.security.token.secret}")
         private String secret;
 
@@ -41,12 +41,12 @@ import java.time.ZoneOffset;
                         .verify(token)
                         .getSubject();
             } catch (JWTVerificationException exception) {
-                return ""; // Retorna vazio se o token for falso ou expirado
+                return "";
             }
         }
 
         private Instant dataExpiracao() {
-            // O token expira em 2 horas.
+
             return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
         }
     }

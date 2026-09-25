@@ -25,16 +25,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
-                // Avisa que não guardamos estado em memória, usamos apenas Tokens
+
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
-                    // Libertamos a rota de Login para que qualquer pessoa possa tentar entrar
+
                     req.requestMatchers(HttpMethod.POST, "/login").permitAll();
 
-                    // Exigimos autenticação para TODAS as outras rotas do sistema
+
                     req.anyRequest().authenticated();
                 })
-                // Mandamos o nosso SecurityFilter agir ANTES do filtro padrão do Spring
+
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -46,7 +46,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Encriptador oficial para não guardarmos senhas em texto limpo na base de dados
+
         return new BCryptPasswordEncoder();
     }
 }
