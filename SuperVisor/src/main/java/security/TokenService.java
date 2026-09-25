@@ -11,43 +11,44 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Date;
+import java.util.UUID;
 
-    @Service
-    public class TokenService {
+@Service
+public class TokenService {
 
+    @Value("${api.security.token.secret:my-secret-key}")
+    private String secret;
 
-        @Value("${api.security.token.secret}")
-        private String secret;
-
-        public String gerarToken(User user) {
-            try {
-                Algorithm algoritmo = Algorithm.HMAC256(secret);
-                return JWT.create()
-                        .withIssuer("supervisor-api")
-                        .withSubject(user.getEmail())
-                        .withExpiresAt(dataExpiracao())
-                        .sign(algoritmo);
-            } catch (JWTCreationException exception) {
-                throw new RuntimeException("Erro ao gerar token JWT", exception);
-            }
-        }
-
-        public String validarToken(String token) {
-            try {
-                Algorithm algoritmo = Algorithm.HMAC256(secret);
-                return JWT.require(algoritmo)
-                        .withIssuer("supervisor-api")
-                        .build()
-                        .verify(token)
-                        .getSubject();
-            } catch (JWTVerificationException exception) {
-                return "";
-            }
-        }
-
-        private Instant dataExpiracao() {
-
-            return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+    public String gerarToken(User user) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            return JWT.create()
+                    .withIssuer("supervisor-api")
+                    .withSubject(user.getEmail())
+                    .withJWTId(UUID.randomUUID().toString()) // Adiciona 'jti' único para diferenciar tokens no mesmo segundo
+                    .withIssuedAt(Date.from(Instant.now()))   // Adiciona 'iat'
+                    .withExpiresAt(genExpirationDate())
+                    .sign(algorithm);
+        } catch (JWTCreationException exception) {
+            throw new RuntimeException("Erro ao gerar token JWT", exception);
         }
     }
 
+    public String validarToken(String token) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            return JWT.require(algorithm)
+                    .withIssuer("supervisor-api")
+                    .build()
+                    .verify(token)
+                    .getSubject();
+        } catch (JWTVerificationException exception) {
+            return "";
+        }
+    }
+
+    private Instant genExpirationDate() {
+        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+    }
+}
