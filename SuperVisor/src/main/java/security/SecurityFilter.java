@@ -11,7 +11,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import security.TokenService;
 
 import java.io.IOException;
 
@@ -25,34 +24,32 @@ public class SecurityFilter extends OncePerRequestFilter {
     private UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-
-        var token = recuperarToken(request);
-
+        var token = recoverToken(request);
         if (token != null) {
-
-            var email = tokenService.validarToken(token);
-
-
-            UserDetails usuario = userRepository.findByEmail(email);
-
-            if (usuario != null) {
-
-                var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            var subject = tokenService.validarToken(token);
+            if (subject != null && !subject.isEmpty()) {
+                UserDetails user = userRepository.findByEmail(subject);
+                if (user != null) {
+                    var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         }
-
-
         filterChain.doFilter(request, response);
     }
 
-    private String recuperarToken(HttpServletRequest request) {
+    private String recoverToken(HttpServletRequest request) {
         var authHeader = request.getHeader("Authorization");
-        if (authHeader == null) return null;
-
-
-        return authHeader.replace("Bearer ", "");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7).trim();
+        if (token.isEmpty() || token.startsWith("Bearer ")) { // Rejeita formato inválido ou duplo Bearer
+            return null;
+        }
+        return token;
     }
 }

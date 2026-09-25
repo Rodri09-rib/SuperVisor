@@ -26,16 +26,24 @@ public class ChangeTimeService {
     private UserRepository userRepository;
 
     @Transactional
-    public void requestExchange(Long originAllocationId, Long destinationAllocationId, Long loggedUserId){
+    public void requestExchange(Long originAllocationId, Long destinationAllocationId, Long loggedUserId) {
 
-        ShiftScheduling origin = shiftSchedulingRepository.findById(originAllocationId).
-                orElseThrow(() -> new RuntimeException("Alocação de origem não encontrada."));
+        if (originAllocationId.equals(destinationAllocationId)) {
+            throw new IllegalArgumentException("Alocação de origem e destino não podem ser iguais.");
+        }
 
-        ShiftScheduling destination = shiftSchedulingRepository.findById(destinationAllocationId).
-                orElseThrow(() -> new RuntimeException("Alocação de destino não encontrada." ));
+        ShiftScheduling origin = shiftSchedulingRepository.findById(originAllocationId)
+                .orElseThrow(() -> new RuntimeException("Alocação de origem não encontrada."));
 
-        User requester = userRepository.findById(loggedUserId).
-                orElseThrow(() -> new RuntimeException("Utilizador(Usuário) não encontrado"));
+        ShiftScheduling destination = shiftSchedulingRepository.findById(destinationAllocationId)
+                .orElseThrow(() -> new RuntimeException("Alocação de destino não encontrada."));
+
+        if (!origin.getEditionScale().getId().equals(destination.getEditionScale().getId())) {
+            throw new IllegalArgumentException("As alocações pertencem a escalas diferentes.");
+        }
+
+        User requester = userRepository.findById(loggedUserId)
+                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
 
         ExchangeRequest request = new ExchangeRequest();
         request.setSourceAllocation(origin);
