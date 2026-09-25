@@ -9,6 +9,5 @@ public record CreateScaleDTO(
         LocalDate endDate,
         Long createdById
 
-
 ) {
 }
