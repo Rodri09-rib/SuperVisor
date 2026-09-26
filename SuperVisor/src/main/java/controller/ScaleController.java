@@ -25,6 +25,8 @@ public class ScaleController {
 
     @PostMapping("/{id}/publish")
     public ResponseEntity<Void> publishScale(@PathVariable Long id) {
+        scaleService.publishSchedule(id);
+
         return ResponseEntity.noContent().build();
     }
 
@@ -32,5 +34,16 @@ public class ScaleController {
     public ResponseEntity<List<EditionScale>> listAll() {
 
         return ResponseEntity.ok(scaleService.listAll());
+    }
+
+    /**
+     * Detalhes de uma escala. O {@code id} só aceita dígitos para que um
+     * caminho como {@code /api/v1/scales/1/alterar} continue a devolver 404 em
+     * vez de cair nesta rota e responder 400 por falha de conversão.
+     */
+    @GetMapping("/{id:[0-9]+}")
+    public ResponseEntity<EditionScale> getById(@PathVariable Long id) {
+
+        return ResponseEntity.ok(scaleService.findById(id));
     }
 }
