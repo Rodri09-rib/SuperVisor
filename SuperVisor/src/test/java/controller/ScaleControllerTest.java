@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -181,28 +182,45 @@ class ScaleControllerTest {
         }
 
         @Test
-        @DisplayName("o endpoint não chama o serviço: a publicação não está implementada")
-        void naoChamaOServico() throws Exception {
+        @DisplayName("o endpoint delega a publicação no serviço, que promove a escala")
+        void chamaOServico() throws Exception {
             mockMvc.perform(post("/api/v1/scales/1/publish"))
                     .andExpect(status().isNoContent());
 
-            verifyNoInteractions(scaleService);
+            verify(scaleService).publishSchedule(1L);
         }
 
         @Test
-        @DisplayName("o id do caminho é ignorado: qualquer id devolve 204")
-        void idEIgnorado() throws Exception {
+        @DisplayName("o id do caminho é encaminhado ao serviço")
+        void idVaiAoServico() throws Exception {
             mockMvc.perform(post("/api/v1/scales/999/publish"))
                     .andExpect(status().isNoContent());
 
-            verifyNoInteractions(scaleService);
+            verify(scaleService).publishSchedule(999L);
         }
 
         @Test
-        @DisplayName("mesmo para uma escala inexistente devolve 204")
-        void escalaInexistente() throws Exception {
-            mockMvc.perform(post("/api/v1/scales/4242/publish"))
-                    .andExpect(status().isNoContent());
+        @DisplayName("escala inexistente propaga o erro do serviço")
+        void escalaInexistente() {
+            doThrow(new RuntimeException("Edição de Escala não encontrada."))
+                    .when(scaleService).publishSchedule(4242L);
+
+            assertThatThrownBy(() -> mockMvc.perform(post("/api/v1/scales/4242/publish")))
+                    .getRootCause()
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Edição de Escala não encontrada.");
+        }
+
+        @Test
+        @DisplayName("escala que já não está em rascunho propaga o erro do serviço")
+        void jaPublicada() {
+            doThrow(new RuntimeException("Apenas escalas em rascunho podem ser publicadas"))
+                    .when(scaleService).publishSchedule(1L);
+
+            assertThatThrownBy(() -> mockMvc.perform(post("/api/v1/scales/1/publish")))
+                    .getRootCause()
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Apenas escalas em rascunho podem ser publicadas");
         }
 
         @Test

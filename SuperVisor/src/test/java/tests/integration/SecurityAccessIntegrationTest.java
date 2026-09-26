@@ -150,10 +150,12 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         @Test
         @DisplayName("não há separação de permissões entre SUPERVISOR e ANALIST")
         void naoHaSeparacaoPorPapel() throws Exception {
-            criarUsuario("Administrador", "admin@teste.com",
+            var supervisor = criarUsuario("Administrador", "admin@teste.com",
                     domain.model.enums.UserProfile.SUPERVISOR);
+            var escala = criarEscala("Escala Outubro", supervisor);
 
-            mockMvc.perform(post("/api/v1/scales/1/publish").with(autorizacao("admin@teste.com")))
+            mockMvc.perform(post("/api/v1/scales/" + escala.getId() + "/publish")
+                            .with(autorizacao("admin@teste.com")))
                     .andExpect(status().isNoContent());
         }
     }

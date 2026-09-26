@@ -271,8 +271,8 @@ class ScaleApiIntegrationTest extends AbstractApiIntegrationTest {
     class Publicar {
 
         @Test
-        @DisplayName("devolve 204, mas não altera o estado da escala")
-        void devolveSemAlterarOEestado() throws Exception {
+        @DisplayName("devolve 204 e promove a escala de rascunho para publicada")
+        void promoveEEAlteraOEEstado() throws Exception {
             prepararUtilizador();
             var escala = criarEscala("Escala Outubro");
 
@@ -282,22 +282,29 @@ class ScaleApiIntegrationTest extends AbstractApiIntegrationTest {
 
             sincronizar();
             assertThat(editionScaleRepository.findById(escala.getId()).orElseThrow().getStatus())
-                    .isEqualTo(domain.model.enums.EditionStatus.DRAFT);
+                    .isEqualTo(domain.model.enums.EditionStatus.PUBLISHED);
         }
 
         @Test
-        @DisplayName("devolve 204 mesmo para uma escala inexistente")
+        @DisplayName("escala inexistente devolve 400 com o corpo de erro estruturado")
         void escalaInexistente() throws Exception {
             prepararUtilizador();
 
-            mockMvc.perform(post("/api/v1/scales/9999/publish")
+            var resposta = mockMvc.perform(post("/api/v1/scales/9999/publish")
                             .header("Authorization", "Bearer " + token))
-                    .andExpect(status().isNoContent());
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error").value("Bad Request"))
+                    .andExpect(jsonPath("$.message").value("Edição de Escala não encontrada."))
+                    .andReturn();
+
+            assertThat(resposta.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                    .contains("\"error\":\"Bad Request\"")
+                    .contains("Edição de Escala não encontrada.");
         }
 
         @Test
-        @DisplayName("o endpoint de publicação está desligado do ScaleService.publishSchedule")
-        void naoChamaPublishSchedule() throws Exception {
+        @DisplayName("o endpoint de publicação está ligado ao ScaleService.publishSchedule")
+        void chamaPublishSchedule() throws Exception {
             prepararUtilizador();
             var escala = criarEscala("Escala Outubro");
 
@@ -307,7 +314,47 @@ class ScaleApiIntegrationTest extends AbstractApiIntegrationTest {
 
             sincronizar();
             assertThat(editionScaleRepository.findById(escala.getId()).orElseThrow().getStatus())
-                    .isNotEqualTo(domain.model.enums.EditionStatus.PUBLISHED);
+                    .isEqualTo(domain.model.enums.EditionStatus.PUBLISHED);
+        }
+
+        @Test
+        @DisplayName("publicar duas vezes é recusado com 400, porque a escala já não está em rascunho")
+        void publicarDuasVezes() throws Exception {
+            prepararUtilizador();
+            var escala = criarEscala("Escala Outubro");
+
+            mockMvc.perform(post("/api/v1/scales/" + escala.getId() + "/publish")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isNoContent());
+
+            var resposta = mockMvc.perform(post("/api/v1/scales/" + escala.getId() + "/publish")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error").value("Bad Request"))
+                    .andExpect(jsonPath("$.message")
+                            .value("Apenas escalas em rascunho podem ser publicadas"))
+                    .andReturn();
+
+            assertThat(resposta.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                    .contains("Apenas escalas em rascunho podem ser publicadas");
+        }
+
+        @Test
+        @DisplayName("uma escala já publicada de origem não volta a ser publicada")
+        void publicadaDeOrigem() throws Exception {
+            prepararUtilizador();
+            var escala = criarEscala("Escala Outubro", admin,
+                    domain.model.enums.EditionStatus.PUBLISHED);
+
+            mockMvc.perform(post("/api/v1/scales/" + escala.getId() + "/publish")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message")
+                            .value("Apenas escalas em rascunho podem ser publicadas"));
+
+            sincronizar();
+            assertThat(editionScaleRepository.findById(escala.getId()).orElseThrow().getStatus())
+                    .isEqualTo(domain.model.enums.EditionStatus.PUBLISHED);
         }
     }
 
