@@ -27,6 +27,12 @@ public class ChangeTimeService {
 
     @Transactional
     public void requestExchange(Long originAllocationId, Long destinationAllocationId, Long loggedUserId) {
+        requestExchange(originAllocationId, destinationAllocationId, loggedUserId, null);
+    }
+
+    @Transactional
+    public void requestExchange(Long originAllocationId, Long destinationAllocationId,
+                                Long loggedUserId, String reason) {
 
         if (originAllocationId.equals(destinationAllocationId)) {
             throw new IllegalArgumentException("Alocação de origem e destino não podem ser iguais.");
@@ -51,8 +57,16 @@ public class ChangeTimeService {
         request.setRequestingUser(requester);
         request.setStatus("PENDING");
         request.setCreationDate(OffsetDateTime.now());
+        request.setReason(motivoNormalizado(reason));
 
         exchangeRequestRepository.save(request);
+    }
+
+    private String motivoNormalizado(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return null;
+        }
+        return reason.trim();
     }
 
     @Transactional
