@@ -21,8 +21,12 @@ public class ExchangeController {
 
         User loggedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-
-        changeTimeService.requestExchange(dto.originAllocationId(), dto.destinationAllocationId(), loggedUser.getId());
+        if (dto.reason() == null || dto.reason().isBlank()) {
+            changeTimeService.requestExchange(dto.originAllocationId(), dto.destinationAllocationId(), loggedUser.getId());
+        } else {
+            changeTimeService.requestExchange(dto.originAllocationId(), dto.destinationAllocationId(),
+                    loggedUser.getId(), dto.reason());
+        }
 
         return ResponseEntity.ok().build();
     }

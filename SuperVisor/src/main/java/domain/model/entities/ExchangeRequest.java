@@ -28,6 +28,9 @@ public class ExchangeRequest {
     private String status = "PENDENTE";
     private OffsetDateTime creationDate;
 
+    @Column(length = 500)
+    private String reason;
+
     public ExchangeRequest(){
 
     }
@@ -87,5 +90,13 @@ public class ExchangeRequest {
 
     public void setCreationDate(OffsetDateTime creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

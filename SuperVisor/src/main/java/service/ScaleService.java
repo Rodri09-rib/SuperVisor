@@ -56,4 +56,10 @@ public class ScaleService {
     public List<EditionScale> listAll() {
         return editionScaleRepository.findAll();
     }
+
+    @Transactional(readOnly = true)
+    public EditionScale findById(Long id) {
+        return editionScaleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Edição de Escala não encontrada."));
+    }
 }
