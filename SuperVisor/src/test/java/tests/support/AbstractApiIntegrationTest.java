@@ -3,9 +3,9 @@ package tests.support;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import domain.model.entities.EditionScale;
 import domain.model.entities.ExchangeRequest;
-import domain.model.entities.Shift;
 import domain.model.entities.ShiftScheduling;
 import domain.model.entities.User;
+import domain.model.enums.ShiftType;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,20 +57,29 @@ public abstract class AbstractApiIntegrationTest {
     protected domain.repository.EditionScaleRepository editionScaleRepository;
 
     @Autowired
-    protected domain.repository.ShiftRepository shiftRepository;
-
-    @Autowired
     protected domain.repository.ShiftSchedulingRepository shiftSchedulingRepository;
 
     @Autowired
     protected domain.repository.ExchangeRequestRepository exchangeRequestRepository;
 
+    @Autowired
+    protected domain.repository.WorkModalityScheduleRepository workModalityScheduleRepository;
+
+    @Autowired
+    protected domain.repository.UserLeaveRepository userLeaveRepository;
+
     @BeforeEach
     void limparBanco() {
         entityManager.createQuery("DELETE FROM ExchangeRequest").executeUpdate();
+        // A ordem segue as chaves estrangeiras: escalas e folgas apontam para
+        // `tb_user` e têm de ser limpas antes dela.
+        entityManager.createQuery("DELETE FROM WorkModalitySchedule").executeUpdate();
+        entityManager.createQuery("DELETE FROM UserLeave").executeUpdate();
+        // A tabela das atribuições especiais é uma @ElementCollection e não tem
+        // entidade: tem de ser limpa por SQL nativo e antes da tabela-mãe.
+        entityManager.createNativeQuery("DELETE FROM tb_shift_scheduling_assignment").executeUpdate();
         entityManager.createQuery("DELETE FROM ShiftScheduling").executeUpdate();
         entityManager.createQuery("DELETE FROM EditionScale").executeUpdate();
-        entityManager.createQuery("DELETE FROM Shift").executeUpdate();
         entityManager.createQuery("DELETE FROM User").executeUpdate();
         entityManager.flush();
         entityManager.clear();
@@ -79,6 +88,14 @@ public abstract class AbstractApiIntegrationTest {
     protected User criarUsuario(String nome, String email, domain.model.enums.UserProfile perfil) {
         return userRepository.saveAndFlush(
                 TestFixtures.userWithEncodedPassword(passwordEncoder, nome, email, perfil));
+    }
+
+    /** Utilizador ativo com equipa, que é o que a escala de presencialidade exige. */
+    protected User criarUsuarioComEquipa(String nome, String email,
+                                         domain.model.enums.UserProfile perfil,
+                                         domain.model.enums.TeamGroup equipa) {
+        return userRepository.saveAndFlush(TestFixtures.userInTeam(
+                nome, email, perfil, equipa));
     }
 
     protected EditionScale criarEscala(String nome, User criadoPor) {
@@ -92,12 +109,11 @@ public abstract class AbstractApiIntegrationTest {
     }
 
     protected ShiftScheduling criarAlocacao(EditionScale escala, User usuario) {
-        return shiftSchedulingRepository.saveAndFlush(TestFixtures.allocation(escala, usuario));
+        return criarAlocacao(escala, usuario, ShiftType.T1_SAB);
     }
 
-    protected Shift criarTurno(String sigla, String dia) {
-        return shiftRepository.saveAndFlush(
-                TestFixtures.shift(sigla, java.time.LocalTime.of(8, 0), java.time.LocalTime.of(17, 0), dia));
+    protected ShiftScheduling criarAlocacao(EditionScale escala, User usuario, ShiftType turno) {
+        return shiftSchedulingRepository.saveAndFlush(TestFixtures.allocation(escala, usuario, turno, null));
     }
 
     protected ExchangeRequest recarregarSolicitacao(Long id) {
@@ -120,9 +136,12 @@ public abstract class AbstractApiIntegrationTest {
     }
 
     /**
-     * A aplicação não tem tratamento global de excepções, pelo que uma
-     * {@link RuntimeException} lancada por um serviço escapa do MockMvc em vez
-     * de virar uma resposta 500. Este utilitário fixa esse comportamento real.
+     * Executa o pedido e devolve a exceção que lançou, se tiver lançado uma.
+     *
+     * <p>Útil nos casos em que a exceção escapa do {@code MockMvc} em vez de
+     * virar resposta — o que acontece quando a exceção não é de um tipo que o
+     * {@code GlobalExceptionHandler} trata, e em que o teste quer ver a
+     * exceção em si e não um código de estado.
      */
     protected Throwable erroDaRequisicao(ThrowingSupplier requisicao) {
         try {

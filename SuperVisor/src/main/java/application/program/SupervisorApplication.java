@@ -3,6 +3,8 @@ package application.program;
 import domain.model.entities.EditionScale;
 import domain.model.entities.ShiftScheduling;
 import domain.model.entities.User;
+import domain.model.enums.ShiftType;
+import domain.model.enums.TeamGroup;
 import domain.model.enums.UserProfile;
 import domain.repository.EditionScaleRepository;
 import domain.repository.ShiftSchedulingRepository;
@@ -57,6 +59,26 @@ public class SupervisorApplication {
                 System.out.println("Utilizador João criado com sucesso!");
             }
 
+            // A escala de presencialidade só existe para quem tem equipa, e as
+            // contas não nascem com uma equipa atribuída. As duas contas de teste
+            // ficam em equipas opostas para que a geração tenha o seu caso
+            // principal — as duas com a mesma escala na mesma semana, e o
+            // resultado a ser diferente para cada uma.
+            //
+            // A atribuição é feita fora do `if (joao == null)`: a conta já
+            // existente é de arranques anteriores, quando a coluna `team_group`
+            // ainda não existia, e deixá-la sem equipa faria a escala não ter
+            // ninguém em quem demonstrar a alternância.
+            if (admin.getTeamGroup() == null) {
+                admin.setTeamGroup(TeamGroup.EQUIPE_A);
+                userRepository.save(admin);
+            }
+
+            if (joao.getTeamGroup() == null) {
+                joao.setTeamGroup(TeamGroup.EQUIPE_B);
+                userRepository.save(joao);
+            }
+
 
             if (editionScaleRepository.count() == 0) {
                 EditionScale escala = new EditionScale();
@@ -66,18 +88,22 @@ public class SupervisorApplication {
                 escala.setCreatedBy(admin);
                 escala = editionScaleRepository.save(escala);
 
+                // Tuas alocações são o par mínimo que o pedido de troca
+                // necesita: um turno de cada utilizador dentro da mesma escala.
+                // O turno é obrigatório, pelo que a enum indica-o.
+                shiftSchedulingRepository.save(alocacao(escala, admin, ShiftType.T1_SAB));
+                shiftSchedulingRepository.save(alocacao(escala, joao, ShiftType.T2_SAB));
 
-                ShiftScheduling alocacaoAdmin = new ShiftScheduling();
-                alocacaoAdmin.setEditionScale(escala);
-                alocacaoAdmin.setUser(admin);
-                shiftSchedulingRepository.save(alocacaoAdmin);
-                ShiftScheduling alocacaoJoao = new ShiftScheduling();
-                alocacaoJoao.setEditionScale(escala);
-                alocacaoJoao.setUser(joao);
-                shiftSchedulingRepository.save(alocacaoJoao);
-
-                System.out.println("Alocações de teste (IDs 1 e 2) criadas com sucesso!");
+                System.out.println("Alocações de teste criadas com sucesso!");
             }
         };
+    }
+
+    private static ShiftScheduling alocacao(EditionScale escala, User utilizador, ShiftType turno) {
+        ShiftScheduling alocacao = new ShiftScheduling();
+        alocacao.setEditionScale(escala);
+        alocacao.setUser(utilizador);
+        alocacao.setShift(turno);
+        return alocacao;
     }
 }

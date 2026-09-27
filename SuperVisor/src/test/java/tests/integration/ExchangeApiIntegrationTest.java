@@ -1,5 +1,6 @@
 package tests.integration;
 
+import domain.model.enums.ExchangeStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -78,15 +79,15 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
             mockMvc.perform(post("/api/v1/exchanges")
                             .header("Authorization", "Bearer " + tokenJoao)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(pedirTrocaJson(alocacaoAdmin.getId(), alocacaoJoao.getId())))
+                            .content(pedirTrocaJson(alocacaoJoao.getId(), alocacaoAdmin.getId())))
                     .andExpect(status().isOk());
 
             sincronizar();
             var request = exchangeRequestRepository.findAll().get(0);
-            assertThat(request.getStatus()).isEqualTo("PENDING");
+            assertThat(request.getStatus()).isEqualTo(ExchangeStatus.PENDING);
             assertThat(request.getRequestingUser().getId()).isEqualTo(joao.getId());
-            assertThat(request.getSourceAllocation().getId()).isEqualTo(alocacaoAdmin.getId());
-            assertThat(request.getDestinationAllocation().getId()).isEqualTo(alocacaoJoao.getId());
+            assertThat(request.getSourceAllocation().getId()).isEqualTo(alocacaoJoao.getId());
+            assertThat(request.getDestinationAllocation().getId()).isEqualTo(alocacaoAdmin.getId());
             assertThat(request.getCreationDate()).isNotNull();
         }
 
@@ -95,7 +96,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         void pedidoNaoAlteraAlocacoes() throws Exception {
             prepararCenario();
 
-            pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
             sincronizar();
 
             assertThat(recarregarAlocacao(alocacaoAdmin.getId()).getUser().getId())
@@ -109,11 +110,57 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         void requisitanteVemDoToken() throws Exception {
             prepararCenario();
 
-            pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
             sincronizar();
 
             assertThat(exchangeRequestRepository.findAll().get(0).getRequestingUser().getEmail())
                     .isEqualTo("joao@teste.com");
+        }
+
+        @Test
+        @DisplayName("não é possível pedir a troca de um turno que é de outra pessoa")
+        void naoPedeTrocaDeTurnoAlheio() throws Exception {
+            // O caminho do buraco: apontar para o turno do admin como origem e
+            // para o próprio como destino. O colega pedido ficava a ser o
+            // próprio João, que respondia ao seu próprio pedido e ficava com
+            // os dois turnos — e o admin perdia o dele sem nunca ter dito que
+            // sim. O turno de origem tem de ser de quem pede.
+            prepararCenario();
+
+            var resposta = mockMvc.perform(post("/api/v1/exchanges")
+                            .header("Authorization", "Bearer " + tokenJoao)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(pedirTrocaJson(alocacaoAdmin.getId(), alocacaoJoao.getId())))
+                    .andExpect(status().isForbidden())
+                    .andReturn();
+
+            assertThat(resposta.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                    .contains("lhe pertence");
+
+            sincronizar();
+            assertThat(exchangeRequestRepository.count()).isZero();
+            assertThat(recarregarAlocacao(alocacaoAdmin.getId()).getUser().getId())
+                    .isEqualTo(admin.getId());
+        }
+
+        @Test
+        @DisplayName("não é possível pedir a troca para um turno que já é nosso")
+        void naoPedeTrocaParaTurnoProprio() throws Exception {
+            prepararCenario();
+            var terceiroTurno = criarAlocacao(escala, joao);
+
+            var resposta = mockMvc.perform(post("/api/v1/exchanges")
+                            .header("Authorization", "Bearer " + tokenJoao)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(pedirTrocaJson(alocacaoJoao.getId(), terceiroTurno.getId())))
+                    .andExpect(status().isBadRequest())
+                    .andReturn();
+
+            assertThat(resposta.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                    .contains("já é seu");
+
+            sincronizar();
+            assertThat(exchangeRequestRepository.count()).isZero();
         }
 
         @Test
@@ -184,16 +231,17 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         void variosPedidosPendentes() throws Exception {
             prepararCenario();
 
-            pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
+            // O admin dá o turno 10, que é dele, e pede o 11, que é do João.
             mockMvc.perform(post("/api/v1/exchanges")
                             .header("Authorization", "Bearer " + tokenAdmin)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(pedirTrocaJson(alocacaoJoao.getId(), alocacaoAdmin.getId())))
+                            .content(pedirTrocaJson(alocacaoAdmin.getId(), alocacaoJoao.getId())))
                     .andExpect(status().isOk());
 
             assertThat(exchangeRequestRepository.findAll())
                     .hasSize(2)
-                    .allSatisfy(r -> assertThat(r.getStatus()).isEqualTo("PENDING"));
+                    .allSatisfy(r -> assertThat(r.getStatus()).isEqualTo(ExchangeStatus.PENDING));
         }
     }
 
@@ -205,7 +253,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         @DisplayName("troca os utilizadores entre as duas alocações")
         void trocaUtilizadores() throws Exception {
             prepararCenario();
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
 
             responder(pedido, tokenAdmin, true);
             sincronizar();
@@ -215,41 +263,96 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("marca a solicitação como ACCEPTED")
+        @DisplayName("marca a solicitação como APPROVED")
         void marcaAceita() throws Exception {
             prepararCenario();
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
 
             responder(pedido, tokenAdmin, true);
             sincronizar();
 
-            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo("ACCEPTED");
+            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo(ExchangeStatus.APPROVED);
         }
 
         @Test
-        @DisplayName("qualquer utilizador autenticado pode responder, por não haver verificação de autoria")
-        void qualquerUmPodeResponder() throws Exception {
+        @DisplayName("regista a data da resposta")
+        void registaDataDeResposta() throws Exception {
+            prepararCenario();
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
+            assertThat(recarregarSolicitacao(pedido).getApprovalDate()).isNull();
+
+            responder(pedido, tokenAdmin, true);
+            sincronizar();
+
+            assertThat(recarregarSolicitacao(pedido).getApprovalDate()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("o colega que não pediu nada não pode responder")
+        void terceiroNaoPodeResponder() throws Exception {
+            // Antes esta resposta era aceite: o endpoint não verificava quem
+            // respondia. Com dois pedidos cruzados — cada um aceitando o
+            // pedido do outro — os dois turnos trocavam de dono e voltavam ao
+            // lugar, com ambos os pedidos marcados como aceites.
             prepararCenario();
             var terceiro = criarUsuario("Terceiro", "terceiro@teste.com",
                     domain.model.enums.UserProfile.ANALIST);
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
 
-            responder(pedido, tokenService.gerarToken(terceiro), true);
+            var resposta = mockMvc.perform(
+                            patch("/api/v1/exchanges/" + pedido + "/respond")
+                                    .header("Authorization", "Bearer " + tokenService.gerarToken(terceiro))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("""
+                                            {"isAccepted":true}
+                                            """))
+                    .andExpect(status().isForbidden())
+                    .andReturn();
+
+            assertThat(resposta.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                    .contains("Apenas a pessoa a quem a troca foi pedida pode responder");
             sincronizar();
 
-            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo("ACCEPTED");
+            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo(ExchangeStatus.PENDING);
+            assertThat(recarregarAlocacao(alocacaoAdmin.getId()).getUser().getId()).isEqualTo(admin.getId());
+            assertThat(recarregarAlocacao(alocacaoJoao.getId()).getUser().getId()).isEqualTo(joao.getId());
         }
 
         @Test
-        @DisplayName("o próprio requisitante pode aceitar o próprio pedido")
-        void requisitanteAceitaOProprioPedido() throws Exception {
+        @DisplayName("o próprio requisitante não pode aceitar o próprio pedido")
+        void requisitanteNaoAceitaOProprioPedido() throws Exception {
+            // Um pedido que o próprio autor aprovasse não precisaria de ninguém:
+            // bastava chamar a rota e ficar com o turno do colega.
             prepararCenario();
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
 
-            responder(pedido, tokenJoao, true);
+            mockMvc.perform(patch("/api/v1/exchanges/" + pedido + "/respond")
+                            .header("Authorization", "Bearer " + tokenJoao)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"isAccepted":true}
+                                    """))
+                    .andExpect(status().isForbidden());
             sincronizar();
 
-            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo("ACCEPTED");
+            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo(ExchangeStatus.PENDING);
+        }
+
+        @Test
+        @DisplayName("o perfil do colega é o que fica guardado, e não o dono da alocação depois da troca")
+        void perfilDoColegaFicaNoPedido() throws Exception {
+            // Sem `requested_user_id`, ler o colega da alocação de destino depois
+            // da troca devolveria o próprio requerente, e o histórico passaria a
+            // dizer que a troca foi consigo mesmo.
+            prepararCenario();
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
+
+            responder(pedido, tokenAdmin, true);
+            sincronizar();
+
+            var request = recarregarSolicitacao(pedido);
+            assertThat(request.getRequestedUser().getId()).isEqualTo(admin.getId());
+            assertThat(request.getRequestingUser().getId()).isEqualTo(joao.getId());
         }
     }
 
@@ -261,12 +364,12 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         @DisplayName("marca a solicitação como REJECTED sem tocar nas alocações")
         void recusaNaoAlteraAlocacoes() throws Exception {
             prepararCenario();
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
 
             responder(pedido, tokenAdmin, false);
             sincronizar();
 
-            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo("REJECTED");
+            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo(ExchangeStatus.REJECTED);
             assertThat(recarregarAlocacao(alocacaoAdmin.getId()).getUser().getId()).isEqualTo(admin.getId());
             assertThat(recarregarAlocacao(alocacaoJoao.getId()).getUser().getId()).isEqualTo(joao.getId());
         }
@@ -275,20 +378,20 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         @DisplayName("uma troca recusada pode ser pedida novamente")
         void permiteNovoPedidoAposRecusa() throws Exception {
             prepararCenario();
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
             responder(pedido, tokenAdmin, false);
 
             mockMvc.perform(post("/api/v1/exchanges")
                             .header("Authorization", "Bearer " + tokenJoao)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(pedirTrocaJson(alocacaoAdmin.getId(), alocacaoJoao.getId())))
+                            .content(pedirTrocaJson(alocacaoJoao.getId(), alocacaoAdmin.getId())))
                     .andExpect(status().isOk());
             sincronizar();
 
             assertThat(exchangeRequestRepository.findAll())
                     .hasSize(2)
                     .extracting(r -> r.getStatus())
-                    .containsExactlyInAnyOrder("REJECTED", "PENDING");
+                    .containsExactlyInAnyOrder(ExchangeStatus.REJECTED, ExchangeStatus.PENDING);
         }
     }
 
@@ -300,7 +403,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         @DisplayName("uma solicitação já aceite não pode ser respondida outra vez")
         void naoRespondeDuasVezes() throws Exception {
             prepararCenario();
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
             responder(pedido, tokenAdmin, true);
 
             var resposta = mockMvc.perform(
@@ -324,7 +427,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         @DisplayName("uma segunda resposta não volta a trocar os utilizadores")
         void segundaRespostaNaoTrocaNovamente() throws Exception {
             prepararCenario();
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
             responder(pedido, tokenAdmin, true);
 
             erroDaRequisicao(() -> mockMvc.perform(
@@ -344,7 +447,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         @DisplayName("uma solicitação recusada não pode ser aceite depois")
         void recusaEhDefinitiva() throws Exception {
             prepararCenario();
-            Long pedido = pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
             responder(pedido, tokenAdmin, false);
 
             var resposta = mockMvc.perform(
@@ -364,7 +467,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
                     .contains("Esta solicitação já foi respondida.");
             sincronizar();
 
-            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo("REJECTED");
+            assertThat(recarregarSolicitacao(pedido).getStatus()).isEqualTo(ExchangeStatus.REJECTED);
             assertThat(recarregarAlocacao(alocacaoAdmin.getId()).getUser().getId()).isEqualTo(admin.getId());
         }
 
@@ -395,13 +498,13 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         void pendenteEOPendente() throws Exception {
             prepararCenario();
 
-            pedirTroca(tokenJoao, alocacaoAdmin.getId(), alocacaoJoao.getId());
+            pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
             sincronizar();
 
             assertThat(exchangeRequestRepository.findAll())
                     .singleElement()
                     .extracting(r -> r.getStatus())
-                    .isEqualTo("PENDING");
+                    .isEqualTo(ExchangeStatus.PENDING);
         }
     }
 
@@ -417,7 +520,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
             mockMvc.perform(post("/api/v1/exchanges")
                             .header("Authorization", "Bearer " + tokenJoao)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(pedirTrocaJson(alocacaoAdmin.getId(), alocacaoJoao.getId())))
+                            .content(pedirTrocaJson(alocacaoJoao.getId(), alocacaoAdmin.getId())))
                     .andExpect(status().isOk());
 
             Long pedido = exchangeRequestRepository.findAll().get(0).getId();
@@ -432,7 +535,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
             sincronizar();
 
             var request = recarregarSolicitacao(pedido);
-            assertThat(request.getStatus()).isEqualTo("ACCEPTED");
+            assertThat(request.getStatus()).isEqualTo(ExchangeStatus.APPROVED);
             assertThat(recarregarAlocacao(alocacaoAdmin.getId()).getUser().getEmail())
                     .isEqualTo("joao@teste.com");
             assertThat(recarregarAlocacao(alocacaoJoao.getId()).getUser().getEmail())

@@ -1,16 +1,26 @@
 package tests.support;
 
 import domain.model.entities.EditionScale;
-import domain.model.entities.Shift;
+import domain.model.entities.ExchangeRequest;
 import domain.model.entities.ShiftScheduling;
 import domain.model.entities.User;
+import domain.model.entities.UserLeave;
+import domain.model.entities.WorkModalitySchedule;
 import domain.model.enums.AllocationStatus;
+import domain.model.enums.AssignmentType;
 import domain.model.enums.EditionStatus;
+import domain.model.enums.ExchangeStatus;
+import domain.model.enums.ShiftType;
+import domain.model.enums.TeamGroup;
 import domain.model.enums.UserProfile;
+import domain.model.enums.WorkModality;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Fábrica de entidades usada pelas suítes. Existe para que cada teste declará
@@ -44,6 +54,34 @@ public final class TestFixtures {
         return user("João", "joao@teste.com", UserProfile.ANALIST);
     }
 
+    /**
+     * Utilizador com equipa atribuída. Existe porque a escala de
+     * presencialidade só gera linhas para quem tem equipa: um teste que usa
+     * {@link #analyst()} sem equipa passaria a ver uma escala vazia e não saberia
+     * se o serviço estava a falhar ou se simplesmente não tinha ninguém para
+     * escalar.
+     */
+    public static User userInTeam(String name, String email, UserProfile profile, TeamGroup team) {
+        User user = user(name, email, profile);
+        user.setTeamGroup(team);
+        return user;
+    }
+
+    public static User supervisorInTeam(TeamGroup team) {
+        return userInTeam("Administrador", "admin@teste.com", UserProfile.SUPERVISOR, team);
+    }
+
+    public static User analystInTeam(TeamGroup team) {
+        return userInTeam("João", "joao@teste.com", UserProfile.ANALIST, team);
+    }
+
+    /** Utilizador desativado: não pode receber alocações. */
+    public static User inactiveAnalyst() {
+        User user = analyst();
+        user.setActive(false);
+        return user;
+    }
+
     public static User userWithEncodedPassword(PasswordEncoder encoder, String name, String email, UserProfile profile) {
         return user(name, email, profile, encoder.encode(RAW_PASSWORD));
     }
@@ -62,14 +100,16 @@ public final class TestFixtures {
         return editionScale("Escala Outubro", createdBy, EditionStatus.DRAFT);
     }
 
+    /**
+     * Alocação mínima válida. O turno é obrigatório pelo modelo, pelo que
+     * nenhum teste pode criar uma alocação sem ele.
+     */
     public static ShiftScheduling allocation(EditionScale scale, User user) {
-        ShiftScheduling allocation = new ShiftScheduling();
-        allocation.setEditionScale(scale);
-        allocation.setUser(user);
-        return allocation;
+        return allocation(scale, user, ShiftType.T1_SAB, null);
     }
 
-    public static ShiftScheduling allocation(EditionScale scale, User user, Shift shift, LocalDate specificDate) {
+    public static ShiftScheduling allocation(EditionScale scale, User user,
+                                             ShiftType shift, LocalDate specificDate) {
         ShiftScheduling allocation = new ShiftScheduling();
         allocation.setEditionScale(scale);
         allocation.setUser(user);
@@ -78,16 +118,65 @@ public final class TestFixtures {
         return allocation;
     }
 
-    public static Shift shift(String acronym, LocalTime start, LocalTime end, String dayOfTheWeek) {
-        Shift shift = new Shift();
-        shift.setAcronym(acronym);
-        shift.setStartTime(start);
-        shift.setEndTime(end);
-        shift.setDayiftheWeek(dayOfTheWeek);
-        return shift;
+    /** Alocação com atribuições especiais e horário dentro do turno. */
+    public static ShiftScheduling allocationCompleta(EditionScale scale, User user,
+                                                     ShiftType shift, LocalDate specificDate,
+                                                     List<AssignmentType> assignments,
+                                                     LocalTime customStart, LocalTime customEnd) {
+        ShiftScheduling allocation = allocation(scale, user, shift, specificDate);
+        allocation.setAssignments(assignments == null ? Set.of() : new java.util.LinkedHashSet<>(assignments));
+        allocation.setCustomStartTime(customStart);
+        allocation.setCustomEndTime(customEnd);
+        return allocation;
     }
 
     public static AllocationStatus acceptance() {
         return AllocationStatus.PENDING;
+    }
+
+    /** Célula de escala de presencialidade. */
+    public static WorkModalitySchedule workModality(User user, LocalDate date,
+                                                   WorkModality modality, TeamGroup team) {
+        WorkModalitySchedule schedule = new WorkModalitySchedule();
+        schedule.setUser(user);
+        schedule.setDate(date);
+        schedule.setModality(modality);
+        schedule.setTeamGroup(team);
+        return schedule;
+    }
+
+    /** Folga de um dia. */
+    public static UserLeave leave(User user, LocalDate date) {
+        return leave(user, date, date, "Motivo de teste");
+    }
+
+    public static UserLeave leave(User user, LocalDate start, LocalDate end, String reason) {
+        UserLeave leave = new UserLeave();
+        leave.setUser(user);
+        leave.setStartDate(start);
+        leave.setEndDate(end);
+        leave.setReason(reason);
+        return leave;
+    }
+
+    /**
+     * Pedido de troca já com o colega pedido preenchido, que é como o serviço o
+     * grava. Um teste que o construísse à mão sem o colega simularia um pedido
+     * anterior à migração de {@code requestedUser}, que é um caso diferente.
+     */
+    public static ExchangeRequest exchangeRequest(ShiftScheduling origem, ShiftScheduling destino,
+                                                  User requerente, User colega,
+                                                  ExchangeStatus status) {
+        ExchangeRequest request = new ExchangeRequest();
+        request.setSourceAllocation(origem);
+        request.setDestinationAllocation(destino);
+        request.setRequestingUser(requerente);
+        request.setRequestedUser(colega);
+        request.setStatus(status);
+        request.setCreationDate(OffsetDateTime.now());
+        if (status != ExchangeStatus.PENDING) {
+            request.setApprovalDate(OffsetDateTime.now());
+        }
+        return request;
     }
 }

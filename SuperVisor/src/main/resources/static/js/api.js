@@ -3,7 +3,12 @@
  *
  * Concentra num único sitio o que é comum a todas as chamadas: o header
  * Authorization a partir do JWT guardado em localStorage, a serialização JSON
- * e o tratamento global de 401/403, que limpa a sessão e volta ao login.
+ * e o tratamento de 401, que limpa a sessão e volta ao login.
+ *
+ * O 403 é separado do 401 de propósito: significa que a sessão é válida e o
+ * que falta é permissão para esta operação, pelo que a sessão não é
+ * destruída. Confundir os dois expulsava o utilizador do painel por tentar
+ * uma ação que simplesmente não lhe compete.
  */
 const SuperVisorApi = (() => {
 
@@ -27,8 +32,8 @@ const SuperVisorApi = (() => {
         window.location.href = '/login';
     }
 
-    function semAutorizacao(status) {
-        return status === 401 || status === 403;
+    function semSessao(status) {
+        return status === 401;
     }
 
     async function mensagemDeErro(response) {
@@ -72,10 +77,10 @@ const SuperVisorApi = (() => {
             throw new Error('Erro de comunicação com o servidor.');
         }
 
-        if (semAutorizacao(response.status)) {
+        if (semSessao(response.status)) {
             limparSessao();
             redirecionarParaLogin();
-            throw new Error('Sessão expirada ou sem permissões.');
+            throw new Error('Sessão expirada. Inicie sessão novamente.');
         }
 
         if (!response.ok) {
@@ -97,6 +102,12 @@ const SuperVisorApi = (() => {
         redirecionarParaLogin: redirecionarParaLogin,
 
         utilizadorAtual: () => request('/api/v1/users/me'),
+        listarUtilizadores: () => request('/api/v1/users'),
+        criarUtilizador: (utilizador) => request('/api/v1/users',
+            { metodo: 'POST', corpo: utilizador }),
+
+        listarTurnos: () => request('/api/v1/shifts'),
+        listarAtribuicoes: () => request('/api/v1/assignments'),
 
         listarEscalas: () => request('/api/v1/scales'),
         obterEscala: (id) => request('/api/v1/scales/' + encodeURIComponent(id)),
@@ -105,7 +116,64 @@ const SuperVisorApi = (() => {
 
         listarAlocacoes: (escalaId) => request('/api/v1/allocations'
             + (escalaId ? '?editionScaleId=' + encodeURIComponent(escalaId) : '')),
+        criarAlocacao: (alocacao) => request('/api/v1/allocations', { metodo: 'POST', corpo: alocacao }),
+        atualizarAlocacao: (id, alocacao) => request('/api/v1/allocations/' + encodeURIComponent(id),
+            { metodo: 'PUT', corpo: alocacao }),
 
-        pedirTroca: (pedido) => request('/api/v1/exchanges', { metodo: 'POST', corpo: pedido })
+        pedirTroca: (pedido) => request('/api/v1/exchanges', { metodo: 'POST', corpo: pedido }),
+
+        /**
+         * Histórico de trocas, com filtros opcionais.
+         *
+         * <p>Os filtros são montados aqui para que a página fique só com o
+         * desenho da tabela, e um filtro sem valor não chega a ser enviado:
+         * mandá-lo na mesma faria o servidor ter de distinguir "não filtrado" de
+         * "filtrado por nada".
+         */
+        listarTrocas: (filtros = {}) => {
+            const parametros = new URLSearchParams();
+            if (filtros.status) {
+                parametros.append('status', filtros.status);
+            }
+            if (filtros.userId) {
+                parametros.append('userId', filtros.userId);
+            }
+            if (filtros.dataInicial) {
+                parametros.append('dataInicial', filtros.dataInicial);
+            }
+            if (filtros.dataFim) {
+                parametros.append('dataFim', filtros.dataFim);
+            }
+            const query = parametros.toString();
+            return request('/api/v1/exchanges' + (query ? '?' + query : ''));
+        },
+
+        /**
+         * Responde a um pedido de troca: aceitar ou recusar.
+         *
+         * <p>É um PATCH e não um PUT porque a operação é uma transição de
+         * estado e não uma substituição do recurso — o resto do pedido fica
+         * como está.
+         */
+        responderTroca: (id, aceitar) => request(
+            '/api/v1/exchanges/' + encodeURIComponent(id) + '/respond',
+            { metodo: 'PATCH', corpo: { isAccepted: aceitar } }),
+
+        listarEscalaWorkModality: (inicio, fim) => request(
+            '/api/v1/work-modality-schedules'
+            + '?inicio=' + encodeURIComponent(inicio)
+            + '&fim=' + encodeURIComponent(fim)),
+
+        gerarEscalaWorkModality: (dataReferencia) => request(
+            '/api/v1/work-modality-schedules/generate',
+            { metodo: 'POST', corpo: { dataReferencia: dataReferencia } }),
+
+        listarFolgas: (userId) => request('/api/v1/leaves'
+            + (userId ? '?userId=' + encodeURIComponent(userId) : '')),
+        criarFolga: (folga) => request('/api/v1/leaves', { metodo: 'POST', corpo: folga }),
+        atualizarFolga: (id, folga) => request('/api/v1/leaves/' + encodeURIComponent(id),
+            { metodo: 'PUT', corpo: folga }),
+        apagarFolga: (id) => request('/api/v1/leaves/' + encodeURIComponent(id),
+            { metodo: 'DELETE' })
     };
 })();

@@ -1,6 +1,9 @@
 package domain.model.entities;
 
+import domain.model.enums.ExchangeStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.OffsetDateTime;
 
@@ -25,8 +28,39 @@ public class ExchangeRequest {
     @JoinColumn(name = "requesting_user_id")
     private User requestingUser;
 
-    private String status = "PENDENTE";
+    /**
+     * Colega a quem a troca foi pedida.
+     *
+     * <p>É uma cópia, e não se vai buscar a alocação de destino, porque ao
+     * responder a um pedido aceite as duas alocações trocam de dono: ler o
+     * destino depois da resposta daria o próprio requerente como "troca com", e
+     * o histórico deixaria de dizer com quem foi. Guardar a pessoa no momento
+     * do pedido mantém a história correta para sempre.
+     *
+     * <p>{@code ON DELETE SET NULL} está declarado aqui e não só na migração
+     * porque o {@code ddl-auto} do Hibernate cria a sua própria chave estrangeira
+     * quando a entidade não a declara. Uma migração que adiciona a restrição com
+     * {@code SET NULL} e uma constraint do Hibernate com o default
+     * {@code NO ACTION} coexistiriam, e a que o PostgreSQL acabaria por
+     * respeitar seria a errada: apagar um colaborador rebentava em vez de
+     * deixar o histórico vivo.
+     */
+    @ManyToOne
+    @JoinColumn(name = "requested_user_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    private User requestedUser;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ExchangeStatus status = ExchangeStatus.PENDING;
+
     private OffsetDateTime creationDate;
+
+    /**
+     * Momento da resposta. Fica nulo enquanto o pedido está pendente, que é o
+     * que distingue "ainda ninguém respondeu" de "respondeu logo a seguir".
+     */
+    private OffsetDateTime approvalDate;
 
     @Column(length = 500)
     private String reason;
@@ -35,7 +69,7 @@ public class ExchangeRequest {
 
     }
 
-    public ExchangeRequest(Long id, ShiftScheduling sourceAllocation, ShiftScheduling destinationAllocation, User requestingUser, String status, OffsetDateTime creationDate) {
+    public ExchangeRequest(Long id, ShiftScheduling sourceAllocation, ShiftScheduling destinationAllocation, User requestingUser, ExchangeStatus status, OffsetDateTime creationDate) {
         this.id = id;
         this.sourceAllocation = sourceAllocation;
         this.destinationAllocation = destinationAllocation;
@@ -76,11 +110,19 @@ public class ExchangeRequest {
         this.requestingUser = requestingUser;
     }
 
-    public String getStatus() {
+    public User getRequestedUser() {
+        return requestedUser;
+    }
+
+    public void setRequestedUser(User requestedUser) {
+        this.requestedUser = requestedUser;
+    }
+
+    public ExchangeStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(ExchangeStatus status) {
         this.status = status;
     }
 
@@ -90,6 +132,14 @@ public class ExchangeRequest {
 
     public void setCreationDate(OffsetDateTime creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public OffsetDateTime getApprovalDate() {
+        return approvalDate;
+    }
+
+    public void setApprovalDate(OffsetDateTime approvalDate) {
+        this.approvalDate = approvalDate;
     }
 
     public String getReason() {
