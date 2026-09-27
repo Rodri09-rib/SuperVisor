@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-PT" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperVisor - Presencialidade</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        /*
+         * A grelha é uma tabela e não uma série de cartões porque a comparação
+         * entre dias é a razão de a página existir: quem lê esta grelha quer
+         * ver de relance quem está na empresa numa quarta-feira. Uma linha por
+         * pessoa e uma coluna por dia é o formato que dá essa leitura.
+         */
+        .grelha-celula {
+            min-width: 7rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/navbar :: navbar('work-modality')}"></div>
+
+<div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer" aria-live="polite"></div>
+
+<div class="container mt-4 mb-5">
+
+    <div class="row mb-4">
+        <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <h3 class="fw-bold text-secondary mb-0">
+                    <i class="bi bi-house-door"></i> Presencialidade
+                </h3>
+                <p class="text-muted small mb-0 mt-1" id="resumoSemana">
+                    A semana ainda não foi gerada.
+                </p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <div class="btn-group" role="group" aria-label="Navegar entre semanas">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSemanaAnterior">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSemanaActual">
+                        Esta semana
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSemanaSeguinte">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm d-none" id="btnGerarEscala">
+                    <i class="bi bi-magic"></i> Gerar escala da semana
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light" id="grelhaCabecalho">
+                    <tr>
+                        <th scope="col" class="grelha-celula">Pessoa</th>
+                    </tr>
+                    </thead>
+                    <tbody id="grelhaCorpo">
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">A carregar a escala...</span>
+                            </div>
+                            <div class="mt-2">A carregar a escala...</div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3 g-3">
+        <div class="col-12 col-md-8">
+            <p class="text-muted small mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                A escala alterna por semana ISO. Nas semanas ímpares a equipa A está
+                presencial à segunda, quarta e sexta; nas semanas pares é a equipa B.
+                A escala é reescrita se já existir, por isso gerar duas vezes não duplica.
+            </p>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="d-flex justify-content-md-end gap-2">
+                <span class="badge bg-success">Presencial</span>
+                <span class="badge bg-info text-dark">Home Office</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: confirmação de geração -->
+<div class="modal fade" id="gerarModal" tabindex="-1" aria-labelledby="gerarTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="gerarTitulo">Gerar escala</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="gerarAviso" class="alert d-none" role="alert"></div>
+                <p class="mb-0" id="gerarTexto">
+                    A escala desta semana vai ser gerada para quem tem equipa atribuída.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarGerar">
+                    <i class="bi bi-magic"></i> Gerar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/format.js}"></script>
+<script th:src="@{/js/layout.js}"></script>
+<script th:src="@{/js/work-modality.js}"></script>
+</body>
+</html>

@@ -7,6 +7,24 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    # O DDL de arranque corre DEPOIS do Hibernate. A ordem é o que corrige o
+    # problema que motivou esta migração: o `update` do Hibernate não consegue
+    # criar a coluna `active` numa base já povoada, porque omite o DEFAULT, e o
+    # PostgreSQL recusa o `ALTER TABLE`. Sem esta espera, o script de migração
+    # correria antes de a tabela existir.
+    defer-datasource-initialization: true
+  sql:
+    init:
+      # `always` para o arranque ser também a migração, e não só a primeira
+      # criação da base. Os scripts são idempotentes, por isso repetir não faz mal.
+      mode: always
+      # A ordem das entradas é a ordem de execução. V3 tem de vir depois de V1:
+      # o `ALTER TABLE tb_user` de V3 falha numa tabela que ainda não existe,
+      # porque o script corre antes de o Hibernate criar as tabelas.
+      schema-locations:
+        - classpath:db/migration/V1__add_active_to_tb_user.sql
+        - classpath:db/migration/V2__exchange_status_and_approval_date.sql
+        - classpath:db/migration/V3__add_team_group_to_tb_user.sql
 api:
   security:
     token:

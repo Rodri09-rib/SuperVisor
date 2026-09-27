@@ -1,0 +1,47 @@
+<!--
+    Navegação comum a todas as páginas internas.
+
+    Fica num fragmento em vez de ser copiada para cada página porque é a única
+    hipótese de haver um único sítio onde se muda a lista de secções. Uma
+    navbar duplicada por página funciona até alguém acrescentar uma secção e se
+    esquecer de uma delas — e o sintoma é um utilizador que não encontra a
+    página nova numa entrada mas encontra-a noutra.
+
+    `ativo` marca a secção corrente. Cada página passa a sua, e o fragmento
+   limita-se a compará-lo com a secção que está a desenhar; assim nenhuma página
+    precisa de saber como é que o item activo se marca.
+-->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm"
+     th:fragment="navbar(ativo)"
+     th:with="secoes=${ {'dashboard': 'Escalas', 'exchanges': 'Trocas', 'work-modality': 'Presencialidade', 'leaves': 'Folgas'} }">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/dashboard">
+            <i class="bi bi-calendar-range"></i> SuperVisor
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSuperVisor" aria-controls="navbarSuperVisor"
+                aria-expanded="false" aria-label="Alternar navegação">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSuperVisor">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item" th:each="secao : ${secoes}">
+                    <a class="nav-link"
+                       th:href="${'/' + secao.key}"
+                       th:classappend="${secao.key == ativo} ? 'active fw-semibold' : ''"
+                       th:text="${secao.value}"
+                       th:aria-current="${secao.key == ativo} ? 'page' : null">…</a>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3 d-none d-md-block" id="userGreeting">A carregar…</span>
+                <button id="logoutBtn" class="btn btn-outline-light btn-sm">
+                    Sair <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>

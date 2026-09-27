@@ -2,7 +2,6 @@ package tests.support;
 
 import domain.repository.EditionScaleRepository;
 import domain.repository.ExchangeRequestRepository;
-import domain.repository.ShiftRepository;
 import domain.repository.ShiftSchedulingRepository;
 import domain.repository.UserRepository;
 import jakarta.persistence.EntityManager;
@@ -43,20 +42,30 @@ public abstract class AbstractJpaIntegrationTest {
     protected EditionScaleRepository editionScaleRepository;
 
     @Autowired
-    protected ShiftRepository shiftRepository;
-
-    @Autowired
     protected ShiftSchedulingRepository shiftSchedulingRepository;
 
     @Autowired
     protected ExchangeRequestRepository exchangeRequestRepository;
 
+    @Autowired
+    protected domain.repository.WorkModalityScheduleRepository workModalityScheduleRepository;
+
+    @Autowired
+    protected domain.repository.UserLeaveRepository userLeaveRepository;
+
     @BeforeEach
     void limparBanco() {
         entityManager.createQuery("DELETE FROM ExchangeRequest").executeUpdate();
+        // A ordem segue as chaves estrangeiras: as escalas e as folgas apontam
+        // para `tb_user` e têm de desaparecer antes dela.
+        entityManager.createQuery("DELETE FROM WorkModalitySchedule").executeUpdate();
+        entityManager.createQuery("DELETE FROM UserLeave").executeUpdate();
+        // A tabela das atribuições especiais é uma @ElementCollection e não tem
+        // entidade: tem de ser limpa por SQL nativo e antes da tabela-mãe, para
+        // não chocar com a chave estrangeira.
+        entityManager.createNativeQuery("DELETE FROM tb_shift_scheduling_assignment").executeUpdate();
         entityManager.createQuery("DELETE FROM ShiftScheduling").executeUpdate();
         entityManager.createQuery("DELETE FROM EditionScale").executeUpdate();
-        entityManager.createQuery("DELETE FROM Shift").executeUpdate();
         entityManager.createQuery("DELETE FROM User").executeUpdate();
         entityManager.flush();
         entityManager.clear();
