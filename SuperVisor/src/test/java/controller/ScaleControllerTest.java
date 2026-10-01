@@ -96,7 +96,7 @@ class ScaleControllerTest {
         }
 
         @Test
-        @DisplayName("a resposta não expõe o utilizador criador, por causa do @JsonIgnore")
+        @DisplayName("a resposta não expõe o usuário criador, por causa do @JsonIgnore")
         void naoExpoeOCriador() throws Exception {
             when(scaleService.createScale(any())).thenReturn(escala(7L, "Escala Outubro", EditionStatus.DRAFT));
 
@@ -137,7 +137,7 @@ class ScaleControllerTest {
         @DisplayName("erro do serviço (criador inexistente) propaga sem tratamento de erro")
         void criadorInexistente() {
             when(scaleService.createScale(any()))
-                    .thenThrow(new RuntimeException("Utilizador não encontrado"));
+                    .thenThrow(new RuntimeException("Usuário não encontrado"));
 
             assertThatThrownBy(() -> mockMvc.perform(post("/api/v1/scales")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -147,7 +147,7 @@ class ScaleControllerTest {
                                     """)))
                     .getRootCause()
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Utilizador não encontrado");
+                    .hasMessage("Usuário não encontrado");
         }
 
         @Test
@@ -262,7 +262,7 @@ class ScaleControllerTest {
         }
 
         @Test
-        @DisplayName("nenhum item da lista expõe o utilizador criador")
+        @DisplayName("nenhum item da lista expõe o usuário criador")
         void listaNaoExpoeCriador() throws Exception {
             when(scaleService.listAll()).thenReturn(List.of(escala(1L, "Escala Outubro", EditionStatus.DRAFT)));
 

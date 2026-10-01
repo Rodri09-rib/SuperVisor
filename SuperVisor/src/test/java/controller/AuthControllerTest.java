@@ -113,7 +113,7 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("gera o token a partir do utilizador devolvido pela autenticação")
+        @DisplayName("gera o token a partir do usuário devolvido pela autenticação")
         void geraTokenComOPrincipal() throws Exception {
             autenticarComSucesso();
 

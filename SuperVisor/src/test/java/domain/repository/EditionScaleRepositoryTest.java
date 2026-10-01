@@ -97,11 +97,11 @@ class EditionScaleRepositoryTest extends AbstractJpaIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Relação com o utilizador criador")
+    @DisplayName("Relação com o usuário criador")
     class RelacaoComCriador {
 
         @Test
-        @DisplayName("a escala guarda a referência ao utilizador que a criou")
+        @DisplayName("a escala salva a referência ao usuário que a criou")
         void referenciaAoCriador() {
             User creator = criarUtilizador();
             EditionScale escala = editionScaleRepository.saveAndFlush(TestFixtures.draftScale(creator));
@@ -127,7 +127,7 @@ class EditionScaleRepositoryTest extends AbstractJpaIntegrationTest {
         }
 
         @Test
-        @DisplayName("apagar o utilizador com escalas associada viola a chave estrangeira")
+        @DisplayName("apagar o usuário com escalas associada viola a chave estrangeira")
         void apagarCriadorComEscalaViolaForeignKey() {
             User creator = criarUtilizador();
             editionScaleRepository.saveAndFlush(TestFixtures.draftScale(creator));

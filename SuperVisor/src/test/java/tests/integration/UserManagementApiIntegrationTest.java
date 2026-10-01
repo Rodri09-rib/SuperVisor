@@ -20,16 +20,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Gestão de utilizadores ponta a ponta, com a aplicação inteira carregada: a
+ * Gerenciamento de usuários ponta a ponta, com a aplicação inteira carregada: a
  * autorização é conferida sobre o token JWT real e as alterações são lidas de
  * volta do PostgreSQL.
  *
  * <p>Estes testes fixam também a ligação do controller ao principal autenticado.
- * A desativação depende de saber <em>quem</em> está a pedir — é isso que impede
+ * A desativação depende de saber <em>quem</em> está pedindo — é isso que impede
  * alguém de se desativar — e esse dado vem do contexto de segurança. Se essa
  * ligação se partir, a regra passa a proteger a conta errada sem dar erro.
  */
-@DisplayName("Gestão de utilizadores — API")
+@DisplayName("Gerenciamento de usuários — API")
 class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
 
     private User supervisor;
@@ -57,11 +57,11 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Criar com equipa")
+    @DisplayName("Criar com equipe")
     class Criacao {
 
         @Test
-        @DisplayName("a equipa enviada na criação fica gravada, o que torna a pessoa escalável")
+        @DisplayName("a equipe enviada na criação fica gravada, o que torna a pessoa escalável")
         void gravaEquipa() throws Exception {
             mockMvc.perform(post("/api/v1/users")
                             .header("Authorization", auth(tokenSupervisor))
@@ -71,7 +71,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
                                     "password":"segredo123","profile":"ANALIST","teamGroup":"EQUIPE_B"}"""))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.teamGroup").value("EQUIPE_B"))
-                    .andExpect(jsonPath("$.teamGroupLabel").value("Equipa B"))
+                    .andExpect(jsonPath("$.teamGroupLabel").value("Equipe B"))
                     .andExpect(jsonPath("$.active").value(true));
 
             User gravado = userRepository.findByEmail("maria@teste.com");
@@ -81,7 +81,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("criar sem equipa é aceite: as contas anteriores ao conceito não têm")
+        @DisplayName("criar sem equipe é aceite: as contas anteriores ao conceito não têm")
         void semEquipa() throws Exception {
             mockMvc.perform(post("/api/v1/users")
                             .header("Authorization", auth(tokenSupervisor))
@@ -90,7 +90,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
                                     {"name":"Maria Costa","email":"maria@teste.com",\
                                     "password":"segredo123","profile":"ANALIST"}"""))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.teamGroupLabel").value("Sem equipa"));
+                    .andExpect(jsonPath("$.teamGroupLabel").value("Sem equipe"));
 
             assertThat(userRepository.findByEmail("maria@teste.com").getTeamGroup()).isNull();
         }
@@ -101,7 +101,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
     class Alteracao {
 
         @Test
-        @DisplayName("nome, perfil e equipa mudam na base de dados")
+        @DisplayName("nome, perfil e equipe mudam na base de dados")
         void alteraOsCampos() throws Exception {
             User ana = criarUsuarioComEquipa(
                     "Ana", "ana@teste.com", UserProfile.ANALIST, TeamGroup.EQUIPE_A);
@@ -122,7 +122,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("enviar teamGroup nulo retira alguém da equipa")
+        @DisplayName("enviar teamGroup nulo retira alguém da equipe")
         void retiraDaEquipa() throws Exception {
             User ana = criarUsuarioComEquipa(
                     "Ana", "ana@teste.com", UserProfile.ANALIST, TeamGroup.EQUIPE_A);
@@ -133,7 +133,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
                             .content("""
                                     {"name":"Ana","profile":"ANALIST","teamGroup":null}"""))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.teamGroupLabel").value("Sem equipa"));
+                    .andExpect(jsonPath("$.teamGroupLabel").value("Sem equipe"));
 
             assertThat(recarregar(ana).getTeamGroup()).isNull();
         }
@@ -154,7 +154,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("um utilizador inexistente dá 400 com mensagem, não 500")
+        @DisplayName("um usuário inexistente dá 400 com mensagem, não 500")
         void inexistenteDa400() throws Exception {
             mockMvc.perform(put("/api/v1/users/999999")
                             .header("Authorization", auth(tokenSupervisor))
@@ -162,7 +162,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
                             .content("""
                                     {"name":"Fantasma","profile":"ANALIST"}"""))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value("Utilizador não encontrado."));
+                    .andExpect(jsonPath("$.message").value("Usuário não encontrado."));
         }
     }
 
@@ -207,7 +207,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("a conta desativada sai do selector de pessoas")
+        @DisplayName("a conta desativada sai do seletor de pessoas")
         void desativadoSaiDoSelector() throws Exception {
             User ana = criarUsuario("Ana", "ana@teste.com", UserProfile.ANALIST);
             desativar(ana.getId(), tokenSupervisor);
@@ -324,7 +324,7 @@ class UserManagementApiIntegrationTest extends AbstractApiIntegrationTest {
     class Autorizacao {
 
         @Test
-        @DisplayName("o ANALIST recebe 403 em todas as operações de gestão, e nada muda")
+        @DisplayName("o ANALIST recebe 403 em todas as operações de gerenciamento, e nada muda")
         void analistNaoGerencia() throws Exception {
             User ana = criarUsuario("Ana", "ana@teste.com", UserProfile.ANALIST);
             String tokenAna = tokenService.gerarToken(ana);

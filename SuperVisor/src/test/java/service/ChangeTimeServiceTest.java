@@ -86,7 +86,7 @@ class ChangeTimeServiceTest {
     class Request {
 
         @Test
-        @DisplayName("regista a solicitação com as duas alocações, o requisitante e o estado PENDING")
+        @DisplayName("registra a solicitação com as duas alocações, o requisitante e o estado PENDING")
         void criaSolicitacaoPendente() {
             when(shiftSchedulingRepository.findById(10L)).thenReturn(Optional.of(alocacaoAdmin));
             when(shiftSchedulingRepository.findById(11L)).thenReturn(Optional.of(alocacaoJoao));
@@ -107,7 +107,7 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("guarda quem é o colega a quem a troca foi pedida")
+        @DisplayName("salva quem é o colega a quem a troca foi pedida")
         void guardaColegaPedido() {
             // O pedido é o do dono do turno de origem, que quer o turno de
             // destino. Quem tem de responder é o dono do destino — por isso é
@@ -149,7 +149,7 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("recusa pedir a troca de um turno que não é do utilizador")
+        @DisplayName("recusa pedir a troca de um turno que não é do usuário")
         void naoTrocaTurnoDeOutro() {
             // Sem esta guarda, o pedido apontava para o turno do admin como
             // origem e para o do próprio João como destino. O colega pedido
@@ -168,7 +168,7 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("recusa pedir a troca para um turno que já é do utilizador")
+        @DisplayName("recusa pedir a troca para um turno que já é do usuário")
         void naoTrocaParaTurnoProprio() {
             when(shiftSchedulingRepository.findById(11L)).thenReturn(Optional.of(alocacaoJoao));
             when(shiftSchedulingRepository.findById(12L)).thenReturn(Optional.of(turnoDoJoao(12L)));
@@ -268,7 +268,7 @@ class ChangeTimeServiceTest {
             // errada, e a causa someva por baixo da outra.
             assertThatThrownBy(() -> changeTimeService.requestExchange(10L, 11L, 404L))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Utilizador não encontrado");
+                    .hasMessage("Usuário não encontrado");
 
             verify(exchangeRequestRepository, never()).save(any());
         }
@@ -450,7 +450,7 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("troca os utilizadores entre as duas alocações")
+        @DisplayName("troca os usuários entre as duas alocações")
         void trocaUtilizadores() {
             when(exchangeRequestRepository.findByIdComDetalhes(100L))
                     .thenReturn(Optional.of(requestPendente()));
@@ -478,7 +478,7 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("regista a data da resposta")
+        @DisplayName("registra a data da resposta")
         void registaDataDeResposta() {
             ExchangeRequest request = requestPendente();
             when(exchangeRequestRepository.findByIdComDetalhes(100L)).thenReturn(Optional.of(request));
@@ -537,7 +537,7 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("regista a data da resposta mesmo numa recusa")
+        @DisplayName("registra a data da resposta mesmo numa recusa")
         void registaDataNaRecusa() {
             ExchangeRequest request = requestPendente();
             when(exchangeRequestRepository.findByIdComDetalhes(100L)).thenReturn(Optional.of(request));
@@ -549,7 +549,7 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("os utilizadores das alocações permanecem os mesmos")
+        @DisplayName("os usuários das alocações permanecem os mesmos")
         void alocacoesIntactas() {
             when(exchangeRequestRepository.findByIdComDetalhes(100L)).thenReturn(Optional.of(requestPendente()));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
@@ -650,7 +650,7 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("um principal que não resolve para um utilizador não passa")
+        @DisplayName("um principal que não resolve para um usuário não passa")
         void utilizadorInexistente() {
             when(exchangeRequestRepository.findByIdComDetalhes(100L))
                     .thenReturn(Optional.of(pedidoParaAdmin()));
@@ -768,10 +768,10 @@ class ChangeTimeServiceTest {
         }
 
         @Test
-        @DisplayName("o pedido de filtro de outro utilizador é ignorado, e não honored")
+        @DisplayName("o pedido de filtro de outro usuário é ignorado, e não é respeitado")
         void analistaNaoVedeTrocasDeOutros() {
             // O filtro é forçado ao próprio id em vez de recusado: o frontend
-            // preenche o selector com o utilizador corrente, e devolver 403 por
+            // preenche o seletor com o usuário corrente, e devolver 403 por
             // um parâmetro legítimo faria a página parecer avariada. O resultado
             // é o mesmo em qualquer dos casos — o analista não vê o dos outros.
             assertThat(changeTimeService.utilizadorDoFiltro(joao, maria.getId())).isEqualTo(joao.getId());
@@ -858,7 +858,7 @@ class ChangeTimeServiceTest {
                 .isNotNull();
         // A leitura não escreve nada, por isso declara `readOnly`: o Hibernate
         // pode usar um cache de segunda nível e o PostgreSQL não gasta ciclos
-        // em fsync à toa numa página que o utilizador vai recarregar.
+        // em fsync à toa numa página que o usuário vai recarregar.
         assertThat(historico.getAnnotation(org.springframework.transaction.annotation.Transactional.class)
                 .readOnly()).isTrue();
     }

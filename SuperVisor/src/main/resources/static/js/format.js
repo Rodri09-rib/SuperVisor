@@ -50,8 +50,8 @@ const SuperVisorFormat = (() => {
     };
 
     const EQUIPAS = {
-        EQUIPE_A: 'Equipa A',
-        EQUIPE_B: 'Equipa B'
+        EQUIPE_A: 'Equipe A',
+        EQUIPE_B: 'Equipe B'
     };
 
     /** Rótulos de atribuições, por constante. O servidor é a fonte da verdade
@@ -131,10 +131,10 @@ const SuperVisorFormat = (() => {
         return '<span class="badge ' + mod.classe + '">' + escapar(mod.rotulo) + '</span>';
     }
 
-    /** "Equipa A", a partir da constante que o servidor envia. */
+    /** "Equipe A", a partir da constante que o servidor envia. */
     function rotuloEquipa(valor) {
         if (!valor) {
-            return 'Sem equipa';
+            return 'Sem equipe';
         }
         return EQUIPAS[valor] || valor;
     }
@@ -194,9 +194,9 @@ const SuperVisorFormat = (() => {
         return partes.join(' · ');
     }
 
-    /** Nome do utilizador, com recurso ao e-mail quando não há nome. */
+    /** Nome do usuário, com recurso ao e-mail quando não há nome. */
     function nomeUtilizador(alocacao) {
-        return (alocacao && (alocacao.userName || alocacao.userEmail)) || 'Sem utilizador';
+        return (alocacao && (alocacao.userName || alocacao.userEmail)) || 'Sem usuário';
     }
 
     /** "Redes Sociais + Celular da Marinas", ou null se não houver. */
@@ -224,7 +224,7 @@ const SuperVisorFormat = (() => {
     }
 
     /**
-     * Coluna "Utilizador" da tabela de alocações: o nome do utilizador
+     * Coluna "Usuário" da tabela de alocações: o nome do usuário
      * cadastrado, seguido das atribuições e do horário especial quando
      * existirem. Ex.: "Rodrigo (Redes Sociais + Celular da Marinas)" ou
      * "Luã (10h30 às 14h30)".

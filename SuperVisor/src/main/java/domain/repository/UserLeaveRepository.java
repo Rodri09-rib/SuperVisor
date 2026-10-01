@@ -14,7 +14,7 @@ public interface UserLeaveRepository extends JpaRepository<UserLeave, Long> {
      * Lista de folgas, opcionalmente restrita a uma pessoa.
      *
      * <p>Devolve as entidades, e não um DTO de projeção, porque a data de
-     * criação entra na resposta e a montagem do nome do utilizador continua a
+     * criação entra na resposta e a montagem do nome do usuário continua a
      * depender de {@code User}. Com a lista vir uma por pessoa e o Hibernate
      * resolve a N+1 na mesma transação, e o volume de uma escala de folgas é
      * pequeno.
@@ -54,7 +54,7 @@ public interface UserLeaveRepository extends JpaRepository<UserLeave, Long> {
      * <p>A condição é a mesma de {@link #listarQueCobrem} aplicada às pontas do
      * período, e não «a folga está dentro do período»: uma folga de 20 dias que
      * começa antes da escala e acaba dentro dela é exatamente o caso que este
-     * relatório existe para apanhar.
+     * relatório existe para pegar.
      */
     @Query("""
             SELECT l FROM UserLeave l

@@ -26,7 +26,7 @@ public class ScaleService {
     public EditionScale createScale(CreateScaleDTO dto) {
 
         User creator = userRepository.findById(dto.createdById()).
-                orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
+                orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         EditionScale newScale = new EditionScale();
         newScale.setName(dto.name());

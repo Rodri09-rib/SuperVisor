@@ -26,8 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * <p>Os testes criam as situações incoerentes por baixo da aplicação, com o
  * repositório, e não pela API. É deliberado: é o que o relatório existe para
- * apanhar. Pela API nenhuma delas se consegue montar, porque a regra de escrita
- * recusa a sobreposição e a folga é registada noutro sítio — e um teste que só
+ * pegar. Pela API nenhuma delas se consegue montar, porque a regra de escrita
+ * recusa a sobreposição e a folga é registrada noutro lugar — e um teste que só
  * soubesse montar incoerências pela API estaria a testar que a API recusa, que
  * já está feito noutro lado.
  */
@@ -108,7 +108,7 @@ class ScaleCoverageApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("apanha a sobreposição que a aplicação não deixaria criar")
+        @DisplayName("pega a sobreposição que a aplicação não deixaria criar")
         void apanhaSobreposicaoLegada() throws Exception {
             alocacaoIlegitima(analista, ShiftType.T1_SAB);
             alocacaoIlegitima(analista, ShiftType.T2_SAB);
@@ -129,7 +129,7 @@ class ScaleCoverageApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("apanha a alocação que calhou a um dia de folga")
+        @DisplayName("pega a alocação que calhou a um dia de folga")
         void apanhaAlocacaoEmFolga() throws Exception {
             criarAlocacao(escala, analista, ShiftType.T1_SAB);
             userLeaveRepository.saveAndFlush(
@@ -211,7 +211,7 @@ class ScaleCoverageApiIntegrationTest extends AbstractApiIntegrationTest {
     class Rotas {
 
         @Test
-        @DisplayName("quem está a ver a escala vê também o que está errado nela")
+        @DisplayName("quem está vendo a escala vê também o que está errado nela")
         void analistTambemLe() throws Exception {
             mockMvc.perform(get("/api/v1/scales/" + escala.getId() + "/coverage")
                             .header("Authorization", "Bearer " + tokenAnalista))

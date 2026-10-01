@@ -52,7 +52,7 @@ class TokenServiceTest {
         }
 
         @Test
-        @DisplayName("o emissor é supervisor-api e o assunto é o e-mail do utilizador")
+        @DisplayName("o emissor é supervisor-api e o assunto é o e-mail do usuário")
         void emissorEAssunto() {
             DecodedJWT decoded = JWT.decode(tokenService.gerarToken(usuario("joao@teste.com")));
 
@@ -85,7 +85,7 @@ class TokenServiceTest {
         }
 
         @Test
-        @DisplayName("utilizador sem e-mail gera um token sem assunto, que não identifica ninguém")
+        @DisplayName("usuário sem e-mail gera um token sem assunto, que não identifica ninguém")
         void utilizadorSemEmail() {
             String token = tokenService.gerarToken(usuario(null));
 

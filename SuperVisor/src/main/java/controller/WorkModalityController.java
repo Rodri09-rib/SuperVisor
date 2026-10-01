@@ -15,9 +15,9 @@ import java.util.List;
 /**
  * Escala de presencialidade / home office.
  *
- * <p>Gerar a escala é escrever em todas as escalas de toda a equipa de uma
+ * <p>Gerar a escala é escrever em todas as escalas de toda a equipe de uma
  * vez, e é a operação mais abrangente da aplicação depois do cadastro de
- * utilizadores, pelo que é restrita à supervisão pela mesma razão de
+ * usuários, pelo que é restrita à supervisão pela mesma razão de
  * {@link UserController}. Ver a escala é ler, e todos os perfis autenticados
  * leem: é a informação que as pessoas consultam para saber onde vão estar.
  *

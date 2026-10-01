@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * {@code column u1_0.active does not exist}.
  *
  * <p>Usa uma base própria, criada dentro do mesmo contêiner, para não mexer no
- * esquema que os restantes testes partilham. O {@code ddl-auto} é
+ * esquema que os restantes testes compartilham. O {@code ddl-auto} é
  * {@code update} e não {@code create}: com {@code create} o Hibernate criaria a
  * tabela já completa e o teste não provaria nada.
  */
@@ -136,7 +136,7 @@ class ActiveColumnMigrationIntegrationTest {
 
     /**
      * Corre o script instrução a instrução, como o Spring faz: o driver não
-     * aceita várias instruções num {@code execute} só, e o ficheiro tem duas.
+     * aceita várias instruções num {@code execute} só, e o arquivo tem duas.
      */
     private static void executarScript(String url, String script) {
         for (String instrucao : script.split(";")) {
@@ -186,7 +186,7 @@ class ActiveColumnMigrationIntegrationTest {
     }
 
     @Test
-    @DisplayName("a migração só preenche o que o PostgreSQL insere: um registo novo nasce ativo")
+    @DisplayName("a migração só preenche o que o PostgreSQL insere: um registro novo nasce ativo")
     void umRegistoNovoNasceAtivo() {
         jdbc.update("insert into tb_user (email, name, password, profile) "
                 + "values ('nova@teste.com', 'Nova', 'x', 'ANALIST')");
@@ -257,7 +257,7 @@ class ActiveColumnMigrationIntegrationTest {
     void oScriptSoTemDdlSimples() {
         String sql = instrucoesDoScript();
 
-        // O leitor de scripts do Spring parte o ficheiro em `;` e não percebe
+        // O leitor de scripts do Spring parte o arquivo em `;` e não percebe
         // dollar-quoting do PostgreSQL. Um `DO $$ ... $$` seria truncado e a
         // aplicação deixava de arrancar, por isso isto é um teste de regressão.
         assertThat(sql).doesNotContain("$$");

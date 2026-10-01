@@ -27,12 +27,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Resposta do analista ao turno escalado, ponta a ponta.
  *
- * <p>O caminho feliz ja vem coberto pelo {@code AllocationServiceTest}. O que
- * aqui se fixa e a parte que so aparece com a aplicacao inteira: o token decide
+ * <p>O caminho feliz já vem coberto pelo {@code AllocationServiceTest}. O que
+ * aqui se fixa e a parte que só aparece com a aplicação inteira: o token decide
  * quem pode responder, o estado gravado e lido de volta da base, e a recusa fica
  * mesmo barrada por uma troca pendente criada por outra via.
  */
-@DisplayName("Aceite de alocacoes - API")
+@DisplayName("Aceitação de alocações - API")
 class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest {
 
     private User supervisor;
@@ -124,7 +124,7 @@ class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest 
         }
 
         @Test
-        @DisplayName("outro analista recebe 403 e o estado nao muda")
+        @DisplayName("outro analista recebe 403 e o estado não muda")
         void outroAnalistaDa403() throws Exception {
             ShiftScheduling alocacao = criarAlocacao(escala, ana, ShiftType.T1_SAB);
 
@@ -166,7 +166,7 @@ class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest 
     class Regras {
 
         @Test
-        @DisplayName("recusar um turno com troca pendente da 400 e nao grava")
+        @DisplayName("recusar um turno com troca pendente dá 400 e não grava")
         void recusaBarradaPorTrocaPendente() throws Exception {
             ShiftScheduling deAna = criarAlocacao(escala, ana, ShiftType.T1_SAB);
             ShiftScheduling deBruno = criarAlocacao(escala, bruno, ShiftType.T3_SAB);
@@ -193,7 +193,7 @@ class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest 
         }
 
         @Test
-        @DisplayName("depois de a troca ser recusada, a recusa do turno volta a ser possivel")
+        @DisplayName("depois de a troca ser recusada, a recusa do turno volta a ser possível")
         void recusaVoltaASerPossivel() throws Exception {
             ShiftScheduling deAna = criarAlocacao(escala, ana, ShiftType.T1_SAB);
             ShiftScheduling deBruno = criarAlocacao(escala, bruno, ShiftType.T3_SAB);
@@ -208,7 +208,7 @@ class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest 
         }
 
         @Test
-        @DisplayName("responder o que ja esta respondido nao da erro")
+        @DisplayName("responder o que já está respondido não dá erro")
         void idempotente() throws Exception {
             ShiftScheduling alocacao = criarAlocacao(escala, ana, ShiftType.T1_SAB);
 
@@ -222,7 +222,7 @@ class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest 
         }
 
         @Test
-        @DisplayName("sem estado no pedido da 400 e nao chega ao servico")
+        @DisplayName("sem estado no pedido dá 400 e não chega ao serviço")
         void semEstadoDa400() throws Exception {
             ShiftScheduling alocacao = criarAlocacao(escala, ana, ShiftType.T1_SAB);
 
@@ -237,7 +237,7 @@ class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest 
         }
 
         @Test
-        @DisplayName("uma alocacao inexistente da 400")
+        @DisplayName("uma alocação inexistente dá 400")
         void inexistenteDa400() throws Exception {
             responder(tokenAna, 999999L, "ACCEPTED")
                     .andExpect(status().isBadRequest())
@@ -284,7 +284,7 @@ class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest 
             responderTroca(pedido, true);
 
             // Nem a Ana nem o Bruno aceitaram os turnos que ficaram a ter: quem
-            // aprovou a troca nao estava a aceitar por eles.
+            // aprovou a troca não estava aceitando por eles.
             assertThat(estadoDe(deAna.getId())).isEqualTo(AllocationStatus.PENDING);
             assertThat(estadoDe(deBruno.getId())).isEqualTo(AllocationStatus.PENDING);
         }
@@ -295,7 +295,7 @@ class AllocationAcceptanceApiIntegrationTest extends AbstractApiIntegrationTest 
     class Leitura {
 
         @Test
-        @DisplayName("a lista de alocacoes traz o estado, para o editor mostrar o que esta por responder")
+        @DisplayName("a lista de alocações traz o estado, para o editor mostrar o que está por responder")
         void listaTrazOEstado() throws Exception {
             ShiftScheduling alocacao = criarAlocacao(escala, ana, ShiftType.T1_SAB);
             responder(tokenAna, alocacao.getId(), "REJECTED")

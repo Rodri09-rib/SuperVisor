@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Corpo de erro comum, para que o frontend tenha sempre o mesmo formato,
-     * independentemente de qual das mãos apanhou a exceção.
+     * independentemente de qual das mãos pegou a exceção.
      */
     private static Map<String, Object> corpoDeErro(HttpStatus estado, String mensagem) {
         Map<String, Object> body = new HashMap<>();
@@ -55,16 +55,16 @@ public class GlobalExceptionHandler {
 
     /**
      * Corpo que não passa nas restrições do {@code @Valid}, como um
-     * nome em branco ou uma password com menos de seis caracteres.
+     * nome em branco ou uma senha com menos de seis caracteres.
      *
      * <p>{@code MethodArgumentNotValidException} é uma exceção verificada, pelo
      * que escapa ao {@code RuntimeException} acima: sem este tratamento o
      * pedido inválido seria respondido com 500 e o frontend mostraria uma
-     * falha genérica em vez do que o utilizador tem de corrigir.
+     * falha genérica em vez do que o usuário tem de corrigir.
      *
      * <p>A resposta traz {@code message} com todas as queixas em conjunto, para
      * o aviso do formulário poder mostrá-las de uma vez, e {@code fields} com
-     * o detalhe por campo, para o formulário poder assinalar o input errado.
+     * o detalhe por campo, para o formulário poder marcar o input errado.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidacao(MethodArgumentNotValidException ex) {
@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
                 .distinct()
                 .collect(Collectors.joining("; "));
         if (mensagem.isBlank()) {
-            mensagem = "Pedido inválido: reveja os campos assinalados.";
+            mensagem = "Pedido inválido: reveja os campos marcados.";
         }
 
         Map<String, Object> body = corpoDeErro(HttpStatus.BAD_REQUEST, mensagem);
@@ -94,7 +94,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Falhas de autenticação são 401, e não o 400 genérico. Apanha a família
+     * Falhas de autenticação são 401, e não o 400 genérico. Pega a família
      * {@link org.springframework.security.core.AuthenticationException} para
      * que uma conta desativada ({@code DisabledException}), que só passou a
      * existir quando {@code isEnabled()} passou a ler a propriedade

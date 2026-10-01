@@ -11,7 +11,7 @@ import java.util.List;
 public interface WorkModalityScheduleRepository extends JpaRepository<WorkModalitySchedule, Long> {
 
     /**
-     * Escala de um intervalo, já com o utilizador e o turno carregados e
+     * Escala de um intervalo, já com o usuário e o turno carregados e
      * pronta a desenhar na grelha.
      *
      * <p>O intervalo é fechado nas duas pontas, ao contrário do histórico de
@@ -28,12 +28,12 @@ public interface WorkModalityScheduleRepository extends JpaRepository<WorkModali
                                                @Param("fim") LocalDate fim);
 
     /**
-     * Todas as linhas da semana, sem carregar o utilizador.
+     * Todas as linhas da semana, sem carregar o usuário.
      *
      * <p>É o que a geração usa: antes de escrever é preciso saber que dias já
      * têm registo, e perguntar dia a dia custaria cinco consultas por pessoa —
      * cem pessoas dariam quinhentas. Uma leitura do intervalo inteiro e um mapa
-     * por {@code (utilizador, dia)} resolvem o mesmo problema com uma consulta.
+     * por {@code (usuário, dia)} resolvem o mesmo problema com uma consulta.
      */
     @Query("""
             SELECT w FROM WorkModalitySchedule w

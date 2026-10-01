@@ -19,7 +19,7 @@ import java.io.IOException;
  *
  * <p>Um token bem assinado só autentica se a conta existir e estiver ativa. Uma
  * conta desativada fica sem autenticação, e é por isso que o pedido acaba em 401
- * e não em 403: quem não tem conta ativa não é um utilizador reconhecido, e o
+ * e não em 403: quem não tem conta ativa não é um usuário reconhecido, e o
  * pedido nem chega a ser autorizado. O token em si continua válido até expirar,
  * pelo que desativar a conta trava logo o acesso, sem esperar pela expiração.
  */

@@ -50,7 +50,7 @@ class ScaleCoverageServiceTest {
      *
      * <p>Estão escritos à mão em vez de calculados para que o teste falhe se o
      * número mudar: um relatório que passa a contar dias úteis como se fossem
-     * turnos é exatamente o erro que estes valores apanham.
+     * turnos é exatamente o erro que estes valores pegam.
      */
     private static final int SLOTS_OUTUBRO_2025 = 24;
     private static final int SABADOS_OUTUBRO_2025 = 4;

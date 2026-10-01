@@ -210,11 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function carregarSessao() {
         // A saudação e o botão de sair são do `layout.js`, que os desenha para
         // todas as páginas. Aqui só interessa o perfil, que é o que decide o
-        // que este utilizador pode ver.
+        // que este usuário pode ver.
         try {
             estado.utilizador = await SuperVisorApi.utilizadorAtual();
         } catch (erro) {
-            console.warn('Perfil do utilizador indisponível:', erro);
+            console.warn('Perfil do usuário indisponível:', erro);
             return;
         }
 
@@ -235,9 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return '<tr>'
             + '<td colspan="4" class="text-center py-5 text-muted">'
             + '<div class="spinner-border text-primary" role="status">'
-            + '<span class="visually-hidden">A carregar escalas...</span>'
+            + '<span class="visually-hidden">Carregando escalas...</span>'
             + '</div>'
-            + '<div class="mt-2">A carregar escalas...</div>'
+            + '<div class="mt-2">Carregando escalas...</div>'
             + '</td>'
             + '</tr>';
     }
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderizarTabela() {
         if (!estado.escalas.length) {
             el.tabelaCorpo.innerHTML = linhaMensagem(4,
-                'Não tem escalas registadas neste momento.', 'text-muted');
+                'Não tem escalas cadastradas neste momento.', 'text-muted');
             return;
         }
         el.tabelaCorpo.innerHTML = estado.escalas.map(linhaEscala).join('');
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
         el.detalhesTitulo.textContent = 'Detalhes da escala';
         el.detalhesCorpo.innerHTML = '<div class="text-center py-4">'
             + '<div class="spinner-border text-primary" role="status">'
-            + '<span class="visually-hidden">A carregar...</span></div></div>';
+            + '<span class="visually-hidden">Carregando...</span></div></div>';
         el.detalhesAlocacoes.innerHTML = '';
         el.detalhesCobertura.innerHTML = '';
         abrirModal('detalhesModal');
@@ -472,9 +472,9 @@ document.addEventListener('DOMContentLoaded', () => {
      * Responder ao turno e repintar a tabela.
      *
      * <p>O erro do servidor é mostrado tal como vem, e em especial o 400 de uma
-     * recusa barrada por troca pendente: é a regra que o utilizador precisa de
+     * recusa barrada por troca pendente: é a regra que o usuário precisa de
      * entender, e reescrevê-la em JavaScript seria ter a mesma informação em dois
-     * sítios.
+     * lugares.
      */
     async function responderAlocacao(botao) {
         const id = botao.dataset.id;
@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        ocupado(botao, true, 'A guardar...');
+        ocupado(botao, true, 'Salvando...');
 
         try {
             await SuperVisorApi.responderAlocacao(id, estado);
@@ -506,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Gestão de alocações (administrador)                                  */
+    /* Gerenciamento de alocações (administrador)                                  */
     /* ------------------------------------------------------------------ */
 
     /**
@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
             valor: u.id,
             rotulo: rotuloUtilizador(u)
         }));
-        preencherOpcoes(el.alocacaoUtilizador, itens, 'Escolha o utilizador');
+        preencherOpcoes(el.alocacaoUtilizador, itens, 'Escolha o usuário');
         el.alocacaoUtilizador.disabled = !itens.length;
     }
 
@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (u.name && u.email) {
             return u.name + ' (' + u.email + ')';
         }
-        return u.name || u.email || 'Utilizador ' + u.id;
+        return u.name || u.email || 'Usuário ' + u.id;
     }
 
     function preencherTurnos() {
@@ -617,14 +617,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ? String(alocacao.specificDate).slice(0, 10)
             : '';
         atualizarAjudaTurno();
-        el.alocacaoSubmeter.innerHTML = '<i class="bi bi-check-lg"></i> Guardar alterações';
+        el.alocacaoSubmeter.innerHTML = '<i class="bi bi-check-lg"></i> Salvar alterações';
         el.btnLimparEdicaoAlocacao.classList.remove('d-none');
     }
 
     /**
      * Botões de resposta de uma alocação.
      *
-     * <p>Só aparecem quando o utilizador autenticado é o dono do turno ou um
+     * <p>Só aparecem quando o usuário autenticado é o dono do turno ou um
      * supervisor, que é a mesma regra do servidor. Duplicá-la aqui evita mostrar
      * botões que iam devolver 403 - mas a decisão real continua a ser do
      * servidor: mostrar o botão não concede a permissão.
@@ -721,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fim = el.alocacaoHoraFim.value;
 
         if (!utilizadorId) {
-            mostrarAviso(el.alocacaoAviso, 'Escolha o utilizador que cobre o turno.', 'warning');
+            mostrarAviso(el.alocacaoAviso, 'Escolha o usuário que cobre o turno.', 'warning');
             return;
         }
         if (!turno) {
@@ -739,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         mostrarAviso(el.alocacaoAviso, null);
-        ocupado(el.alocacaoSubmeter, true, 'A guardar...');
+        ocupado(el.alocacaoSubmeter, true, 'Salvando...');
 
         const corpo = {
             editionScaleId: Number(estado.escalaEmEdicao),
@@ -771,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // O reposicionamento do botão tem de acontecer depois de ocupado(...,
         // false): esse helper restaura o rótulo que existia no momento do
-        // envio, que no modo de edição é o de "Guardar alterações".
+        // envio, que no modo de edição é o de "Salvar alterações".
         if (guardado) {
             limparFormularioAlocacao();
             await recarregarAlocacoesDaEscala(estado.escalaEmEdicao);
@@ -793,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function validarTroca() {
         if (!estado.utilizador) {
             mostrarAviso(el.trocaAviso,
-                'Não foi possível identificar o utilizador. Inicie sessão novamente.', 'danger');
+                'Não foi possível identificar o usuário. Inicie sessão novamente.', 'danger');
             el.trocaSubmeter.disabled = true;
             return;
         }
@@ -996,11 +996,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Administração: gestão de utilizadores                                */
+    /* Administração: gerenciamento de usuários                                */
     /* ------------------------------------------------------------------ */
 
     /**
-     * Recarrega a lista de utilizadores ativos e repinta o selector de
+     * Recarrega a lista de usuários ativos e repinta o seletor de
      * pessoas. Chamar depois de cadastrar alguém evita que a pessoa nova só
      * apareça depois de recarregar a página.
      */
@@ -1011,7 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (erro.message.indexOf('Sessão') === 0) {
                 return;
             }
-            console.warn('Utilizadores indisponíveis:', erro);
+            console.warn('Usuários indisponíveis:', erro);
             return;
         }
         preencherUtilizadores();
@@ -1028,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!ehAdministrador()) {
             mostrarAviso(el.utilizadorAviso,
-                'Apenas o perfil SUPERVISOR pode cadastar utilizadores.', 'danger');
+                'Apenas o perfil SUPERVISOR pode cadastar usuários.', 'danger');
             return;
         }
 
@@ -1039,12 +1039,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!nome || !email || !password) {
             mostrarAviso(el.utilizadorAviso,
-                'Preencha o nome, o e-mail e a password.', 'warning');
+                'Preencha o nome, o e-mail e a senha.', 'warning');
             return;
         }
         if (password.length < SENHA_MINIMA) {
             mostrarAviso(el.utilizadorAviso,
-                'A password tem de ter pelo menos ' + SENHA_MINIMA + ' caracteres.', 'warning');
+                'A senha tem de ter pelo menos ' + SENHA_MINIMA + ' caracteres.', 'warning');
             return;
         }
 
@@ -1061,11 +1061,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 active: true
             });
             fecharModal('modalNovoUsuario');
-            notificar('Utilizador cadastrado com sucesso!', 'sucesso');
+            notificar('Usuário cadastrado com sucesso!', 'sucesso');
             await carregarUtilizadores();
 
-            // A lista de gestão pode estar aberta por baixo do modal de criação;
-            // se estiver, é repintada com o utilizador novo.
+            // A lista de gerenciamento pode estar aberta por baixo do modal de criação;
+            // se estiver, é repintada com o usuário novo.
             if (el.utilizadoresCorpo.innerHTML) {
                 await carregarTodosUtilizadores();
                 renderizarGestaoUtilizadores();
@@ -1080,11 +1080,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Gestão de utilizadores (administrador)                              */
+    /* Gerenciamento de usuários (administrador)                              */
     /* ------------------------------------------------------------------ */
 
     /**
-     * Lista de contas para gestão, incluindo as desativadas.
+     * Lista de contas para gerenciamento, incluindo as desativadas.
      *
      * <p>Usa o endpoint `/todos` e não `/users`: a pergunta aqui é "quem existe",
      * e uma conta desativada é alguém que continua a existir e pode precisar de
@@ -1124,13 +1124,13 @@ document.addEventListener('DOMContentLoaded', () => {
             + '<td class="fw-semibold">' + SuperVisorFormat.escapar(u.name || '—') + '</td>'
             + '<td>' + SuperVisorFormat.escapar(u.email || '—') + '</td>'
             + '<td>' + rotuloPerfil(u.profile) + '</td>'
-            + '<td>' + SuperVisorFormat.escapar(u.teamGroupLabel || 'Sem equipa') + '</td>'
+            + '<td>' + SuperVisorFormat.escapar(u.teamGroupLabel || 'Sem equipe') + '</td>'
             + '<td>' + conta + '</td>'
             + '<td class="text-end text-nowrap">'
             + '<button class="btn btn-sm btn-outline-secondary js-editar-utilizador" '
             + 'data-id="' + id + '"><i class="bi bi-pencil"></i> Editar</button> '
             + '<button class="btn btn-sm btn-outline-secondary js-redefinir-senha" '
-            + 'data-id="' + id + '"><i class="bi bi-key"></i> Password</button> '
+            + 'data-id="' + id + '"><i class="bi bi-key"></i> Senha</button> '
             + alternar
             + '</td>'
             + '</tr>';
@@ -1145,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderizarGestaoUtilizadores() {
         if (!estado.todosUtilizadores.length) {
             el.utilizadoresCorpo.innerHTML = linhaMensagem(6,
-                'Não há utilizadores registados.', 'text-muted');
+                'Não há usuários cadastrados.', 'text-muted');
             return;
         }
         mostrarAviso(el.utilizadoresAviso, null);
@@ -1158,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         el.utilizadoresCorpo.innerHTML = linhaMensagem(6,
             '<div class="spinner-border text-primary" role="status">'
-            + '<span class="visually-hidden">A carregar utilizadores...</span></div>',
+            + '<span class="visually-hidden">Carregando usuários...</span></div>',
             '');
         abrirModal('utilizadoresModal');
         await carregarTodosUtilizadores();
@@ -1198,7 +1198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         mostrarAviso(el.editarUsuarioAviso, null);
-        ocupado(el.editarUsuarioSubmeter, true, 'A guardar...');
+        ocupado(el.editarUsuarioSubmeter, true, 'Salvando...');
 
         try {
             // O e-mail não entra: o servidor não o aceita, e mandá-lo na mesma
@@ -1209,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 teamGroup: equipa || null
             });
             fecharModal('editarUsuarioModal');
-            notificar('Utilizador atualizado.', 'sucesso');
+            notificar('Usuário atualizado.', 'sucesso');
             await Promise.all([carregarTodosUtilizadores(), carregarUtilizadores()]);
         } catch (erro) {
             mostrarAviso(el.editarUsuarioAviso, erro.message, 'danger');
@@ -1232,8 +1232,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const alvo = utilizadorPorId(id);
 
         const pergunta = ativar
-            ? 'Reativar a conta de ' + (alvo ? alvo.name || alvo.email : 'este utilizador') + '?'
-            : 'Desativar a conta de ' + (alvo ? alvo.name || alvo.email : 'este utilizador')
+            ? 'Reativar a conta de ' + (alvo ? alvo.name || alvo.email : 'este usuário') + '?'
+            : 'Desativar a conta de ' + (alvo ? alvo.name || alvo.email : 'este usuário')
               + '? As alocações que a pessoa já tem mantêm-se: fica escalada num turno em que '
               + 'já não pode entrar.';
 
@@ -1241,7 +1241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        ocupado(botao, true, 'A guardar...');
+        ocupado(botao, true, 'Salvando...');
 
         try {
             await SuperVisorApi.alterarEstadoUtilizador(id, ativar);
@@ -1281,17 +1281,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (password.length < SENHA_MINIMA) {
             mostrarAviso(el.senhaAviso,
-                'A password tem de ter pelo menos ' + SENHA_MINIMA + ' caracteres.', 'warning');
+                'A senha tem de ter pelo menos ' + SENHA_MINIMA + ' caracteres.', 'warning');
             return;
         }
 
         mostrarAviso(el.senhaAviso, null);
-        ocupado(el.senhaSubmeter, true, 'A guardar...');
+        ocupado(el.senhaSubmeter, true, 'Salvando...');
 
         try {
             await SuperVisorApi.redefinirSenhaUtilizador(id, password);
             fecharModal('senhaModal');
-            notificar('Password redefinida.', 'sucesso');
+            notificar('Senha redefinida.', 'sucesso');
         } catch (erro) {
             mostrarAviso(el.senhaAviso, erro.message, 'danger');
         } finally {

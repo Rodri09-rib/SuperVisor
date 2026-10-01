@@ -17,25 +17,25 @@ public interface UserRepository extends JpaRepository<User, Long> {
    User findByEmail(String email);
 
     /**
-     * Utilizadores ativos, por nome, para o selector de pessoas do editor de
+     * Usuários ativos, por nome, para o seletor de pessoas do editor de
      * alocações. Contas desativadas não podem receber turnos, logo não são
      * oferecidas.
      */
     List<User> findByActiveTrueOrderByNameAsc();
 
     /**
-     * Utilizadores ativos com equipa atribuída, para gerar a escala de
-     * presencialidade. A equipa é obrigatória para entrar na escala: sem ela não
-     * há como saber se a pessoa está a presenter ou em home office naquela
+     * Usuários ativos com equipe atribuída, para gerar a escala de
+     * presencialidade. A equipe é obrigatória para entrar na escala: sem ela não
+     * há como saber se a pessoa está presente ou em home office naquela
      * semana, e inventar um valor por omissão produziria uma escala errada em
      * silêncio, que é pior do que não gerar linha nenhuma.
      */
     List<User> findByActiveTrueAndTeamGroupIsNotNullOrderByNameAsc();
 
     /**
-     * Todos os ativos, com a equipa à frente do nome, para a grelha de
-     * presencialidade: as linhas são agrupadas por equipa, porque a grelha tem
-     * uma cor por equipa.
+     * Todos os ativos, com a equipe à frente do nome, para a grelha de
+     * presencialidade: as linhas são agrupadas por equipe, porque a grelha tem
+     * uma cor por equipe.
      */
     List<User> findByActiveTrueOrderByTeamGroupAscNameAsc();
 
@@ -44,12 +44,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      *
      * <p>Existe para a regra que impede desativar o último: sem ela, desativar o
      * único supervisor deixa a aplicação sem ninguém capaz de criar contas,
-     * atribuir equipas ou reativar quem ficou desativado. A conta ficava presa
+     * atribuir equipes ou reativar quem ficou desativado. A conta ficava presa
      * e a única saída seria mexer na base de dados à mão.
      */
     long countByProfileAndActiveTrue(UserProfile profile);
 
-    /** Todos os utilizadores, ativos ou não, para a vista de administração. */
+    /** Todos os usuários, ativos ou não, para a vista de administração. */
     List<User> findAllByOrderByNameAsc();
 
 }

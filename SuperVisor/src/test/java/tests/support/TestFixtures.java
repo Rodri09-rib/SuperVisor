@@ -55,9 +55,9 @@ public final class TestFixtures {
     }
 
     /**
-     * Utilizador com equipa atribuída. Existe porque a escala de
-     * presencialidade só gera linhas para quem tem equipa: um teste que usa
-     * {@link #analyst()} sem equipa passaria a ver uma escala vazia e não saberia
+     * Usuário com equipe atribuída. Existe porque a escala de
+     * presencialidade só gera linhas para quem tem equipe: um teste que usa
+     * {@link #analyst()} sem equipe passaria a ver uma escala vazia e não saberia
      * se o serviço estava a falhar ou se simplesmente não tinha ninguém para
      * escalar.
      */
@@ -75,7 +75,7 @@ public final class TestFixtures {
         return userInTeam("João", "joao@teste.com", UserProfile.ANALIST, team);
     }
 
-    /** Utilizador desativado: não pode receber alocações. */
+    /** Usuário desativado: não pode receber alocações. */
     public static User inactiveAnalyst() {
         User user = analyst();
         user.setActive(false);

@@ -8,7 +8,7 @@ package domain.model.enums;
  * campo escrevia {@code "PENDENTE"}, o serviço ao criar escrevia
  * {@code "PENDING"} e o serviço ao responder escrevia {@code "ACCEPTED"} /
  * {@code "REJECTED"}. Um pedido criado pelo caminho que não definisse o estado
- * ficava assim com um valor que nenhuma comparação apanhava: respondê-lo
+ * ficava assim com um valor que nenhuma comparação pegava: respondê-lo
  * respondia "já foi respondida" para sempre. Um enum fecha essa porta, porque
  * passa a haver um único conjunto de valores válidos.
  *

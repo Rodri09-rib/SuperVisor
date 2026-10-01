@@ -26,7 +26,7 @@
 -- afeta pedidos anteriores a esta migração; os novos gravam o valor certo.
 --
 -- Como na migração 1, só há DDL/DML simples, sem blocos `DO $$ ... $$`: o
--- leitor de scripts do Spring parte o ficheiro em `;` e não percebe
+-- leitor de scripts do Spring parte o arquivo em `;` e não percebe
 -- dollar-quoting do PostgreSQL.
 
 ALTER TABLE tb_exchange_request ADD COLUMN IF NOT EXISTS approval_date TIMESTAMP WITH TIME ZONE;
@@ -42,7 +42,7 @@ UPDATE tb_exchange_request SET status = 'REJECTED' WHERE status = 'REJECTED';
 ALTER TABLE tb_exchange_request ALTER COLUMN status SET NOT NULL;
 
 -- A data de resposta só existe a partir de agora. Os pedidos já resolvidos
--- ficam sem ela, que é honesto: não há registo de quando foram respondidos.
+-- ficam sem ela, que é honesto: não há registro de quando foram respondidos.
 ALTER TABLE tb_exchange_request ALTER COLUMN status SET DEFAULT 'PENDING';
 
 -- O enum protege a aplicação; esta CHECK protege a base. Sem ela, um valor

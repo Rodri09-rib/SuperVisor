@@ -90,8 +90,8 @@
     async function carregar() {
         el.corpo.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">'
             + '<div class="spinner-border text-primary" role="status">'
-            + '<span class="visually-hidden">A carregar trocas...</span></div>'
-            + '<div class="mt-2">A carregar trocas...</div></td></tr>';
+            + '<span class="visually-hidden">Carregando trocas...</span></div>'
+            + '<div class="mt-2">Carregando trocas...</div></td></tr>';
 
         try {
             pedidos = (await SuperVisorApi.listarTrocas(filtrosAtivos())) || [];
@@ -104,7 +104,7 @@
     /**
      * Opções do filtro de pessoa.
      *
-     * <p>Só para quem tem utilizador visível. A lista vem de `/users`, que é
+     * <p>Só para quem tem usuário visível. A lista vem de `/users`, que é
      * autenticado mas não é de supervisão, e uma falha ali não pode impedir a
      * página de mostrar o histórico: o filtro de pessoa é uma conveniência, e
      * a lista de trocas não depende dele.
@@ -119,7 +119,7 @@
                 el.utilizador.appendChild(opcao);
             });
         } catch (erro) {
-            console.warn('Lista de utilizadores indisponível para o filtro:', erro);
+            console.warn('Lista de usuários indisponível para o filtro:', erro);
         }
     }
 

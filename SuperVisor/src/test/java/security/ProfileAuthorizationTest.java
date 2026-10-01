@@ -66,7 +66,7 @@ class ProfileAuthorizationTest {
         }
 
         @Test
-        @DisplayName("recusa quando nao ha autenticacao nenhuma")
+        @DisplayName("recusa quando não há autenticação nenhuma")
         void semAutenticacaoNegado() {
             assertThatThrownBy(() -> profileAuthorization.exigirSupervisor())
                     .isInstanceOf(AccessDeniedException.class)
@@ -74,7 +74,7 @@ class ProfileAuthorizationTest {
         }
 
         @Test
-        @DisplayName("recusa um principal que nao e um User, para um token valido nao contornar a regra")
+        @DisplayName("recusa um principal que não é um User, para um token válido não contornar a regra")
         void principalDesconhecidoNegado() {
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     "nao-e-um-utilizador", null, TestFixtures.analyst().getAuthorities());
@@ -86,7 +86,7 @@ class ProfileAuthorizationTest {
         }
 
         @Test
-        @DisplayName("recusa um utilizador sem perfil atribuido")
+        @DisplayName("recusa um usuário sem perfil atribuído")
         void semPerfilNegado() {
             User semPerfil = TestFixtures.analyst();
             semPerfil.setProfile(null);
@@ -102,7 +102,7 @@ class ProfileAuthorizationTest {
     class ExigirPerfil {
 
         @Test
-        @DisplayName("aceita quando o perfil pedido e o do utilizador")
+        @DisplayName("aceita quando o perfil pedido é o do usuário")
         void perfilIgualPassa() {
             autenticarComo(TestFixtures.analyst());
 
@@ -111,7 +111,7 @@ class ProfileAuthorizationTest {
         }
 
         @Test
-        @DisplayName("recusa quando o perfil pedido e diferente do do utilizador")
+        @DisplayName("recusa quando o perfil pedido é diferente do do usuário")
         void perfilDiferenteNegado() {
             autenticarComo(TestFixtures.analyst());
 
@@ -122,7 +122,7 @@ class ProfileAuthorizationTest {
     }
 
     @Test
-    @DisplayName("a comparacao de perfil nao usa igualdade de texto, para nao passar por engano")
+    @DisplayName("a comparação de perfil não usa igualdade de texto, para não passar por engano")
     void comparacaoEstrita() {
         User user = TestFixtures.analyst();
         assertThat(user.getProfile()).isNotEqualTo(UserProfile.SUPERVISOR);

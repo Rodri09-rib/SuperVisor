@@ -12,7 +12,7 @@ import java.util.List;
  * existe porque a aplicação tem dados anteriores a essa regra e porque o
  * bloqueio é por aplicação: uma inserção feita fora dela, ou dois pedidos
  * simultâneos, deixam passar o conflito. Um relatório que só olha para o estado
- * atual da base não apanha nada disso.
+ * atual da base não pega nada disso.
  *
  * <p>As datas afetadas vêm à parte porque o conflito raramente é de um dia só:
  * duas alocações sem data específica cruzam todas as datas do dia da semana
@@ -38,7 +38,7 @@ public record OverlapConflictDTO(
     /**
      * Frase para mostrar ao supervisor, já com os dois turnos e horários.
      *
-     * <p>Vem no JSON para que a frase exista num sítio só: escrevê-la também em
+     * <p>Vem no JSON para que a frase exista num lugar só: escrevê-la também em
      * JavaScript seria ter a mesma informação em duas línguas, à espera de uma
      * delas ficar desatualizada.
      */

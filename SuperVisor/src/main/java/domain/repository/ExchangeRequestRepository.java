@@ -15,7 +15,7 @@ public interface ExchangeRequestRepository
     /**
      * Pedido pelo identificador já com as ligações carregadas, para a página de
      * resposta: sem este método, responder a um pedido dispararia uma consulta
-     * por cada alocação e outra por cada utilizador.
+     * por cada alocação e outra por cada usuário.
      *
      * <p>Não traz filtros, e por isso não sofre do problema do
      * {@code :parametro is null} que obrigou o histórico a ser uma
@@ -49,7 +49,7 @@ public interface ExchangeRequestRepository
             ExchangeStatus status, Long sourceAllocationId, Long destinationAllocationId);
 
     /**
-     * Diz se a alocação está a ser cedida ou pedida em algum pedido pendente.
+     * Diz se a alocação está sendo cedida ou pedida em algum pedido pendente.
      *
      * <p>Qualquer uma das pontas conta, e por isso é um {@code or} em vez de
      * dois métodos: a resposta é uma só pergunta, e perguntar duas vezes para

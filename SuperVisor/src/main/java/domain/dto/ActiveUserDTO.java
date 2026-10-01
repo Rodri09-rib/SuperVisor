@@ -7,13 +7,13 @@ import domain.model.enums.UserProfile;
 import java.util.List;
 
 /**
- * Vista de utilizador para o frontend. Não inclui a senha: a entidade
+ * Vista de usuário para o frontend. Não inclui a senha: a entidade
  * {@code User} implementa {@code UserDetails} e serializá-la diretamente
  * exporia o hash.
  *
- * <p>Traz a equipa e o estado da conta porque os dois são coisas que o
- * supervisor precisa de ver e corrigir. A equipa porque um colaborador sem
- * equipa não entra na escala de presencialidade gerada e o motivo tem de ser
+ * <p>Traz a equipe e o estado da conta porque os dois são coisas que o
+ * supervisor precisa ver e corrigir. A equipe porque um colaborador sem
+ * equipe não entra na escala de presencialidade gerada e o motivo tem de ser
  * visível na lista em vez de a pessoa simplesmente não aparecer; o estado porque
  * uma conta desativada continua a existir e tem de poder ser encontrada para
  * ser reativada.
@@ -35,7 +35,7 @@ public record ActiveUserDTO(
                 user.getEmail(),
                 user.getProfile(),
                 user.getTeamGroup(),
-                user.getTeamGroup() == null ? "Sem equipa" : user.getTeamGroup().getRotulo(),
+                user.getTeamGroup() == null ? "Sem equipe" : user.getTeamGroup().getRotulo(),
                 user.isActive());
     }
 

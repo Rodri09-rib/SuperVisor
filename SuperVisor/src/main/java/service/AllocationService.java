@@ -44,7 +44,7 @@ public class AllocationService {
     /**
      * Alocações de turno, opcionalmente restritas a uma escala. É a origem de
      * dados dos seletores do pedido de troca: a alocação de origem é a do
-     * utilizador e a de destino é a de um colega dentro da mesma escala.
+     * usuário e a de destino é a de um colega dentro da mesma escala.
      */
     @Transactional(readOnly = true)
     public List<AllocationDTO> list(Long editionScaleId) {
@@ -75,7 +75,7 @@ public class AllocationService {
 
     /**
      * Remove uma alocação. A autorização não é aqui verificada: o perfil do
-     * utilizador vive na camada web, e o serviço mantém-se responsável apenas
+     * usuário vive na camada web, e o serviço mantém-se responsável apenas
      * pela regra de negócio, para que também possa ser chamado de testes e de
      * outras entradas.
      */
@@ -98,7 +98,7 @@ public class AllocationService {
      * sempre é pior do que ficar decidido.
      *
      * <p>A recusa é bloqueada enquanto houver uma troca pendente sobre a mesma
-     * alocação. Recusar um turno que já se está a tentar ceder deixa a troca
+     * alocação. Recusar um turno que já se está tentando ceder deixa a troca
      * pendente sobre um turno que o dono já não quer, e a troca só se resolveria
      * quando alguém reparasse nisso. Aceitar não é bloqueado, porque aceitar
      * e trocar não se contradizem.
@@ -175,7 +175,7 @@ public class AllocationService {
             throw new RuntimeException("Escolha o turno do fim de semana.");
         }
         if (dto.userId() == null) {
-            throw new RuntimeException("Escolha o utilizador que cobre o turno.");
+            throw new RuntimeException("Escolha o usuário que cobre o turno.");
         }
         if (dto.editionScaleId() == null) {
             throw new RuntimeException("Escolha a escala a que a alocação pertence.");
@@ -185,10 +185,10 @@ public class AllocationService {
                 .orElseThrow(() -> new RuntimeException("Edição de Escala não encontrada."));
 
         User utilizador = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado."));
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
         if (!utilizador.isActive()) {
-            throw new RuntimeException("O utilizador selecionado está inativo e não pode "
+            throw new RuntimeException("O usuário selecionado está inativo e não pode "
                     + "receber turnos.");
         }
 
@@ -214,7 +214,7 @@ public class AllocationService {
      * Uma alocação desligada com o mesmo identificador da original.
      *
      * <p>Tem de trazer o id para que a exclusão da própria alocação funcione: sem
-     * ele, a candidata era comparada com a linha que está a ser editada como se
+     * ele, a candidata era comparada com a linha que está sendo editada como se
      * fosse outra, e nenhuma alteração seria aceite.
      */
     private ShiftScheduling copiaDesligada(ShiftScheduling origem) {
@@ -248,8 +248,8 @@ public class AllocationService {
      * ficasse com T1 (08h00-12h00) e T2 (11h00-15h00) no mesmo dia, e o
      * resultado era uma escala impossível de cumprir.
      *
-     * <p>Turnos que só se tocam — T1 e T3, que partilham a fronteira das 12h00
-     * — são aceites: quem acaba ao meio-dia entra no turno seguinte. A decisão
+     * <p>Turnos que só se tocam — T1 e T3, que compartilham a fronteira das 12h00
+     * — são aceitos: quem acaba ao meio-dia entra no turno seguinte. A decisão
      * está em {@link ShiftScheduling#conflitaCom}.
      *
      * <p>Na alteração, a própria alocação é excluída da comparação. Sem isso,
@@ -293,7 +293,7 @@ public class AllocationService {
      * dos dois turnos para outro que não se cruze.
      */
     private String mensagemDeSobreposicao(ShiftScheduling conflito) {
-        return "Este utilizador já tem o turno "
+        return "Este usuário já tem o turno "
                 + conflito.getShift().getRotuloCurto()
                 + " ("
                 + conflito.intervaloEfetivo().formatado()

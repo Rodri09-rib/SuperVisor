@@ -28,7 +28,7 @@ class ShiftTypeTest {
         }
 
         @Test
-        @DisplayName("T2 sobrepoe T1 e T3 de proposito")
+        @DisplayName("T2 sobrepõe T1 e T3 de propósito")
         void t2SobrepoeT1ET3() {
             assertThat(ShiftType.T2_SAB.getStartTime()).isBefore(ShiftType.T1_SAB.getEndTime());
             assertThat(ShiftType.T2_SAB.getEndTime()).isAfter(ShiftType.T3_SAB.getStartTime());
@@ -78,14 +78,14 @@ class ShiftTypeTest {
         @Test
         @DisplayName("os turnos de sábado não cruzam os de domingo, apesar do mesmo horário")
         void sabadoNaoCruzaDomingo() {
-            // T1 e T6 têm as mesmas horas. Ninguém está em dois sítios num
+            // T1 e T6 têm as mesmas horas. Ninguém está em dois lugares num
             // sábado e num domingo, e o dia da semana é o que os distingue.
             assertThat(ShiftType.T1_SAB.getIntervalo()).isEqualTo(ShiftType.T6_DOM.getIntervalo());
             assertThat(ShiftType.T1_SAB.sobrepoe(ShiftType.T6_DOM)).isFalse();
         }
 
         @Test
-        @DisplayName("T5 não cruza T4, que acaba exactamente quando T5 começa")
+        @DisplayName("T5 não cruza T4, que acaba exatamente quando T5 começa")
         void t4ET5NaoCruzam() {
             assertThat(ShiftType.T4_SAB.sobrepoe(ShiftType.T5_SAB)).isFalse();
         }
@@ -116,31 +116,31 @@ class ShiftTypeTest {
     class HorariosEspeciais {
 
         @Test
-        @DisplayName("aceita um horario dentro do turno")
+        @DisplayName("aceita um horário dentro do turno")
         void dentroDoTurno() {
             assertThat(ShiftType.T1_SAB.contem(LocalTime.of(9, 0), LocalTime.of(11, 0))).isTrue();
         }
 
         @Test
-        @DisplayName("aceita o proprio horario do turno")
+        @DisplayName("aceita o próprio horário do turno")
         void horarioCompletoDoTurno() {
             assertThat(ShiftType.T3_SAB.contem(LocalTime.of(12, 0), LocalTime.of(16, 0))).isTrue();
         }
 
         @Test
-        @DisplayName("rejeita um horario que comeca antes do turno")
+        @DisplayName("rejeita um horário que comeca antes do turno")
         void antesDoTurno() {
             assertThat(ShiftType.T1_SAB.contem(LocalTime.of(7, 0), LocalTime.of(11, 0))).isFalse();
         }
 
         @Test
-        @DisplayName("rejeita um horario que termina depois do turno")
+        @DisplayName("rejeita um horário que termina depois do turno")
         void depoisDoTurno() {
             assertThat(ShiftType.T1_SAB.contem(LocalTime.of(9, 0), LocalTime.of(13, 0))).isFalse();
         }
 
         @Test
-        @DisplayName("rejeita um horario em que o fim e anterior ao inicio")
+        @DisplayName("rejeita um horário em que o fim e anterior ao inicio")
         void horarioInvertido() {
             assertThat(ShiftType.T1_SAB.contem(LocalTime.of(11, 0), LocalTime.of(9, 0))).isFalse();
         }
@@ -152,13 +152,13 @@ class ShiftTypeTest {
         }
 
         @Test
-        @DisplayName("rejeita em T5 um horario que passa da meia-noite")
+        @DisplayName("rejeita em T5 um horário que passa da meia-noite")
         void t5ParaAlemDaMeiaNoite() {
             assertThat(ShiftType.T5_SAB.contem(LocalTime.of(23, 0), LocalTime.of(1, 0))).isFalse();
         }
 
         @Test
-        @DisplayName("rejeita em T1 um horario que atravessa a meia-noite")
+        @DisplayName("rejeita em T1 um horário que atravessa a meia-noite")
         void t1NaoAtravessaAMeiaNoite() {
             assertThat(ShiftType.T1_SAB.contem(LocalTime.of(23, 0), LocalTime.MIDNIGHT)).isFalse();
         }

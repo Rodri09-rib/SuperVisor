@@ -1,11 +1,22 @@
 <!DOCTYPE html>
-<html lang="pt-PT" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SuperVisor - Folgas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+        .modal-dialog-scrollable .modal-content {
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-dialog-scrollable .modal-body {
+            overflow-y: auto !important;
+            max-height: calc(85vh - 130px);
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -22,16 +33,16 @@
                     <i class="bi bi-calendar-x"></i> Folgas
                 </h3>
                 <p class="text-muted small mb-0 mt-1">
-                    Quem está de folga é informação de toda a equipa, por isso a
+                    Quem está de folga é informação de toda a equipe, por isso a
                     lista mostra todas.
                 </p>
             </div>
             <div class="d-flex flex-wrap gap-2">
                 <select id="filtroUtilizador" class="form-select form-select-sm" style="width: auto;">
-                    <option value="">Toda a equipa</option>
+                    <option value="">Toda a equipe</option>
                 </select>
                 <button type="button" class="btn btn-primary btn-sm d-none" id="btnNovaFolga">
-                    <i class="bi bi-plus-lg"></i> Registar folga
+                    <i class="bi bi-plus-lg"></i> Registrar folga
                 </button>
             </div>
         </div>
@@ -55,9 +66,9 @@
                     <tr>
                         <td colspan="6" class="text-center py-5 text-muted">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">A carregar folgas...</span>
+                                <span class="visually-hidden">Carregando folgas...</span>
                             </div>
-                            <div class="mt-2">A carregar folgas...</div>
+                            <div class="mt-2">Carregando folgas...</div>
                         </td>
                     </tr>
                     </tbody>
@@ -67,16 +78,16 @@
     </div>
 </div>
 
-<!-- Modal: registar e editar -->
+<!-- Modal: registrar e editar -->
 <div class="modal fade" id="folgaModal" tabindex="-1" aria-labelledby="folgaTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form id="folgaForm" novalidate>
-                <div class="modal-header">
-                    <h5 class="modal-title" id="folgaTitulo">Registar folga</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="folgaForm" novalidate>
+        <div class="modal-header">
+          <h5 class="modal-title" id="folgaModalTitulo">Nova folga</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
                     <div id="folgaAviso" class="alert d-none" role="alert"></div>
                     <input type="hidden" id="folgaId">
 
@@ -113,7 +124,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="btnSubmeterFolga">
-                        <i class="bi bi-check-lg"></i> Guardar
+                        <i class="bi bi-check-lg"></i> Salvar
                     </button>
                 </div>
             </form>
@@ -123,13 +134,13 @@
 
 <!-- Modal: apagar -->
 <div class="modal fade" id="apagarModal" tabindex="-1" aria-labelledby="apagarTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="apagarTitulo">Remover folga</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title" id="apagarTitulo">Remover folga</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+</div>
+<div class="modal-body">
                 <p class="mb-0" id="apagarTexto"></p>
             </div>
             <div class="modal-footer">

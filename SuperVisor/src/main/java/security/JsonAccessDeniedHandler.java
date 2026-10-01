@@ -14,7 +14,7 @@ import java.io.IOException;
  *
  * <p>É o par de {@link CustomAuthenticationEntryPoint}, que trata o 401: sem
  * este handler o Spring devolve uma página HTML em branco e o frontend, que
- * espera JSON, não consegue mostrar a mensagem ao utilizador.
+ * espera JSON, não consegue mostrar a mensagem ao usuário.
  */
 @Component
 public class JsonAccessDeniedHandler implements AccessDeniedHandler {

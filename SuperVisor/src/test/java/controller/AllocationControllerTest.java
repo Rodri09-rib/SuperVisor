@@ -74,10 +74,10 @@ class AllocationControllerTest {
     void setUp() {
         AllocationController controller = new AllocationController();
         ReflectionTestUtils.setField(controller, "allocationService", allocationService);
-        // A ProfileAuthorization real, e nao um mock, para o teste cobrir a
-        // ligacao entre o perfil do principal e o 403 devolvido.
+        // A ProfileAuthorization real, e não um mock, para o teste cobrir a
+        // ligação entre o perfil do principal e o 403 devolvido.
         ReflectionTestUtils.setField(controller, "profileAuthorization", new ProfileAuthorization());
-        // Mesmo serializador do Spring Boot: horas e datas em ISO, nao em array.
+        // Mesmo serializador do Spring Boot: horas e datas em ISO, não em array.
         ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().build();
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -145,7 +145,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("a leitura nao exige perfil SUPERVISOR")
+        @DisplayName("a leitura não exige perfil SUPERVISOR")
         void leituraAbertaAAnalistas() throws Exception {
             autenticarComo(TestFixtures.analyst());
             when(allocationService.list(null)).thenReturn(List.of(alocacao()));
@@ -160,7 +160,7 @@ class AllocationControllerTest {
     class Criar {
 
         @Test
-        @DisplayName("devolve 200 com a alocacao gravada")
+        @DisplayName("devolve 200 com a alocação gravada")
         void devolveAlocacaoGravada() throws Exception {
             when(allocationService.create(any())).thenReturn(alocacao());
 
@@ -179,7 +179,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("converte o corpo JSON no DTO do servico, sem texto livre para turnos")
+        @DisplayName("converte o corpo JSON no DTO do serviço, sem texto livre para turnos")
         void converteCorpoNoDto() throws Exception {
             when(allocationService.create(any())).thenReturn(alocacao());
 
@@ -221,9 +221,9 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("devolve 400 com a mensagem quando o servico rejeita a alocacao")
+        @DisplayName("devolve 400 com a mensagem quando o serviço rejeita a alocação")
         void devolve400ComMensagem() throws Exception {
-            String mensagem = "O utilizador selecionado est\u00e1 inativo e n\u00e3o pode "
+            String mensagem = "O usuário selecionado est\u00e1 inativo e n\u00e3o pode "
                     + "receber turnos.";
             when(allocationService.create(any())).thenThrow(new RuntimeException(mensagem));
 
@@ -240,7 +240,7 @@ class AllocationControllerTest {
     class Atualizar {
 
         @Test
-        @DisplayName("devolve 200 com a alocacao atualizada")
+        @DisplayName("devolve 200 com a alocação atualizada")
         void devolveAlocacaoAtualizada() throws Exception {
             when(allocationService.update(eq(42L), any())).thenReturn(alocacao());
 
@@ -256,7 +256,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("encaminha o id do caminho para o servico")
+        @DisplayName("encaminha o id do caminho para o serviço")
         void encaminhaIdDoCaminho() throws Exception {
             when(allocationService.update(anyLong(), any())).thenReturn(alocacao());
 
@@ -274,7 +274,7 @@ class AllocationControllerTest {
     class Remover {
 
         @Test
-        @DisplayName("devolve 204 sem conteudo quando a alocacao e removida")
+        @DisplayName("devolve 204 sem conteúdo quando a alocação é removida")
         void devolve204() throws Exception {
             mockMvc.perform(delete("/api/v1/allocations/42"))
                     .andExpect(status().isNoContent());
@@ -283,7 +283,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("devolve 400 com a mensagem quando a alocacao nao existe")
+        @DisplayName("devolve 400 com a mensagem quando a alocação não existe")
         void devolve400SeNaoExistir() throws Exception {
             doThrow(new RuntimeException(APLICACAO_INEXISTENTE))
                     .when(allocationService).delete(404L);
@@ -299,7 +299,7 @@ class AllocationControllerTest {
     class Autorizacao {
 
         @Test
-        @DisplayName("POST com perfil ANALIST devolve 403 e nao chega ao servico")
+        @DisplayName("POST com perfil ANALIST devolve 403 e não chega ao serviço")
         void postDeAnalistaNegado() throws Exception {
             autenticarComo(TestFixtures.analyst());
 
@@ -315,7 +315,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("PUT com perfil ANALIST devolve 403 e nao chega ao servico")
+        @DisplayName("PUT com perfil ANALIST devolve 403 e não chega ao serviço")
         void putDeAnalistaNegado() throws Exception {
             autenticarComo(TestFixtures.analyst());
 
@@ -329,7 +329,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("DELETE com perfil ANALIST devolve 403 e nao chega ao servico")
+        @DisplayName("DELETE com perfil ANALIST devolve 403 e não chega ao serviço")
         void deleteDeAnalistaNegado() throws Exception {
             autenticarComo(TestFixtures.analyst());
 
@@ -341,7 +341,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("um perfil ANALIST desativado tambem e recusado")
+        @DisplayName("um perfil ANALIST desativado também é recusado")
         void perfilInativoNegado() throws Exception {
             autenticarComo(TestFixtures.inactiveAnalyst());
 
@@ -377,7 +377,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("devolve 200 com a alocacao ja com o novo estado")
+        @DisplayName("devolve 200 com a alocação já com o novo estado")
         void devolveAlocacaoAtualizada() throws Exception {
             User ana = TestFixtures.analyst();
             ana.setId(5L);
@@ -394,7 +394,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("encaminha o estado e o id de quem responde, para o servico decidir")
+        @DisplayName("encaminha o estado e o id de quem responde, para o serviço decidir")
         void encaminhaEstadoEUtilizador() throws Exception {
             User ana = TestFixtures.analyst();
             ana.setId(5L);
@@ -407,7 +407,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("sem estado no corpo da 400 e o servico nao e chamado")
+        @DisplayName("sem estado no corpo dá 400 e o serviço não é chamado")
         void semEstadoDa400() throws Exception {
             User ana = TestFixtures.analyst();
             ana.setId(5L);
@@ -423,7 +423,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("um estado que nao existe da 400, em vez de falhar a converter")
+        @DisplayName("um estado que não existe dá 400, em vez de falhar a converter")
         void estadoDesconhecidoDa400() throws Exception {
             User ana = TestFixtures.analyst();
             ana.setId(5L);
@@ -438,7 +438,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("sem principal autenticado o id chega a null ao servico, que e quem nega")
+        @DisplayName("sem principal autenticado o id chega a null ao serviço, que é quem nega")
         void semPrincipalEncaminhaIdNulo() throws Exception {
             SecurityContextHolder.clearContext();
             when(allocationService.responder(42L, AllocationStatus.ACCEPTED, null))
@@ -454,7 +454,7 @@ class AllocationControllerTest {
         }
 
         @Test
-        @DisplayName("um ANALIST nao e barrado pela rota: quem responde e decidido no servico")
+        @DisplayName("um ANALIST não é barrado pela rota: quem responde é decidido no serviço")
         void analistaDa403QuandoOMServicoRecusa() throws Exception {
             User bruno = TestFixtures.user("Bruno", "bruno@teste.com", UserProfile.ANALIST);
             bruno.setId(6L);

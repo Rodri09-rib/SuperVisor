@@ -70,10 +70,10 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
     }
 
     private User criarSupervisor() {
-        // O supervisor é aqui só quem pede a escala, e fica sem equipa de
-        // propósito: com equipa, entrava na grelha como mais um colaborador e
-        // as contagens deste ficheiro teriam de incluir uma terceira pessoa que
-        // não está a ser testada.
+        // O supervisor é aqui só quem pede a escala, e fica sem equipe de
+        // propósito: com equipe, entrava na grelha como mais um colaborador e
+        // as contagens deste arquivo teriam de incluir uma terceira pessoa que
+        // não está sendo testada.
         var supervisor = TestFixtures.supervisor();
         supervisor.setPassword(passwordEncoder.encode(TestFixtures.RAW_PASSWORD));
         return userRepository.saveAndFlush(supervisor);
@@ -113,7 +113,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
     class Gerar {
 
         @Test
-        @DisplayName("na semana ímpar, a equipa A está presencial à segunda, quarta e sexta")
+        @DisplayName("na semana ímpar, a equipe A está presencial à segunda, quarta e sexta")
         void semanaImparEquipaA() throws Exception {
             mockMvc.perform(post("/api/v1/work-modality-schedules/generate")
                             .header("Authorization", "Bearer " + tokenAdmin)
@@ -136,7 +136,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("na mesma semana, a equipa B faz exactamente o contrário")
+        @DisplayName("na mesma semana, a equipe B faz exatamente o contrário")
         void semanaImparEquipaB() throws Exception {
             mockMvc.perform(post("/api/v1/work-modality-schedules/generate")
                             .header("Authorization", "Bearer " + tokenAdmin)
@@ -204,7 +204,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("quem não tem equipa, ou está inativo, não gera linha")
+        @DisplayName("quem não tem equipe, ou está inativo, não gera linha")
         void soEquipasAtivas() throws Exception {
             mockMvc.perform(post("/api/v1/work-modality-schedules/generate")
                             .header("Authorization", "Bearer " + tokenAdmin)
@@ -213,7 +213,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(10));
 
-            // Duas pessoas escaladas, cinco dias cada. A terceira não tem equipa
+            // Duas pessoas escaladas, cinco dias cada. A terceira não tem equipe
             // e a quarta está inativa, e nenhuma das duas pode aparecer: a
             // escala precisa de dizer quem é que vai estar onde.
             assertThat(contarLinhas()).isEqualTo(10);
@@ -233,7 +233,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
                         .andExpect(jsonPath("$.length()").value(10));
             }
 
-            // A restrição de unicidade (utilizador, dia) é o que impede o
+            // A restrição de unicidade (usuário, dia) é o que impede o
             // duplicado, mas o serviço tem de reescrever em vez de inserir
             // para lá chegar: se inserisse, a segunda passagem rebentava em
             // vez de devolver a escala.
@@ -308,7 +308,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
                     .andExpect(jsonPath("$.message")
                             .value("Apenas o perfil SUPERVISOR pode executar esta operação."));
 
-            // Gerar reescreve a escala de toda a equipa. Um analista que o
+            // Gerar reescreve a escala de toda a equipe. Um analista que o
             // conseguisse fazer mudaria o calendário de toda a gente, e a
             // partir de uma semana errada ninguém perceberia porque é que a
             // escala mudou.
@@ -325,9 +325,9 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("sem nenhum utilizador com equipa, é 400 e a escala não fica a meio")
+        @DisplayName("sem nenhum usuário com equipe, é 400 e a escala não fica a meio")
         void semNinguemComEquipa() throws Exception {
-            // Desativa-se a equipa toda, em vez de apagar as contas: o token do
+            // Desativa-se a equipe toda, em vez de apagar as contas: o token do
             // supervisor tem de continuar a resolver para ele, ou a resposta
             // seria 401 e o teste passaria a medir a autenticação.
             for (User colaborador : List.of(ana, bruno, semEquipa, inativo)) {
@@ -341,7 +341,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
                             .content(corpo(SEGUNDA_IMPAR)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message")
-                            .value("Nenhum utilizador ativo tem equipa atribuída, "
+                            .value("Nenhum usuário ativo tem equipe atribuída, "
                                     + "por isso não há escala para gerar."));
 
             assertThat(contarLinhas()).isZero();
@@ -390,7 +390,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("o intervalo apanha as duas semanas de uma vez")
+        @DisplayName("o intervalo pega as duas semanas de uma vez")
         void intervaloDeDuasSemanas() throws Exception {
             mockMvc.perform(post("/api/v1/work-modality-schedules/generate")
                             .header("Authorization", "Bearer " + tokenAdmin)
@@ -462,11 +462,11 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
     }
 
     @Nested
-    @DisplayName("A célula como a base a guarda")
+    @DisplayName("A célula como a base a salva")
     class Celula {
 
         @Test
-        @DisplayName("a equipa fica escrita na célula, e sobrevive a quem a ler")
+        @DisplayName("a equipe fica escrita na célula, e sobrevive a quem a ler")
         void equipaNaCelula() throws Exception {
             mockMvc.perform(post("/api/v1/work-modality-schedules/generate")
                             .header("Authorization", "Bearer " + tokenAdmin)
@@ -475,10 +475,10 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
                     .andExpect(status().isOk());
             sincronizar();
 
-            // A equipa é desnormalizada para dentro da célula de propósito: a
-            // grelha mostra a etiqueta da equipa do dia, e ir buscar a equipa
-            // ao utilizador a cada célula fazia uma consulta por linha. A
-            // contrapartida é que mudar a equipa de uma pessoa não reescreve o
+            // A equipe é desnormalizada para dentro da célula de propósito: a
+            // grelha mostra a etiqueta da equipe do dia, e ir buscar a equipe
+            // ao usuário a cada célula fazia uma consulta por linha. A
+            // contrapartida é que mudar a equipe de uma pessoa não reescreve o
             // passado, e é por isso que isto vale a pena fixar num teste.
             List<WorkModalitySchedule> celulas =
                     workModalityScheduleRepository.listarIntervalo(SEGUNDA_IMPAR, SEGUNDA_IMPAR.plusDays(4));
@@ -492,7 +492,7 @@ class WorkModalityApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("não há duas linhas para o mesmo utilizador no mesmo dia")
+        @DisplayName("não há duas linhas para o mesmo usuário no mesmo dia")
         void unicidadeUtilizadorDia() throws Exception {
             mockMvc.perform(post("/api/v1/work-modality-schedules/generate")
                             .header("Authorization", "Bearer " + tokenAdmin)

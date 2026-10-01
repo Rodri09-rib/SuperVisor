@@ -90,7 +90,7 @@ public abstract class AbstractApiIntegrationTest {
                 TestFixtures.userWithEncodedPassword(passwordEncoder, nome, email, perfil));
     }
 
-    /** Utilizador ativo com equipa, que é o que a escala de presencialidade exige. */
+    /** Usuário ativo com equipe, que é o que a escala de presencialidade exige. */
     protected User criarUsuarioComEquipa(String nome, String email,
                                          domain.model.enums.UserProfile perfil,
                                          domain.model.enums.TeamGroup equipa) {

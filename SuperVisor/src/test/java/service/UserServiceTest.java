@@ -47,7 +47,7 @@ class UserServiceTest {
     void setUp() {
         service = new UserService();
         ReflectionTestUtils.setField(service, "userRepository", userRepository);
-        // O BCrypt real, e nao um mock: o que se verifica aqui e a encriptacao
+        // O BCrypt real, e não um mock: o que se verifica aqui é a criptografia
         // propriamente dita, e um encoder simulado confirmaria sempre o que
         // lhe fosse pedido.
         ReflectionTestUtils.setField(service, "passwordEncoder", new BCryptPasswordEncoder());
@@ -73,11 +73,11 @@ class UserServiceTest {
     }
 
     @Nested
-    @DisplayName("Utilizador novo")
+    @DisplayName("Usuário novo")
     class Sucesso {
 
         @Test
-        @DisplayName("grava a senha encriptada, nunca em claro")
+        @DisplayName("grava a senha criptografada, nunca em claro")
         void encriptaAPassword() {
             emailLivre();
 
@@ -88,7 +88,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("a senha gravada deixa o BCrypt reconhecer a password original")
+        @DisplayName("a senha gravada deixa o BCrypt reconhecer a senha original")
         void passwordGravadaAutentica() {
             emailLivre();
 
@@ -99,7 +99,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("duas passwords iguais dão hashes diferentes, por causa do sal do BCrypt")
+        @DisplayName("duas senhas iguais dão hashes diferentes, por causa do sal do BCrypt")
         void hashNaoEhDeterministico() {
             emailLivre();
 
@@ -113,7 +113,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("guarda o nome sem espaços nas pontas e o e-mail tal como foi enviado")
+        @DisplayName("salva o nome sem espaços nas pontas e o e-mail tal como foi enviado")
         void limpaONome() {
             emailLivre();
 
@@ -147,7 +147,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("devolve o utilizador criado, sem a senha no resultado")
+        @DisplayName("devolve o usuário criado, sem a senha no resultado")
         void respostaNaoIncluiASenha() {
             when(userRepository.findByEmail(EMAIL_LIVRE)).thenReturn(null);
             when(userRepository.save(any(User.class)))
@@ -171,7 +171,7 @@ class UserServiceTest {
     class EmailEmUso {
 
         @Test
-        @DisplayName("lança RegraDeNegocioException com mensagem para o utilizador")
+        @DisplayName("lança RegraDeNegocioException com mensagem para o usuário")
         void lancaRegraDeNegocio() {
             when(userRepository.findByEmail(EMAIL_LIVRE))
                     .thenReturn(TestFixtures.supervisor());
@@ -211,11 +211,11 @@ class UserServiceTest {
     }
 
     @Nested
-    @DisplayName("Criar com equipa atribuída")
+    @DisplayName("Criar com equipe atribuída")
     class EquipaNaCriacao {
 
         @Test
-        @DisplayName("grava a equipa que veio no pedido, para a pessoa poder ser escalada")
+        @DisplayName("grava a equipe que veio no pedido, para a pessoa poder ser escalada")
         void gravaEquipa() {
             emailLivre();
 
@@ -227,7 +227,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("uma conta sem equipa continua válida: as contas antigas não têm equipa")
+        @DisplayName("uma conta sem equipe continua válida: as contas antigas não têm equipe")
         void equipaAusenteGravaNula() {
             emailLivre();
 
@@ -242,7 +242,7 @@ class UserServiceTest {
     class Alteracao {
 
         @Test
-        @DisplayName("grava nome, perfil e equipa, e devolve o utilizador alterado")
+        @DisplayName("grava nome, perfil e equipe, e devolve o usuário alterado")
         void alteraOsTresCampos() {
             User user = existente(3L);
             user.setTeamGroup(null);
@@ -254,12 +254,12 @@ class UserServiceTest {
 
             assertThat(resposta.name()).isEqualTo("Maria Costa");
             assertThat(resposta.teamGroup()).isEqualTo(TeamGroup.EQUIPE_B);
-            assertThat(resposta.teamGroupLabel()).isEqualTo("Equipa B");
+            assertThat(resposta.teamGroupLabel()).isEqualTo("Equipe B");
             assertThat(gravados().get(0).getProfile()).isEqualTo(UserProfile.ANALIST);
         }
 
         @Test
-        @DisplayName("teamGroup nulo retira alguém da equipa, e não éIgnored como omissão")
+        @DisplayName("teamGroup nulo retira alguém da equipe, e não é ignorado como omissão")
         void equipaNulaRetiraDaEquipa() {
             User user = TestFixtures.userInTeam(
                     "Maria", "maria@teste.com", UserProfile.ANALIST, TeamGroup.EQUIPE_A);
@@ -271,7 +271,7 @@ class UserServiceTest {
                     4L, alteracao("Maria", UserProfile.ANALIST, null));
 
             assertThat(resposta.teamGroup()).isNull();
-            assertThat(resposta.teamGroupLabel()).isEqualTo("Sem equipa");
+            assertThat(resposta.teamGroupLabel()).isEqualTo("Sem equipe");
         }
 
         @Test
@@ -287,7 +287,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("alterar o perfil de um utilizador existente é permitido")
+        @DisplayName("alterar o perfil de um usuário existente é permitido")
         void promoveAAnalista() {
             User user = existente(6L);
             when(userRepository.findById(6L)).thenReturn(Optional.of(user));
@@ -299,27 +299,27 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("utilizador inexistente dá mensagem clara")
+        @DisplayName("usuário inexistente dá mensagem clara")
         void inexistenteDaErro() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.atualizar(
                     99L, alteracao("Maria", UserProfile.ANALIST, null)))
                     .isInstanceOf(RegraDeNegocioException.class)
-                    .hasMessage("Utilizador não encontrado.");
+                    .hasMessage("Usuário não encontrado.");
         }
 
         @Test
-        @DisplayName("id nulo também é utilizador inexistente, e não um NPE")
+        @DisplayName("id nulo também é usuário inexistente, e não um NPE")
         void idNuloDaErro() {
             assertThatThrownBy(() -> service.atualizar(
                     null, alteracao("Maria", UserProfile.ANALIST, null)))
                     .isInstanceOf(RegraDeNegocioException.class)
-                    .hasMessage("Utilizador não encontrado.");
+                    .hasMessage("Usuário não encontrado.");
         }
 
         @Test
-        @DisplayName("quando o utilizador não existe nada é gravado")
+        @DisplayName("quando o usuário não existe nada é gravado")
         void inexistenteNaoGrava() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -451,13 +451,13 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("utilizador inexistente dá erro em vez de criar uma conta nova")
+        @DisplayName("usuário inexistente dá erro em vez de criar uma conta nova")
         void inexistenteDaErro() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.alterarEstado(99L, false, 1L))
                     .isInstanceOf(RegraDeNegocioException.class)
-                    .hasMessage("Utilizador não encontrado.");
+                    .hasMessage("Usuário não encontrado.");
         }
     }
 
@@ -466,7 +466,7 @@ class UserServiceTest {
     class RedefinicaoDeSenha {
 
         @Test
-        @DisplayName("grava a nova senha encriptada, e nunca em claro")
+        @DisplayName("grava a nova senha criptografada, e nunca em claro")
         void encriptaANovaSenha() {
             User user = existente(20L);
             when(userRepository.findById(20L)).thenReturn(Optional.of(user));
@@ -492,13 +492,13 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("utilizador inexistente dá erro e não grava nada")
+        @DisplayName("usuário inexistente dá erro e não grava nada")
         void inexistenteDaErro() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.redefinirSenha(99L, "novasenha123"))
                     .isInstanceOf(RegraDeNegocioException.class)
-                    .hasMessage("Utilizador não encontrado.");
+                    .hasMessage("Usuário não encontrado.");
 
             verify(userRepository, never()).save(any(User.class));
         }
@@ -509,7 +509,7 @@ class UserServiceTest {
     class VistaDeAdministracao {
 
         @Test
-        @DisplayName("inclui as contas desativadas, que o selector de pessoas não mostra")
+        @DisplayName("inclui as contas desativadas, que o seletor de pessoas não mostra")
         void incluiInativos() {
             User ativo = TestFixtures.analyst();
             User inativo = TestFixtures.inactiveAnalyst();
@@ -524,12 +524,12 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("a conta sem equipa é rotulada em vez de vir com a equipa a null")
+        @DisplayName("a conta sem equipe é rotulada em vez de vir com a equipe a null")
         void rotulaQuemNaoTemEquipa() {
             User semEquipa = TestFixtures.analyst();
             when(userRepository.findAllByOrderByNameAsc()).thenReturn(List.of(semEquipa));
 
-            assertThat(service.listarTodos().get(0).teamGroupLabel()).isEqualTo("Sem equipa");
+            assertThat(service.listarTodos().get(0).teamGroupLabel()).isEqualTo("Sem equipe");
         }
     }
 }

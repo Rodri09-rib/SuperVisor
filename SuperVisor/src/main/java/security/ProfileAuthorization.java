@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
  *
  * <p>O {@code SecurityConfig} garante apenas que o pedido está autenticado, e
  * isso é suficiente para leitura. As operações que escrevem no estado do
- * ficheiro de escalas são validadas aqui, no controlador, porque o perfil do
- * utilizador vive no principal e não na rota: a mesma rota tem de responder de
+ * arquivo de escalas são validadas aqui, no controlador, porque o perfil do
+ * usuário vive no principal e não na rota: a mesma rota tem de responder de
  * forma diferente conforme quem a chama.
  *
  * <p>A negação é um {@link AccessDeniedException}, tratado pelo
@@ -34,7 +34,7 @@ public class ProfileAuthorization {
     /**
      * Exige um perfil específico. Um principal ausente ou que não seja um
      * {@link User} também nega: assim um token válido mas sem entidade de
-     * utilizador não contorna a regra.
+     * usuário não contorna a regra.
      */
     public void exigirPerfil(UserProfile exigido) {
         User utilizador = utilizadorAutenticado();

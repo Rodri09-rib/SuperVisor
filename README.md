@@ -2,7 +2,7 @@
 
 # SuperVisor
 
-**Gestão, alocação e publicação de escalas, folgas e utilizadores**
+**Gerenciamento, alocação e publicação de escalas, folgas e usuários**
 
 [![Licença MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Rodri09-rib/SuperVisor/blob/main/LICENSE)
 [![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
@@ -13,11 +13,17 @@
 
 ## Sobre
 
+<<<<<<< Updated upstream
 O SuperVisor é uma plataforma web que nasceu da nescessidade de uma equipe de SAC
 que trabalho, onde utilizavam-se apenas planilhas de excel. Estou deixando publico 
 para equipes de trabalho operacional que precisam de um modelo mais atual e moderno de
 montar escalas de fim de semana, gerir ausências e confirmar que as regras do negócio.
 O foco não é o CRUD: é responder a perguntas como *esta escala
+=======
+O SuperVisor é uma plataforma web para equipes de trabalho operacional que precisam de
+montar escalas de fim de semana, gerenciar ausências e confirmar que as regras do negócio
+não estão a ser violadas. O foco não é o CRUD: é responder a perguntas como *esta escala
+>>>>>>> Stashed changes
 está correta?*, *quem está com dois turnos ao mesmo tempo?* e *esta pessoa foi escalada
 num dia em que pediu para folgar?*.
 
@@ -35,7 +41,7 @@ alocações e responde pelo estado das contas.
 - Bloqueio de duplo agendamento na criação e na edição: a mesma pessoa não fica com dois
   turnos sobrepostos. A comparação de intervalos é meio-aberta, pelo que T2 (11h–15h)
   bloqueia T1 (08h–12h) e T3 (12h–16h), mas T1 e T3 não se cruzam entre si.
-- Períodos com data de início posterior à de fim são aceites e simplesmente não geram
+- Períodos com data de início posterior à de fim são aceitos e simplesmente não geram
   slots de fim de semana — a escala existe, está vazia.
 
 **Relatório de cobertura e conflitos**
@@ -50,18 +56,18 @@ a fazer três pedidos para pintar três blocos que se atualizam em conjunto.
 - Aviso (não conflito) para alocações de contas desativadas: são turnos que ninguém vai
   cobrir.
 
-**Gestão de utilizadores**
+**Gerenciamento de usuários**
 
 - Listagem de contas ativas e, separadamente, de todas as contas, incluindo as inativas —
   uma conta desativada continua a existir e tem de poder ser encontrada para ser reativada.
-- Edição de nome, perfil e equipa. **O e-mail não é editável**: é a identidade da conta e
+- Edição de nome, perfil e equipe. **O e-mail não é editável**: é a identidade da conta e
   o que vai dentro do token JWT; alterá-lo deixaria no ar todos os tokens já emitidos.
 - Ativação e desativação com duas proteções: ninguém desativa a própria conta, e o último
   supervisor ativo não pode ser desativado — a aplicação ficaria sem ninguém capaz de
-  gerir utilizadores.
-- Redefinição de password, com mínimo de 6 caracteres.
+  gerenciar usuários.
+- Redefinição de senha, com mínimo de 6 caracteres.
 
-**Aceite de turnos**
+**Aceitação de turnos**
 
 Quem fica escalado tem de responder ao turno, e o estado é reposto sempre que o turno
 muda de forma.
@@ -86,7 +92,7 @@ muda de forma.
 
 - CRUD de folgas por pessoa e período.
 - Geração automática da grelha de presencialidade (presencial / home office) a partir do
-  número de semana ISO e da equipa de cada pessoa. Só dias úteis: sábado e domingo ficam de
+  número de semana ISO e da equipe de cada pessoa. Só dias úteis: sábado e domingo ficam de
   fora porque a grelha de home office se aplica à semana de trabalho.
 
 ## Stack
@@ -102,7 +108,7 @@ muda de forma.
 ## Como executar
 
 **Requisitos:** JDK 21, Maven 3.9+ e PostgreSQL 16 acessível em `localhost:5432`
-(utilizador `supervisor`, password `supervisor`, base `supervisor` — ver
+(usuário `supervisor`, senha `supervisor`, base `supervisor` — ver
 `src/main/resources/application.yml`).
 
 O segredo de assinatura do JWT é **obrigatório e não tem valor por omissão**: sem
@@ -160,7 +166,7 @@ src/main/java/
 ```
 
 As entidades nunca são serializadas diretamente: `User` implementa `UserDetails` e expunha o
-hash da password. Todos os contratos de saída são DTOs.
+hash da senha. Todos os contratos de saída são DTOs.
 
 ## API
 
@@ -196,8 +202,8 @@ Todas as rotas exigem token, exceto o login e o carregamento do *shell* HTML das
 | `GET` | `/api/v1/shifts`, `/api/v1/assignments` | autenticado |
 
 Criar e publicar uma escala é acessível a qualquer perfil autenticado, por decisão: a
-supervisão tem de poder montar a grelha com o resto da equipa, e reservar a criação a um
-perfil só entregava a essa equipa o trabalho de a pedir. O que a aplicação restringe à
+supervisão tem de poder montar a grelha com o resto da equipe, e reservar a criação a um
+perfil só entregava a essa equipe o trabalho de a pedir. O que a aplicação restringe à
 supervisão é a escrita que afeta os outros — alocações, contas e modalidades de trabalho.
 
 Erros de regra de negócio devolvem `400` com mensagem em português; falta de sessão devolve

@@ -59,7 +59,7 @@ public class ScaleController {
      * que {@code /api/v1/scales/1/coverage} não colida com a rota de detalhe.
      *
      * <p>É uma leitura, como o resto dos recursos de escala, e não fica restrita
-     * à supervisão: quem está a ver a escala precisa de ver também o que está
+     * à supervisão: quem está vendo a escala precisa ver também o que está
      * errado nela. O relatório não expõe o motivo das folgas pelo mesmo motivo.
      */
     @GetMapping("/{id:[0-9]+}/coverage")

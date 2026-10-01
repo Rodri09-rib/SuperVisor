@@ -107,7 +107,7 @@ class SeedDataTest {
     }
 
     @Test
-    @DisplayName("numa segunda execução não duplica utilizadores nem escala")
+    @DisplayName("numa segunda execução não duplica usuários nem escala")
     void execucaoRepetidaNaoDuplica() throws Exception {
         runner().run(new String[0]);
         runner().run(new String[0]);
@@ -162,7 +162,7 @@ class SeedDataTest {
     }
 
     @Test
-    @DisplayName("a verificação de escala existente conta qualquer registo, mesmo de outro criador")
+    @DisplayName("a verificação de escala existente conta qualquer registro, mesmo de outro criador")
     void contaQualquerEscala() throws Exception {
         runner().run(new String[0]);
 

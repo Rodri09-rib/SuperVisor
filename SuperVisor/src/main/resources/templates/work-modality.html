@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-PT" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,17 @@
          */
         .grelha-celula {
             min-width: 7rem;
+        }
+    </style>
+  <style>
+        .modal-dialog-scrollable .modal-content {
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-dialog-scrollable .modal-body {
+            overflow-y: auto !important;
+            max-height: calc(85vh - 130px);
         }
     </style>
 </head>
@@ -68,9 +79,9 @@
                     <tr>
                         <td colspan="6" class="text-center py-5 text-muted">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">A carregar a escala...</span>
+                                <span class="visually-hidden">Carregando a escala...</span>
                             </div>
-                            <div class="mt-2">A carregar a escala...</div>
+                            <div class="mt-2">Carregando a escala...</div>
                         </td>
                     </tr>
                     </tbody>
@@ -83,8 +94,8 @@
         <div class="col-12 col-md-8">
             <p class="text-muted small mb-0">
                 <i class="bi bi-info-circle me-1"></i>
-                A escala alterna por semana ISO. Nas semanas ímpares a equipa A está
-                presencial à segunda, quarta e sexta; nas semanas pares é a equipa B.
+                A escala alterna por semana ISO. Nas semanas ímpares a equipe A está
+                presencial à segunda, quarta e sexta; nas semanas pares é a equipe B.
                 A escala é reescrita se já existir, por isso gerar duas vezes não duplica.
             </p>
         </div>
@@ -99,7 +110,7 @@
 
 <!-- Modal: confirmação de geração -->
 <div class="modal fade" id="gerarModal" tabindex="-1" aria-labelledby="gerarTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="gerarTitulo">Gerar escala</h5>
@@ -108,7 +119,7 @@
             <div class="modal-body">
                 <div id="gerarAviso" class="alert d-none" role="alert"></div>
                 <p class="mb-0" id="gerarTexto">
-                    A escala desta semana vai ser gerada para quem tem equipa atribuída.
+                    A escala desta semana vai ser gerada para quem tem equipe atribuída.
                 </p>
             </div>
             <div class="modal-footer">

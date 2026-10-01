@@ -6,13 +6,13 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 /**
- * Turnos de fim de semana. O dominio so trabalha sabados e domingos, pelo que
+ * Turnos de fim de semana. O domínio só trabalha sábados e domingos, pelo que
  * o turno deixou de ser uma entidade com horarios em base de dados e passou a
- * ser um valor fechado: sigla, horario e dia sao invariantes e derivam do
- * proprio enum.
+ * ser um valor fechado: sigla, horário e dia são invariantes e derivam do
+ * próprio enum.
  *
- * <p>T2 (11h-15h) sobrepoe T1 (08h-12h) e T3 (12h-16h) de proposito: e o turno
- * intermedirio, usado quando ha sobreposicao de equipas. T5 termina a meia-noite
+ * <p>T2 (11h-15h) sobrepõe T1 (08h-12h) e T3 (12h-16h) de propósito: e o turno
+ * intermédio, usado quando há sobreposição de equipes. T5 termina a meia-noite
  * (00h00), ou seja, no inicio do domingo.
  */
 public enum ShiftType {
@@ -80,13 +80,13 @@ public enum ShiftType {
     }
 
     /**
-     * Verdadeiro quando dois turnos partilham algum tempo no mesmo dia.
+     * Verdadeiro quando dois turnos compartilham algum tempo no mesmo dia.
      *
      * <p>É por isto que T2 se sobrepõe a T1 e a T3, e por isso que a mesma
      * pessoa não pode ficar com os dois no mesmo dia. A comparação é feita entre
      * dias da semana: T1 (sábado 08h00-12h00) e T6 (domingo 08h00-12h00) têm
      * horários idênticos e mesmo assim não se cruzam, porque ninguém está em
-     * dois sítios ao mesmo tempo num sábado e num domingo.
+     * dois lugares ao mesmo tempo num sábado e num domingo.
      */
     public boolean sobrepoe(ShiftType outro) {
         return outro != null

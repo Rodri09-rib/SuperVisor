@@ -34,7 +34,7 @@ public class ExchangeRequest {
      * <p>É uma cópia, e não se vai buscar a alocação de destino, porque ao
      * responder a um pedido aceite as duas alocações trocam de dono: ler o
      * destino depois da resposta daria o próprio requerente como "troca com", e
-     * o histórico deixaria de dizer com quem foi. Guardar a pessoa no momento
+     * o histórico deixaria de dizer com quem foi. Salvar a pessoa no momento
      * do pedido mantém a história correta para sempre.
      *
      * <p>{@code ON DELETE SET NULL} está declarado aqui e não só na migração

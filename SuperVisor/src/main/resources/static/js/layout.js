@@ -3,12 +3,12 @@
  * e como sair.
  *
  * <p>Estava dentro do `dashboard.js`, mas a barra de navegação passou a ser um
- * fragmento partilhado e as outras páginas passaram a tê-la também. Deixar o
+ * fragmento compartilhado e as outras páginas passaram a tê-la também. Deixar o
  * botão de sair a funcionar numa página e não noutra seria o tipo de falha que
  * só aparece depois de alguém navega para a página nova e não consegue sair.
  *
  * <p>Os dois elementos são procurados em vez de assumidos: o fragmento é
- * partilhado, mas esta página pode não ser a ter — e um `null` aqui rebentava a
+ * compartilhado, mas esta página pode não ser a ter — e um `null` aqui rebentava a
  * página antes de ela desenhar seja o que for.
  */
 const SuperVisorLayout = (() => {
@@ -21,10 +21,10 @@ const SuperVisorLayout = (() => {
      * E-mail do token, para a saudação aparecer sem esperar pela API.
      *
      * <p>O token JWT traz o assunto no claim `sub`, e usá-lo só para a primeira
-     * pintura evita o salto visual de "A carregar…" para "Olá, …". Não é usado
+     * pintura evita o salto visual de "Carregando…" para "Olá, …". Não é usado
      * para nada que precise de ser verdade: o nome que fica no fim vem do
      * servidor, e um token forjado com outro `sub` só mudaria o texto que o
-     * próprio utilizador está a ver antes de a página perguntar quem ele é.
+     * próprio usuário está vendo antes de a página perguntar quem ele é.
      */
     function emailDoToken() {
         try {

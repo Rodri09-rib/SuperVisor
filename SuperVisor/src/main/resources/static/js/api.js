@@ -7,7 +7,7 @@
  *
  * O 403 é separado do 401 de propósito: significa que a sessão é válida e o
  * que falta é permissão para esta operação, pelo que a sessão não é
- * destruída. Confundir os dois expulsava o utilizador do painel por tentar
+ * destruída. Confundir os dois expulsava o usuário do painel por tentar
  * uma ação que simplesmente não lhe compete.
  */
 const SuperVisorApi = (() => {
@@ -107,12 +107,12 @@ const SuperVisorApi = (() => {
             { metodo: 'POST', corpo: utilizador }),
 
         /**
-         * Lista de utilizadores com contas inativas incluídas.
+         * Lista de usuários com contas inativas incluídas.
          *
          * <p>Separada de {@link listarUtilizadores} porque as duas respondem a
          * perguntas diferentes: a primeira alimenta o <select> do editor de
          * alocações, onde uma conta desativada não pode aparecer; esta alimenta a
-         * gestão de contas, onde a conta desativada é precisamente o que se
+         * gerenciamento de contas, onde a conta desativada é precisamente o que se
          * procura para a reativar.
          */
         listarTodosUtilizadores: () => request('/api/v1/users/todos'),
@@ -149,7 +149,7 @@ const SuperVisorApi = (() => {
         /**
          * Relatório de cobertura e conflitos de uma escala, numa só resposta.
          *
-         * <p>É leitura, como o resto das escalas: qualquer utilizador
+         * <p>É leitura, como o resto das escalas: qualquer usuário
          * autenticado o pode pedir. O relatório não traz o motivo das folgas
          * precisamente por isso.
          */

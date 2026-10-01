@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Turno de fim de semana exposto ao frontend. O editor de alocações precisa de
- * todos os turnos para construir o selector, e como o horário e o dia são
+ * todos os turnos para construir o seletor, e como o horário e o dia são
  * invariantes do domínio, são servidos a partir do enum em vez de duplicados
  * em JavaScript.
  */

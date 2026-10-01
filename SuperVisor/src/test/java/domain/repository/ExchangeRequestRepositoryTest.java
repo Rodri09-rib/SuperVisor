@@ -232,7 +232,7 @@ class ExchangeRequestRepositoryTest extends AbstractJpaIntegrationTest {
         }
 
         @Test
-        @DisplayName("apagar um utilizador deixa o histórico da troca intacto, com o colega a nulo")
+        @DisplayName("apagar um usuário deixa o histórico da troca intacto, com o colega a nulo")
         void apagarUtilizadorNaoApagaHistorico() {
             // O histórico responde "o que ficou combinado". Se desaparecer
             // quando alguém é apagado da conta, a resposta desaparece com ele.

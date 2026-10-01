@@ -1,16 +1,16 @@
 /**
- * Registo e consulta de folgas.
+ * Registro e consulta de folgas.
  *
  * <p>A escrita é de supervisor, e o `canEdit` que vem em cada linha é o que a
  * interface usa para decidir se mostra os botões. Não é uma restrição: o
  * servidor volta a verificar o perfil em cada pedido, e um `canEdit` verdadeiro
  * num token adulterado só levaria a um 403.
  *
- * <p>Quem pode ser registado vem de `/api/v1/users`, e a lista traz um campo
- * para o utilizador estar ativo. Um utilizador desativado aparece na lista mas
+ * <p>Quem pode ser cadastrado vem de `/api/v1/users`, e a lista traz um campo
+ * para o usuário estar ativo. Um usuário desativado aparece na lista mas
  * não pode receber folgas — o servidor recusa — por isso a opção é marcada em
  * vez de escondida: esconder significa que a pessoa some da lista e o
- * utilizador que a procurava pensava que nunca existiu.
+ * usuário que a procurava pensava que nunca existiu.
  */
 (() => {
 
@@ -38,7 +38,7 @@
 
     function desenhar() {
         if (!folhas.length) {
-            el.corpo.innerHTML = linhaVazia('Não há folgas registadas.');
+            el.corpo.innerHTML = linhaVazia('Não há folgas cadastradas.');
             return;
         }
 
@@ -52,7 +52,7 @@
             // incluídas. Voltar a contá-la aqui dava um número diferente do que
             // a API devolve sempre que alguém acertasse a regra dos dois
             // lados — e o cartão da pessoa passava a dizer 4 dias quando o
-            // registo são 5.
+            // registro são 5.
             const duracao = folga.durationDays === 1
                 ? '1 dia'
                 : folga.durationDays + ' dias';
@@ -110,11 +110,11 @@
         try {
             utilizadores = (await SuperVisorApi.listarUtilizadores()) || [];
         } catch (erro) {
-            console.warn('Lista de utilizadores indisponível:', erro);
+            console.warn('Lista de usuários indisponível:', erro);
             utilizadores = [];
         }
 
-        el.filtroUtilizador.innerHTML = '<option value="">Toda a equipa</option>';
+        el.filtroUtilizador.innerHTML = '<option value="">Toda a equipe</option>';
         utilizadores.forEach((utilizador) => {
             const opcao = document.createElement('option');
             opcao.value = utilizador.id;
@@ -137,13 +137,13 @@
     /* ------------------------------------------------------------------ */
 
     function abrirNova() {
-        el.titulo.textContent = 'Registar folga';
+        el.titulo.textContent = 'Registrar folga';
         el.id.value = '';
         el.inicio.value = '';
         el.fim.value = '';
         el.motivo.value = '';
         opcoesDeUtilizadores(el.utilizadorFormulario, null);
-        el.usuarioAjuda.textContent = 'Apenas utilizadores ativos podem receber folga.';
+        el.usuarioAjuda.textContent = 'Apenas usuários ativos podem receber folga.';
         el.aviso.classList.add('d-none');
         modal.show();
     }
@@ -280,7 +280,7 @@
             }
         });
 
-        // O select da pessoa fica desactivado numa edição e é preciso rearmá-lo
+        // O select da pessoa fica desativado numa edição e é preciso rearmá-lo
         // na seguinte, senão a segunda folha a abrir vinha sem poder escolher
         // quem a tem.
         document.getElementById('folgaModal').addEventListener('hidden.bs.modal', () => {

@@ -1,8 +1,8 @@
 package domain.model.enums;
 
 /**
- * Atribuições especiais que um utilizador pode ter dentro de um turno. São
- * opcionais e pertencem à alocação, não ao utilizador: o mesmo utilizador pode
+ * Atribuições especiais que um usuário pode ter dentro de um turno. São
+ * opcionais e pertencem à alocação, não ao usuário: o mesmo usuário pode
  * estar com "Redes Sociais" ao sábado e sem atribuição ao domingo.
  *
  * <p>O {@code rotulo} é o texto mostrado no dashboard e nunca é usado como

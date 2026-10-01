@@ -28,20 +28,20 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     /**
-     * Perfil do utilizador autenticado. O e-mail vem do token, já validado
+     * Perfil do usuário autenticado. O e-mail vem do token, já validado
      * pelo {@code SecurityFilter}, pelo que a autenticação está garantida.
      */
     @Transactional(readOnly = true)
     public CurrentUserDTO currentUser(String email) {
         UserDetails encontrado = userRepository.findByEmail(email);
         if (encontrado == null) {
-            throw new UsernameNotFoundException("Utilizador não encontrado");
+            throw new UsernameNotFoundException("Usuário não encontrado");
         }
         return CurrentUserDTO.from((User) encontrado);
     }
 
     /**
-     * Utilizadores ativos, por ordem de nome. É a origem de dados do selector
+     * Usuários ativos, por ordem de nome. É a origem de dados do seletor
      * de pessoas do editor de alocações: só contas ativas podem receber turnos.
      */
     @Transactional(readOnly = true)
@@ -50,21 +50,21 @@ public class UserService {
     }
 
     /**
-     * Cadastra um novo utilizador.
+     * Cadastra um novo usuário.
      *
      * <p>O e-mail é a identidade da conta e tem de ser único. A verificação é
      * feita aqui e não deixada para a restrição {@code unique} da base de dados
      * porque essa chegaria como 500: o frontend precisa de um 400 com mensagem
-     * para mostrar no formulário, e o utilizador precisa de saber que o e-mail
-     * é que está repetido e não o nome ou a password.
+     * para mostrar no formulário, e o usuário precisa de saber que o e-mail
+     * é que está repetido e não o nome ou a senha.
      *
      * <p>O e-mail é guardado tal como foi enviado, sem normalização. A
      * autenticação compara o valor por igualdade exata, pelo que passar a
      * gravar em minúsculas faria o valor gravado divergir da chave de leitura
-     * e o novo utilizador não conseguiria entrar com o mesmo endereço com que
+     * e o novo usuário não conseguiria entrar com o mesmo endereço com que
      * se cadastrou. A unicidade é, por isso, a da coluna {@code email}.
      *
-     * <p>A password é encriptada com o {@code BCryptPasswordEncoder} declarado
+     * <p>A senha é criptografada com o {@code BCryptPasswordEncoder} declarado
      * no {@code SecurityConfig}, e nunca chega ao banco em claro.
      */
     @Transactional
@@ -85,7 +85,7 @@ public class UserService {
     }
 
     /**
-     * Alterar o cadastro de um utilizador.
+     * Alterar o cadastro de um usuário.
      *
      * <p>O e-mail não é tocável, e a razão está em
      * {@link UpdateUserRequestDTO}: o e-mail é a identidade da conta e o que vai
@@ -99,17 +99,17 @@ public class UserService {
         user.setName(dto.name().trim());
         user.setProfile(dto.profile());
         // O `null` é um valor pedido, não uma ausência: é assim que alguém sai
-        // de uma equipa.
+        // de uma equipe.
         user.setTeamGroup(dto.teamGroup());
 
         return ActiveUserDTO.from(userRepository.save(user));
     }
 
     /**
-     * Todos os utilizadores, ativos e inativos.
+     * Todos os usuários, ativos e inativos.
      *
      * <p>É a vista de administração: sem ela, uma conta desativada desaparece
-     * do selector de pessoas e deixa de haver caminho para a reativar a partir da
+     * do seletor de pessoas e deixa de haver caminho para a reativar a partir da
      * aplicação.
      */
     @Transactional(readOnly = true)
@@ -128,13 +128,13 @@ public class UserService {
      * <p>Duas regras impedem estados em que ninguém consegue recuperar a
      * aplicação: ninguém se desativa a si próprio, e o último supervisor ativo
      * não pode ser desativado. Sem elas, um clique podia deixar a instalação sem
-     * nenhuma conta capaz de criar utilizadores ou de reativar contas, e a
+     * nenhuma conta capaz de criar usuários ou de reativar contas, e a
      * saída passaria a ser a base de dados à mão.
      *
      * <p>As duas regras protegem o mesmo estado por caminhos diferentes, e é
      * por isso que as duas ficam. Quem desativa um supervisor tem de ser ele
      * próprio — o único perfil que chega a este método — ou outro supervisor
-     * ativo. A segunda opção é a única que a regra do último supervisor apanha,
+     * ativo. A segunda opção é a única que a regra do último supervisor pega,
      * porque nesse caso o alvo está ativo e a contagem dá pelo menos dois; quando
      * a contagem dá um, só pode ser a pessoa a desativar-se a si própria, e aí a
      * outra regra trata. A do último supervisor é a rede debaixo: não é
@@ -169,8 +169,8 @@ public class UserService {
     /**
      * Recusa desativar o último supervisor ativo.
      *
-     * <p>Só interessa quando o utilizador é supervisor: desativar um analista
-     * não tira a ninguém a capacidade de gerir contas. Com mais de um
+     * <p>Só interessa quando o usuário é supervisor: desativar um analista
+     * não tira a ninguém a capacidade de gerenciar contas. Com mais de um
      * supervisor ativo, desativar um deles é uma decisão normal e passa.
      */
     private void impedirDesativarUltimoSupervisor(User user) {
@@ -184,12 +184,12 @@ public class UserService {
         if (outrosSupervisoresAtivos <= 1) {
             throw new RegraDeNegocioException(
                     "Não pode desativar o único supervisor ativo: a aplicação ficaria "
-                            + "sem ninguém capaz de gerir os utilizadores.");
+                            + "sem ninguém capaz de gerenciar os usuários.");
         }
     }
 
     /**
-     * Redefine a senha de um utilizador.
+     * Redefine a senha de um usuário.
      *
      * <p>É a operação de recuperação de acesso: sem ela, um colaborador que se
      * esqueça da senha fica fora da aplicação sem caminho para lá voltar. A
@@ -206,10 +206,10 @@ public class UserService {
 
     private User procurar(Long id) {
         if (id == null) {
-            throw new RegraDeNegocioException("Utilizador não encontrado.");
+            throw new RegraDeNegocioException("Usuário não encontrado.");
         }
 
         return userRepository.findById(id)
-                .orElseThrow(() -> new RegraDeNegocioException("Utilizador não encontrado."));
+                .orElseThrow(() -> new RegraDeNegocioException("Usuário não encontrado."));
     }
 }

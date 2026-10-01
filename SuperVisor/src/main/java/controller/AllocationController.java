@@ -28,7 +28,7 @@ import jakarta.validation.Valid;
 /**
  * Alocações de turno.
  *
- * <p>A leitura fica aberta a qualquer utilizador autenticado, porque o ficheiro
+ * <p>A leitura fica aberta a qualquer usuário autenticado, porque o arquivo
  * de escalas é informação partilhada. Já criar, alterar e remover são
  * operações de escrita restritas ao perfil {@code SUPERVISOR}: o perfil vive no
  * principal e não na rota, pelo que a regra é verificada aqui, no controlador,
@@ -51,7 +51,7 @@ public class AllocationController {
     }
 
     /**
-     * Cria uma alocação. O utilizador e a escala chegam por id e o turno vem
+     * Cria uma alocação. O usuário e a escala chegam por id e o turno vem
      * como constante de {@code ShiftType}, pelo que nunca há texto livre para
      * nomes de pessoas nem para turnos.
      */
@@ -100,7 +100,7 @@ public class AllocationController {
     }
 
     /**
-     * O utilizador autenticado, ou {@code null} quando não há principal.
+     * O usuário autenticado, ou {@code null} quando não há principal.
      *
      * <p>Devolve {@code null} em vez de rebentar para que a negação venha do
      * serviço, como {@code AccessDeniedException} e 403, e não como uma

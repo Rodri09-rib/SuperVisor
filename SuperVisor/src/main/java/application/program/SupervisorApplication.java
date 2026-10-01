@@ -19,7 +19,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"application", "domain", "security", "service", "controller"})
+@ComponentScan(basePackages = {"application", "domain", "security", "service", "controller", "exception"})
 @EnableJpaRepositories(basePackages = {"domain.repository"})
 @EntityScan(basePackages = {"domain.model.entities"})
 public class SupervisorApplication {
@@ -44,7 +44,7 @@ public class SupervisorApplication {
                 admin.setPassword(passwordEncoder.encode("123456"));
                 admin.setProfile(domain.model.enums.UserProfile.SUPERVISOR);
                 admin = userRepository.save(admin);
-                System.out.println("Utilizador Administrador criado!");
+                System.out.println("Usuário Administrador criado!");
             }
 
 
@@ -56,18 +56,18 @@ public class SupervisorApplication {
                 joao.setPassword(passwordEncoder.encode("123456"));
                 joao.setProfile(domain.model.enums.UserProfile.ANALIST);
                 joao = userRepository.save(joao);
-                System.out.println("Utilizador João criado com sucesso!");
+                System.out.println("Usuário João criado com sucesso!");
             }
 
-            // A escala de presencialidade só existe para quem tem equipa, e as
-            // contas não nascem com uma equipa atribuída. As duas contas de teste
-            // ficam em equipas opostas para que a geração tenha o seu caso
+            // A escala de presencialidade só existe para quem tem equipe, e as
+            // contas não nascem com uma equipe atribuída. As duas contas de teste
+            // ficam em equipes opostas para que a geração tenha o seu caso
             // principal — as duas com a mesma escala na mesma semana, e o
             // resultado a ser diferente para cada uma.
             //
             // A atribuição é feita fora do `if (joao == null)`: a conta já
             // existente é de arranques anteriores, quando a coluna `team_group`
-            // ainda não existia, e deixá-la sem equipa faria a escala não ter
+            // ainda não existia, e deixá-la sem equipe faria a escala não ter
             // ninguém em quem demonstrar a alternância.
             if (admin.getTeamGroup() == null) {
                 admin.setTeamGroup(TeamGroup.EQUIPE_A);
@@ -89,7 +89,7 @@ public class SupervisorApplication {
                 escala = editionScaleRepository.save(escala);
 
                 // Tuas alocações são o par mínimo que o pedido de troca
-                // necesita: um turno de cada utilizador dentro da mesma escala.
+                // necesita: um turno de cada usuário dentro da mesma escala.
                 // O turno é obrigatório, pelo que a enum indica-o.
                 shiftSchedulingRepository.save(alocacao(escala, admin, ShiftType.T1_SAB));
                 shiftSchedulingRepository.save(alocacao(escala, joao, ShiftType.T2_SAB));
