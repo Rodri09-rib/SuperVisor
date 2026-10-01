@@ -283,6 +283,109 @@ class ChangeTimeServiceTest {
             verify(exchangeRequestRepository, never()).save(any());
         }
 
+        @Nested
+        @DisplayName("Pedidos duplicados")
+        class Duplicados {
+
+            /** O cenário válido: a troca de 11 (do João) por 10 (do admin). */
+            private void cenarioDaTrocaDoJoao() {
+                when(shiftSchedulingRepository.findById(10L)).thenReturn(Optional.of(alocacaoAdmin));
+                when(shiftSchedulingRepository.findById(11L)).thenReturn(Optional.of(alocacaoJoao));
+                when(userRepository.findById(2L)).thenReturn(Optional.of(joao));
+            }
+
+            @Test
+            @DisplayName("recusa repetir um pedido que já está pendente")
+            void recusaRepetirOPedidoPendente() {
+                // Carregar outra vez no botão, ou recarregar a página e carregar
+                // outra vez, criava pedidos idênticos ao infinito e o colega
+                // passava a ver o mesmo pedido várias vezes na fila.
+                cenarioDaTrocaDoJoao();
+                when(exchangeRequestRepository
+                        .existsByStatusAndSourceAllocationIdAndDestinationAllocationId(
+                                ExchangeStatus.PENDING, 11L, 10L))
+                        .thenReturn(true);
+
+                assertThatThrownBy(() -> changeTimeService.requestExchange(11L, 10L, 2L))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("Já existe um pedido de troca pendente para estes dois turnos.");
+
+                verify(exchangeRequestRepository, never()).save(any());
+            }
+
+            @Test
+            @DisplayName("aceita o pedido quando não há nenhum pendente no mesmo sentido")
+            void aceitaQuandoNaoHaPendente() {
+                cenarioDaTrocaDoJoao();
+                when(exchangeRequestRepository
+                        .existsByStatusAndSourceAllocationIdAndDestinationAllocationId(
+                                ExchangeStatus.PENDING, 11L, 10L))
+                        .thenReturn(false);
+
+                changeTimeService.requestExchange(11L, 10L, 2L);
+
+                verify(exchangeRequestRepository).save(any(ExchangeRequest.class));
+            }
+
+            @Test
+            @DisplayName("o sentido contrário não é duplicado: cada um cede o seu turno")
+            void sentidoContrarioNaoEDuplicado() {
+                // Se o João pede o turno do admin e o admin pede o do João, os
+                // dois pedidos são legítimos e diferentes: um cede 11, o outro
+                // cede 10. Tratar isto como duplicado impediria a única
+                // negociação que funciona, em que os dois chegam a acordo.
+                when(shiftSchedulingRepository.findById(10L)).thenReturn(Optional.of(alocacaoAdmin));
+                when(shiftSchedulingRepository.findById(11L)).thenReturn(Optional.of(alocacaoJoao));
+                when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+                when(exchangeRequestRepository
+                        .existsByStatusAndSourceAllocationIdAndDestinationAllocationId(
+                                ExchangeStatus.PENDING, 10L, 11L))
+                        .thenReturn(false);
+
+                changeTimeService.requestExchange(10L, 11L, 1L);
+
+                verify(exchangeRequestRepository).save(any(ExchangeRequest.class));
+            }
+
+            @Test
+            @DisplayName("só o estado pendente trava; um pedido já respondido deixa pedir de novo")
+            void soOPendenteTrava() {
+                // A consulta leva o estado, e não pergunta só "existe": um pedido
+                // recusado ou aceite já tem resposta e não pode impedir uma nova
+                // tentativa pela mesma troca.
+                cenarioDaTrocaDoJoao();
+                when(exchangeRequestRepository
+                        .existsByStatusAndSourceAllocationIdAndDestinationAllocationId(
+                                ExchangeStatus.PENDING, 11L, 10L))
+                        .thenReturn(false);
+
+                changeTimeService.requestExchange(11L, 10L, 2L);
+
+                verify(exchangeRequestRepository)
+                        .existsByStatusAndSourceAllocationIdAndDestinationAllocationId(
+                                ExchangeStatus.PENDING, 11L, 10L);
+            }
+
+            @Test
+            @DisplayName("um pedido que não podia ser feito por outro motivo continua a falhar por esse motivo")
+            void aGuardaVemNoFim() {
+                // Se a duplicidade fosse verificada primeiro, um pedido de um
+                // turno que não é seu deixaria de dizer "não lhe pertence".
+                when(shiftSchedulingRepository.findById(10L)).thenReturn(Optional.of(alocacaoAdmin));
+                when(shiftSchedulingRepository.findById(11L)).thenReturn(Optional.of(alocacaoJoao));
+                when(userRepository.findById(2L)).thenReturn(Optional.of(joao));
+
+                assertThatThrownBy(() -> changeTimeService.requestExchange(10L, 11L, 2L))
+                        .isInstanceOf(org.springframework.security.access.AccessDeniedException.class)
+                        .hasMessageContaining("lhe pertence");
+
+                verify(exchangeRequestRepository, never()).save(any());
+                verify(exchangeRequestRepository, never())
+                        .existsByStatusAndSourceAllocationIdAndDestinationAllocationId(
+                                any(), any(), any());
+            }
+        }
+
         @Test
         @DisplayName("recusa alocações de escalas diferentes, porque a troca tem de ser dentro da mesma escala")
         void alocacoesDeEscalasDiferentes() {

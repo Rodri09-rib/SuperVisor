@@ -1,6 +1,7 @@
 package domain.repository;
 
 import domain.model.entities.User;
+import domain.model.enums.UserProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -37,6 +38,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * uma cor por equipa.
      */
     List<User> findByActiveTrueOrderByTeamGroupAscNameAsc();
+
+    /**
+     * Quantos supervisores ativos existem.
+     *
+     * <p>Existe para a regra que impede desativar o último: sem ela, desativar o
+     * único supervisor deixa a aplicação sem ninguém capaz de criar contas,
+     * atribuir equipas ou reativar quem ficou desativado. A conta ficava presa
+     * e a única saída seria mexer na base de dados à mão.
+     */
+    long countByProfileAndActiveTrue(UserProfile profile);
+
+    /** Todos os utilizadores, ativos ou não, para a vista de administração. */
+    List<User> findAllByOrderByNameAsc();
 
 }
 

@@ -1,5 +1,6 @@
 package domain.dto;
 
+import domain.model.enums.TeamGroup;
 import domain.model.enums.UserProfile;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -36,6 +37,19 @@ public record CreateUserRequestDTO(
 
         @NotNull(message = "O perfil é obrigatório.")
         UserProfile profile,
+
+        /**
+         * Equipa a que a pessoa pertence, ou {@code null} se ainda não foi
+         * atribuída.
+         *
+         * <p>Estava ausente e com ele não havia forma de atribuir uma equipa a
+         * um utilizador novo: o campo só podia ser preenchido a partir da base
+         * de dados, e sem equipa a pessoa nunca aparecia na escala de
+         * presencialidade gerada. Aceitar {@code null} continua a ser válido,
+         * porque as contas anteriores a este campo não têm equipa e inventar uma
+         * seria inventar um dado.
+         */
+        TeamGroup teamGroup,
 
         Boolean active
 ) {

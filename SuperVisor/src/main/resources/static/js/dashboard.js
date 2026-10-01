@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
         escalaEmEdicao: null,
         utilizadores: [],
         turnos: [],
-        atribuicoes: []
+        atribuicoes: [],
+        todosUtilizadores: []
     };
 
     const el = {};
@@ -36,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         el.detalhesTitulo = document.getElementById('detalhesTitulo');
         el.detalhesCorpo = document.getElementById('detalhesCorpo');
         el.detalhesAlocacoes = document.getElementById('detalhesAlocacoesCorpo');
+        el.detalhesCobertura = document.getElementById('detalhesCobertura');
         el.btnTrocarDetalhes = document.getElementById('btnTrocarDaEscala');
         el.btnEditarAlocacoes = document.getElementById('btnEditarAlocacoes');
 
@@ -77,8 +79,29 @@ document.addEventListener('DOMContentLoaded', () => {
         el.utilizadorEmail = document.getElementById('novoUsuarioEmail');
         el.utilizadorPassword = document.getElementById('novoUsuarioPassword');
         el.utilizadorPerfil = document.getElementById('novoUsuarioPerfil');
+        el.utilizadorEquipa = document.getElementById('novoUsuarioEquipa');
         el.utilizadorAviso = document.getElementById('novoUsuarioAviso');
         el.utilizadorSubmeter = document.getElementById('btnSubmeterUsuario');
+
+        el.btnGerirUtilizadores = document.getElementById('btnGerirUtilizadores');
+        el.utilizadoresCorpo = document.getElementById('utilizadoresCorpo');
+        el.utilizadoresAviso = document.getElementById('utilizadoresAviso');
+
+        el.editarUsuarioFormulario = document.getElementById('editarUsuarioForm');
+        el.editarUsuarioId = document.getElementById('editarUsuarioId');
+        el.editarUsuarioNome = document.getElementById('editarUsuarioNome');
+        el.editarUsuarioEmail = document.getElementById('editarUsuarioEmail');
+        el.editarUsuarioPerfil = document.getElementById('editarUsuarioPerfil');
+        el.editarUsuarioEquipa = document.getElementById('editarUsuarioEquipa');
+        el.editarUsuarioAviso = document.getElementById('editarUsuarioAviso');
+        el.editarUsuarioSubmeter = document.getElementById('btnGuardarUsuario');
+
+        el.senhaFormulario = document.getElementById('senhaForm');
+        el.senhaUsuarioId = document.getElementById('senhaUsuarioId');
+        el.senhaUtilizadorNome = document.getElementById('senhaUtilizadorNome');
+        el.senhaNova = document.getElementById('senhaNova');
+        el.senhaAviso = document.getElementById('senhaAviso');
+        el.senhaSubmeter = document.getElementById('btnGuardarSenha');
     }
 
     /* ------------------------------------------------------------------ */
@@ -201,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // a recusar o POST com 403 na mesma: isto é só para não oferecer um
         // botão que não pode fazer nada.
         el.btnNovoUsuario.classList.toggle('d-none', !ehAdministrador());
+        el.btnGerirUtilizadores.classList.toggle('d-none', !ehAdministrador());
     }
 
     /* ------------------------------------------------------------------ */
@@ -294,12 +318,19 @@ document.addEventListener('DOMContentLoaded', () => {
             + '<div class="spinner-border text-primary" role="status">'
             + '<span class="visually-hidden">A carregar...</span></div></div>';
         el.detalhesAlocacoes.innerHTML = '';
+        el.detalhesCobertura.innerHTML = '';
         abrirModal('detalhesModal');
 
         try {
-            const [escala, alocacoes] = await Promise.all([
+            const [escala, alocacoes, relatorio] = await Promise.all([
                 SuperVisorApi.obterEscala(id),
-                SuperVisorApi.listarAlocacoes(id)
+                SuperVisorApi.listarAlocacoes(id),
+                // O relatório falha à parte: uma escala com sobreposições não é
+                // motivo para a lista de turnos e a cobertura desaparecerem.
+                SuperVisorApi.relatorioCoberturaEscala(id).catch((erro) => {
+                    console.warn('Relatório de cobertura indisponível:', erro);
+                    return null;
+                })
             ]);
 
             el.detalhesTitulo.textContent = escala.name || 'Escala #' + escala.id;
@@ -309,12 +340,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 linhaDetalhe('Estado', SuperVisorFormat.badgeEscala(escala.status))
             ].join('');
 
+            renderizarCobertura(relatorio);
             renderizarAlocacoes(alocacoes || []);
         } catch (erro) {
             el.detalhesCorpo.innerHTML = linhaMensagem(1,
                 '<i class="bi bi-exclamation-triangle me-2"></i>'
                 + SuperVisorFormat.escapar(erro.message), 'text-danger');
+            el.detalhesCobertura.innerHTML = '';
         }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Relatório de cobertura e conflitos                                 */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Bloco de cobertura do modal de detalhes.
+     *
+     * <p>Os avisos vêm antes dos números: um supervisor precisa de saber que há
+     * um conflito antes deylls ler uma percentagem que parece aceitável.
+     */
+    function renderizarCobertura(relatorio) {
+        if (!relatorio) {
+            el.detalhesCobertura.innerHTML = linhaMensagem(1,
+                '<span class="text-muted small">'
+                + 'O relatório de cobertura não pôde ser carregado.</span>', '');
+            return;
+        }
+
+        const partes = [];
+
+        if (relatorio.temConflitos) {
+            partes.push(blocoAvisos(relatorio));
+        }
+
+        if (relatorio.inactivePeopleScheduled > 0) {
+            partes.push(
+                '<div class="alert alert-warning py-2 small mb-0">'
+                + '<i class="bi bi-person-x me-2"></i>'
+                + relatorio.inactivePeopleScheduled
+                + (relatorio.inactivePeopleScheduled === 1
+                    ? ' alocação é de uma conta desativada.'
+                    : ' alocações são de contas desativadas.')
+                + ' Alguém escalado que não entra na aplicação é um turno que ninguém vai cobrir.'
+                + '</div>');
+        }
+
+        partes.push(resumoCobertura(relatorio));
+
+        el.detalhesCobertura.innerHTML = partes.join('');
+    }
+
+    function resumoCobertura(relatorio) {
+        const classe = relatorio.coveragePercent === 100
+            ? 'text-success'
+            : (relatorio.coveragePercent >= 80 ? 'text-warning' : 'text-danger');
+
+        return '<div class="row text-center g-2 align-items-end">'
+            + celulaCobertura('Cobertura', relatorio.coveragePercent + '%', classe)
+            + celulaCobertura('Turnos com gente', relatorio.coveredSlots + '/' + relatorio.totalSlots, '')
+            + celulaCobertura('Sem ninguém', relatorio.uncoveredSlots,
+                relatorio.uncoveredSlots ? 'text-danger fw-bold' : '')
+            + celulaCobertura('Alocações', relatorio.allocationsCount, '')
+            + '</div>';
+    }
+
+    function celulaCobertura(rotulo, valor, classe) {
+        return '<div class="col">'
+            + '<div class="fs-4 fw-bold ' + classe + '">' + SuperVisorFormat.escapar(valor) + '</div>'
+            + '<div class="small text-muted">' + rotulo + '</div>'
+            + '</div>';
+    }
+
+    function blocoAvisos(relatorio) {
+        const itens = [];
+
+        (relatorio.overlaps || []).forEach((conflito) => {
+            itens.push('<li><strong>Sobreposição:</strong> '
+                + SuperVisorFormat.escapar(conflito.descricao)
+                + (conflito.affectedDates && conflito.affectedDates.length
+                    ? ' <span class="text-muted">('
+                      + SuperVisorFormat.escapar(conflito.affectedDates.map(
+                          (d) => SuperVisorFormat.data(d)).join(', '))
+                      + ')</span>'
+                    : '')
+                + '</li>');
+        });
+
+        (relatorio.leaveConflicts || []).forEach((conflito) => {
+            itens.push('<li><strong>Folga:</strong> '
+                + SuperVisorFormat.escapar(conflito.descricao) + '</li>');
+        });
+
+        return '<div class="alert alert-danger py-2 small">'
+            + '<div class="fw-bold mb-1">'
+            + '<i class="bi bi-exclamation-triangle me-2"></i>'
+            + 'Conflitos encontrados</div>'
+            + '<ul class="mb-0 ps-3">' + itens.join('') + '</ul>'
+            + '</div>';
     }
 
     function linhaDetalhe(rotulo, valorHtml) {
@@ -340,8 +463,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 + '<td class="fw-semibold">'
                 + SuperVisorFormat.utilizadorComDetalhes(alocacao) + '</td>'
                 + '<td>' + SuperVisorFormat.badgeAlocacao(alocacao.analystAcceptanceStatus) + '</td>'
+                + '<td class="text-end">' + botoesResposta(alocacao) + '</td>'
                 + '</tr>';
         }).join('');
+    }
+
+    /**
+     * Responder ao turno e repintar a tabela.
+     *
+     * <p>O erro do servidor é mostrado tal como vem, e em especial o 400 de uma
+     * recusa barrada por troca pendente: é a regra que o utilizador precisa de
+     * entender, e reescrevê-la em JavaScript seria ter a mesma informação em dois
+     * sítios.
+     */
+    async function responderAlocacao(botao) {
+        const id = botao.dataset.id;
+        const estado = botao.dataset.estado;
+        const rotulo = estado === 'ACCEPTED' ? 'aceitar' : 'recusar';
+
+        if (!window.confirm(estado === 'REJECTED'
+            ? 'Recusar este turno? Se existir uma troca pendente para este turno, a recusa vai ser recusada.'
+            : 'Aceitar este turno?')) {
+            return;
+        }
+
+        ocupado(botao, true, 'A guardar...');
+
+        try {
+            await SuperVisorApi.responderAlocacao(id, estado);
+            notificar(estado === 'ACCEPTED'
+                ? 'Turno aceite.'
+                : 'Turno recusado.', 'sucesso');
+            await recarregarAlocacoesDaEscala(el.btnTrocarDetalhes.dataset.id);
+        } catch (erro) {
+            if (erro.message.indexOf('Sessão') === 0) {
+                return;
+            }
+            notificar('Não foi possível ' + rotulo + ': ' + erro.message, 'erro');
+        } finally {
+            ocupado(botao, false);
+        }
     }
 
     /* ------------------------------------------------------------------ */
@@ -458,6 +619,40 @@ document.addEventListener('DOMContentLoaded', () => {
         atualizarAjudaTurno();
         el.alocacaoSubmeter.innerHTML = '<i class="bi bi-check-lg"></i> Guardar alterações';
         el.btnLimparEdicaoAlocacao.classList.remove('d-none');
+    }
+
+    /**
+     * Botões de resposta de uma alocação.
+     *
+     * <p>Só aparecem quando o utilizador autenticado é o dono do turno ou um
+     * supervisor, que é a mesma regra do servidor. Duplicá-la aqui evita mostrar
+     * botões que iam devolver 403 - mas a decisão real continua a ser do
+     * servidor: mostrar o botão não concede a permissão.
+     */
+    function botoesResposta(alocacao) {
+        const meuId = estado.utilizador ? estado.utilizador.id : null;
+        const souDono = meuId !== null && String(alocacao.userId) === String(meuId);
+        const souSupervisor = ehAdministrador();
+
+        if (!souDono && !souSupervisor) {
+            return '';
+        }
+        if (alocacao.analystAcceptanceStatus !== 'PENDING') {
+            // Já respondido: mostrar de novo os mesmos botões não acrescenta nada
+            // e deixaria um clique novo gravar por cima de uma decisão tomada.
+            return '';
+        }
+
+        const id = encodeURIComponent(alocacao.id);
+        return '<div class="btn-group btn-group-sm" role="group" '
+            + 'aria-label="Responder ao turno">'
+            + '<button class="btn btn-outline-success js-responder-alocacao" '
+            + 'data-id="' + id + '" data-estado="ACCEPTED">'
+            + '<i class="bi bi-check-lg"></i> Aceitar</button> '
+            + '<button class="btn btn-outline-danger js-responder-alocacao" '
+            + 'data-id="' + id + '" data-estado="REJECTED">'
+            + '<i class="bi bi-x-lg"></i> Recusar</button>'
+            + '</div>';
     }
 
     /** "10:30:00" (LocalTime) passa a "10:30", o formato de <input type=time>. */
@@ -862,17 +1057,245 @@ document.addEventListener('DOMContentLoaded', () => {
                 email: email,
                 password: password,
                 profile: perfil,
+                teamGroup: el.utilizadorEquipa.value || null,
                 active: true
             });
             fecharModal('modalNovoUsuario');
             notificar('Utilizador cadastrado com sucesso!', 'sucesso');
             await carregarUtilizadores();
+
+            // A lista de gestão pode estar aberta por baixo do modal de criação;
+            // se estiver, é repintada com o utilizador novo.
+            if (el.utilizadoresCorpo.innerHTML) {
+                await carregarTodosUtilizadores();
+                renderizarGestaoUtilizadores();
+            }
         } catch (erro) {
             // O 400 do e-mail duplicado chega com a mensagem do servidor, que é
             // o que se quer mostrar; o resto é mostrado tal como vier.
             mostrarAviso(el.utilizadorAviso, erro.message, 'danger');
         } finally {
             ocupado(el.utilizadorSubmeter, false);
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Gestão de utilizadores (administrador)                              */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Lista de contas para gestão, incluindo as desativadas.
+     *
+     * <p>Usa o endpoint `/todos` e não `/users`: a pergunta aqui é "quem existe",
+     * e uma conta desativada é alguém que continua a existir e pode precisar de
+     * ser reativada. O <select> do editor de alocações continua a usar a lista
+     * de ativos, onde uma conta desativada não pode aparecer.
+     */
+    async function carregarTodosUtilizadores() {
+        try {
+            estado.todosUtilizadores =
+                await SuperVisorApi.listarTodosUtilizadores() || [];
+        } catch (erro) {
+            if (erro.message.indexOf('Sessão') === 0) {
+                return;
+            }
+            estado.todosUtilizadores = [];
+            mostrarAviso(el.utilizadoresAviso, erro.message, 'danger');
+            return;
+        }
+        renderizarGestaoUtilizadores();
+    }
+
+    function linhaUtilizador(u) {
+        const id = encodeURIComponent(u.id);
+        const conta = u.active
+            ? '<span class="badge bg-success">Ativa</span>'
+            : '<span class="badge bg-secondary">Desativada</span>';
+
+        const alternar = u.active
+            ? '<button class="btn btn-sm btn-outline-warning js-alterar-estado" '
+              + 'data-id="' + id + '" data-ativo="false">'
+              + '<i class="bi bi-person-slash"></i> Desativar</button> '
+            : '<button class="btn btn-sm btn-outline-success js-alterar-estado" '
+              + 'data-id="' + id + '" data-ativo="true">'
+              + '<i class="bi bi-person-check"></i> Reativar</button> ';
+
+        return '<tr class="' + (u.active ? '' : 'opacity-75') + '">'
+            + '<td class="fw-semibold">' + SuperVisorFormat.escapar(u.name || '—') + '</td>'
+            + '<td>' + SuperVisorFormat.escapar(u.email || '—') + '</td>'
+            + '<td>' + rotuloPerfil(u.profile) + '</td>'
+            + '<td>' + SuperVisorFormat.escapar(u.teamGroupLabel || 'Sem equipa') + '</td>'
+            + '<td>' + conta + '</td>'
+            + '<td class="text-end text-nowrap">'
+            + '<button class="btn btn-sm btn-outline-secondary js-editar-utilizador" '
+            + 'data-id="' + id + '"><i class="bi bi-pencil"></i> Editar</button> '
+            + '<button class="btn btn-sm btn-outline-secondary js-redefinir-senha" '
+            + 'data-id="' + id + '"><i class="bi bi-key"></i> Password</button> '
+            + alternar
+            + '</td>'
+            + '</tr>';
+    }
+
+    function rotuloPerfil(perfil) {
+        return perfil === 'SUPERVISOR'
+            ? '<span class="badge bg-primary">Supervisor</span>'
+            : '<span class="badge bg-light text-dark border">Analista</span>';
+    }
+
+    function renderizarGestaoUtilizadores() {
+        if (!estado.todosUtilizadores.length) {
+            el.utilizadoresCorpo.innerHTML = linhaMensagem(6,
+                'Não há utilizadores registados.', 'text-muted');
+            return;
+        }
+        mostrarAviso(el.utilizadoresAviso, null);
+        el.utilizadoresCorpo.innerHTML = estado.todosUtilizadores.map(linhaUtilizador).join('');
+    }
+
+    async function abrirGestaoUtilizadores() {
+        if (!ehAdministrador()) {
+            return;
+        }
+        el.utilizadoresCorpo.innerHTML = linhaMensagem(6,
+            '<div class="spinner-border text-primary" role="status">'
+            + '<span class="visually-hidden">A carregar utilizadores...</span></div>',
+            '');
+        abrirModal('utilizadoresModal');
+        await carregarTodosUtilizadores();
+    }
+
+    function utilizadorPorId(id) {
+        const alvo = String(id);
+        return estado.todosUtilizadores.find((u) => String(u.id) === alvo) || null;
+    }
+
+    function abrirEditarUtilizador(id) {
+        const alvo = utilizadorPorId(id);
+        if (!alvo) {
+            return;
+        }
+        el.editarUsuarioFormulario.reset();
+        mostrarAviso(el.editarUsuarioAviso, null);
+        el.editarUsuarioId.value = alvo.id;
+        el.editarUsuarioNome.value = alvo.name || '';
+        el.editarUsuarioEmail.value = alvo.email || '';
+        el.editarUsuarioPerfil.value = alvo.profile || 'ANALIST';
+        el.editarUsuarioEquipa.value = alvo.teamGroup || '';
+        abrirModal('editarUsuarioModal');
+    }
+
+    async function submeterEdicaoUtilizador(evento) {
+        evento.preventDefault();
+
+        const id = el.editarUsuarioId.value;
+        const nome = el.editarUsuarioNome.value.trim();
+        const perfil = el.editarUsuarioPerfil.value;
+        const equipa = el.editarUsuarioEquipa.value;
+
+        if (!nome) {
+            mostrarAviso(el.editarUsuarioAviso, 'O nome completo é obrigatório.', 'warning');
+            return;
+        }
+
+        mostrarAviso(el.editarUsuarioAviso, null);
+        ocupado(el.editarUsuarioSubmeter, true, 'A guardar...');
+
+        try {
+            // O e-mail não entra: o servidor não o aceita, e mandá-lo na mesma
+            // seria mandar um campo que vai ser ignorado sem o dizer.
+            await SuperVisorApi.atualizarUtilizador(id, {
+                name: nome,
+                profile: perfil,
+                teamGroup: equipa || null
+            });
+            fecharModal('editarUsuarioModal');
+            notificar('Utilizador atualizado.', 'sucesso');
+            await Promise.all([carregarTodosUtilizadores(), carregarUtilizadores()]);
+        } catch (erro) {
+            mostrarAviso(el.editarUsuarioAviso, erro.message, 'danger');
+        } finally {
+            ocupado(el.editarUsuarioSubmeter, false);
+        }
+    }
+
+    /**
+     * Ativar ou desativar uma conta.
+     *
+     * <p>A confirmação diz o que acontece às alocações, porque é a consequência
+     * que ninguém espera: desativar não liberta turnos. Quem fica escalado numa
+     * conta desativada aparece no relatório de cobertura como aviso, e é por
+     * isso que desativar aparece com este texto e não como um botão mudo.
+     */
+    async function alterarEstadoUtilizador(botao) {
+        const id = botao.dataset.id;
+        const ativar = botao.dataset.ativo === 'true';
+        const alvo = utilizadorPorId(id);
+
+        const pergunta = ativar
+            ? 'Reativar a conta de ' + (alvo ? alvo.name || alvo.email : 'este utilizador') + '?'
+            : 'Desativar a conta de ' + (alvo ? alvo.name || alvo.email : 'este utilizador')
+              + '? As alocações que a pessoa já tem mantêm-se: fica escalada num turno em que '
+              + 'já não pode entrar.';
+
+        if (!window.confirm(pergunta)) {
+            return;
+        }
+
+        ocupado(botao, true, 'A guardar...');
+
+        try {
+            await SuperVisorApi.alterarEstadoUtilizador(id, ativar);
+            notificar(ativar ? 'Conta reativada.' : 'Conta desativada.', 'sucesso');
+            await Promise.all([carregarTodosUtilizadores(), carregarUtilizadores()]);
+        } catch (erro) {
+            if (erro.message.indexOf('Sessão') === 0) {
+                return;
+            }
+            // A recusa do último supervisor e da própria conta chega do servidor
+            // com a frase que explica o porquê, e é ela que se mostra.
+            mostrarAviso(el.utilizadoresAviso, erro.message, 'danger');
+            notificar(erro.message, 'erro');
+        } finally {
+            ocupado(botao, false);
+        }
+    }
+
+    function abrirRedefinirSenha(id) {
+        const alvo = utilizadorPorId(id);
+        if (!alvo) {
+            return;
+        }
+        el.senhaFormulario.reset();
+        mostrarAviso(el.senhaAviso, null);
+        el.senhaUsuarioId.value = alvo.id;
+        el.senhaUtilizadorNome.textContent = (alvo.name || alvo.email)
+            + ' (' + (alvo.email || 'sem e-mail') + ')';
+        abrirModal('senhaModal');
+    }
+
+    async function submeterSenha(evento) {
+        evento.preventDefault();
+
+        const id = el.senhaUsuarioId.value;
+        const password = el.senhaNova.value;
+
+        if (password.length < SENHA_MINIMA) {
+            mostrarAviso(el.senhaAviso,
+                'A password tem de ter pelo menos ' + SENHA_MINIMA + ' caracteres.', 'warning');
+            return;
+        }
+
+        mostrarAviso(el.senhaAviso, null);
+        ocupado(el.senhaSubmeter, true, 'A guardar...');
+
+        try {
+            await SuperVisorApi.redefinirSenhaUtilizador(id, password);
+            fecharModal('senhaModal');
+            notificar('Password redefinida.', 'sucesso');
+        } catch (erro) {
+            mostrarAviso(el.senhaAviso, erro.message, 'danger');
+        } finally {
+            ocupado(el.senhaSubmeter, false);
         }
     }
 
@@ -885,6 +1308,23 @@ document.addEventListener('DOMContentLoaded', () => {
         el.btnNovaEscala.addEventListener('click', abrirNovaEscala);
         el.btnNovoUsuario.addEventListener('click', abrirNovoUsuario);
         el.utilizadorFormulario.addEventListener('submit', submeterNovoUsuario);
+        el.btnGerirUtilizadores.addEventListener('click', abrirGestaoUtilizadores);
+        el.editarUsuarioFormulario.addEventListener('submit', submeterEdicaoUtilizador);
+        el.senhaFormulario.addEventListener('submit', submeterSenha);
+
+        el.utilizadoresCorpo.addEventListener('click', (evento) => {
+            const editar = evento.target.closest('.js-editar-utilizador');
+            const senha = evento.target.closest('.js-redefinir-senha');
+            const estado = evento.target.closest('.js-alterar-estado');
+
+            if (editar) {
+                abrirEditarUtilizador(editar.dataset.id);
+            } else if (senha) {
+                abrirRedefinirSenha(senha.dataset.id);
+            } else if (estado) {
+                alterarEstadoUtilizador(estado);
+            }
+        });
 
         el.tabelaCorpo.addEventListener('click', (evento) => {
             const detalhes = evento.target.closest('.js-detalhes');
@@ -926,6 +1366,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (alocacao) {
                 mostrarAviso(el.alocacaoAviso, null);
                 preencherFormularioAlocacao(alocacao);
+            }
+        });
+
+        el.detalhesAlocacoes.addEventListener('click', (evento) => {
+            const botao = evento.target.closest('.js-responder-alocacao');
+            if (botao) {
+                responderAlocacao(botao);
             }
         });
 

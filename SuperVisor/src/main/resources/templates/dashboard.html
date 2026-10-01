@@ -22,6 +22,9 @@
         <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
             <h3 class="fw-bold text-secondary mb-0">Escalas</h3>
             <div class="d-flex gap-2">
+                <button id="btnGerirUtilizadores" class="btn btn-outline-primary d-none">
+                    <i class="bi bi-person-gear"></i> Gerir utilizadores
+                </button>
                 <button id="btnNovoUsuario" class="btn btn-primary d-none">
                     <i class="bi bi-person-plus"></i> Novo Utilizador
                 </button>
@@ -74,6 +77,8 @@
             <div class="modal-body">
                 <div id="detalhesCorpo"></div>
                 <hr>
+                <h6 class="text-secondary text-uppercase small fw-bold">Cobertura e conflitos</h6>
+                <div id="detalhesCobertura" class="mb-3"></div>
                 <h6 class="text-secondary text-uppercase small fw-bold">Turnos atribuídos</h6>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0">
@@ -83,6 +88,7 @@
                             <th scope="col">Turno</th>
                             <th scope="col">Utilizador</th>
                             <th scope="col">Estado</th>
+                            <th scope="col"><span class="visually-hidden">Resposta</span></th>
                         </tr>
                         </thead>
                         <tbody id="detalhesAlocacoesCorpo"></tbody>
@@ -309,7 +315,7 @@
                         <div class="form-text">Mínimo de 6 caracteres. É a que o utilizador vai usar para entrar.</div>
                     </div>
 
-                    <div class="mb-0">
+                    <div class="mb-3">
                         <label for="novoUsuarioPerfil" class="form-label fw-semibold">Perfil</label>
                         <select id="novoUsuarioPerfil" class="form-select">
                             <option value="ANALIST">Analista</option>
@@ -317,11 +323,147 @@
                         </select>
                         <div class="form-text">O supervisor é quem pode criar utilizadores e gerir alocações.</div>
                     </div>
+
+                    <div class="mb-0">
+                        <label for="novoUsuarioEquipa" class="form-label fw-semibold">Equipa</label>
+                        <select id="novoUsuarioEquipa" class="form-select">
+                            <option value="">Sem equipa</option>
+                            <option value="EQUIPE_A">Equipa A</option>
+                            <option value="EQUIPE_B">Equipa B</option>
+                        </select>
+                        <div class="form-text">Quem não tem equipa não entra na escala de presencialidade gerada.</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="btnSubmeterUsuario">
                         <i class="bi bi-person-plus"></i> Cadastrar utilizador
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Gestão de utilizadores (administrador) -->
+<div class="modal fade" id="utilizadoresModal" tabindex="-1" aria-labelledby="utilizadoresTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="utilizadoresTitulo">Gerir utilizadores</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="utilizadoresAviso" class="alert d-none" role="alert"></div>
+
+                <div class="alert alert-light border small">
+                    <i class="bi bi-info-circle me-2"></i>
+                    O e-mail não é editável: é a identidade da conta e o que vai dentro do token.
+                    Trocá-lo deixaria no ar os tokens já emitidos. Use a redefinição de password
+                    quando alguém precisar de recuperar o acesso.
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th scope="col">Nome</th>
+                            <th scope="col">E-mail</th>
+                            <th scope="col">Perfil</th>
+                            <th scope="col">Equipa</th>
+                            <th scope="col">Conta</th>
+                            <th scope="col" class="text-end">Ações</th>
+                        </tr>
+                        </thead>
+                        <tbody id="utilizadoresCorpo"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar utilizador -->
+<div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editarUsuarioForm" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editarUsuarioTitulo">Editar utilizador</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="editarUsuarioAviso" class="alert d-none" role="alert"></div>
+                    <input type="hidden" id="editarUsuarioId">
+
+                    <div class="mb-3">
+                        <label for="editarUsuarioNome" class="form-label fw-semibold">Nome completo</label>
+                        <input type="text" id="editarUsuarioNome" class="form-control" maxlength="120" autocomplete="off">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editarUsuarioEmail" class="form-label fw-semibold">E-mail</label>
+                        <input type="email" id="editarUsuarioEmail" class="form-control" disabled>
+                        <div class="form-text">Identidade da conta: não é editável.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editarUsuarioPerfil" class="form-label fw-semibold">Perfil</label>
+                        <select id="editarUsuarioPerfil" class="form-select">
+                            <option value="ANALIST">Analista</option>
+                            <option value="SUPERVISOR">Supervisor (administrador)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-0">
+                        <label for="editarUsuarioEquipa" class="form-label fw-semibold">Equipa</label>
+                        <select id="editarUsuarioEquipa" class="form-select">
+                            <option value="">Sem equipa</option>
+                            <option value="EQUIPE_A">Equipa A</option>
+                            <option value="EQUIPE_B">Equipa B</option>
+                        </select>
+                        <div class="form-text">Escolher "Sem equipa" retira a pessoa da equipa.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnGuardarUsuario">
+                        <i class="bi bi-check-lg"></i> Guardar alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Redefinir password -->
+<div class="modal fade" id="senhaModal" tabindex="-1" aria-labelledby="senhaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="senhaForm" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="senhaTitulo">Redefinir password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="senhaAviso" class="alert d-none" role="alert"></div>
+                    <input type="hidden" id="senhaUsuarioId">
+                    <p class="small text-muted mb-3" id="senhaUtilizadorNome"></p>
+
+                    <div class="mb-0">
+                        <label for="senhaNova" class="form-label fw-semibold">Nova password</label>
+                        <input type="password" id="senhaNova" class="form-control"
+                               minlength="6" autocomplete="new-password">
+                        <div class="form-text">Mínimo de 6 caracteres. A anterior deixa de funcionar.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnGuardarSenha">
+                        <i class="bi bi-key"></i> Redefinir
                     </button>
                 </div>
             </form>

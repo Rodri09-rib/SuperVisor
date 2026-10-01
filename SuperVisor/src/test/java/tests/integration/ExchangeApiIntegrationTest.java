@@ -243,6 +243,52 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
                     .hasSize(2)
                     .allSatisfy(r -> assertThat(r.getStatus()).isEqualTo(ExchangeStatus.PENDING));
         }
+
+        @Test
+        @DisplayName("repetir o mesmo pedido pendente é recusado, e não cria um segundo igual")
+        void naoRepeteOPedidoPendente() throws Exception {
+            // Sem esta guarda, carregar outra vez no botão — ou recarregar a
+            // página e carregar outra vez — enchia a fila do colega pedido com
+            // cópias do mesmo pedido, e o histórico deixava de ser um histórico.
+            prepararCenario();
+            pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
+
+            var resposta = mockMvc.perform(post("/api/v1/exchanges")
+                            .header("Authorization", "Bearer " + tokenJoao)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(pedirTrocaJson(alocacaoJoao.getId(), alocacaoAdmin.getId())))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message")
+                            .value("Já existe um pedido de troca pendente para estes dois turnos."))
+                    .andReturn();
+
+            assertThat(resposta.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                    .contains("Já existe um pedido de troca pendente");
+
+            sincronizar();
+            assertThat(exchangeRequestRepository.findAll()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("depois de recusado, o mesmo sentido de troca pode ser pedido outra vez")
+        void pedidoRepetidoDepoisDaRecusa() throws Exception {
+            // Só o pendente trava. Um pedido que já tem resposta é um episódio
+            // encerrado e não pode impedir uma nova tentativa.
+            prepararCenario();
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
+            responder(pedido, tokenAdmin, false);
+
+            mockMvc.perform(post("/api/v1/exchanges")
+                            .header("Authorization", "Bearer " + tokenJoao)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(pedirTrocaJson(alocacaoJoao.getId(), alocacaoAdmin.getId())))
+                    .andExpect(status().isOk());
+
+            assertThat(exchangeRequestRepository.findAll())
+                    .hasSize(2)
+                    .extracting(r -> r.getStatus())
+                    .containsExactlyInAnyOrder(ExchangeStatus.REJECTED, ExchangeStatus.PENDING);
+        }
     }
 
     @Nested

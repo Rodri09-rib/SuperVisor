@@ -1,10 +1,12 @@
 package domain.model.entities;
 
+import domain.model.IntervaloHorario;
 import domain.model.enums.AllocationStatus;
 import domain.model.enums.AssignmentType;
 import domain.model.enums.ShiftType;
 import jakarta.persistence.*;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.LinkedHashSet;
@@ -165,6 +167,91 @@ public class ShiftScheduling {
 
     public LocalDate getSpecificDate() {
         return specificDate;
+    }
+
+    /**
+     * O dia da semana a que esta alocação se aplica.
+     *
+     * <p>Vem sempre do {@link ShiftType}, mesmo quando há {@code specificDate}:
+     * o turno é o que fixa o dia no domínio, e a data específica é o calendário
+     * concreto em que esse turno cai. Um sábado de T1 e um domingo de T6 têm o
+     * mesmo horário e mesmo assim não se cruzam, e é este o método que o
+     * distingue.
+     */
+    public DayOfWeek diaDaSemana() {
+        return shift == null ? null : shift.getDayOfWeek();
+    }
+
+    /**
+     * O horário que esta alocação ocupa de facto: o especial quando existe, o do
+     * turno caso contrário.
+     *
+     * <p>Devolve {@code null} só quando não há turno nenhum, que é um estado
+     * que a base não devia ter mas que um dado antigo podia ter.
+     */
+    public IntervaloHorario intervaloEfetivo() {
+        if (temHorarioCustomizado()) {
+            return IntervaloHorario.de(customStartTime, customEndTime);
+        }
+        return shift == null ? null : shift.getIntervaloHorario();
+    }
+
+    /**
+     * Verdadeiro quando esta alocação ocupa um dia do calendário concreto.
+     *
+     * <p>Sem data específica, vale para todos os dias do dia da semana do
+     * turno dentro da escala; com data, vale só para esse dia.
+     */
+    public boolean cobreDia(LocalDate data) {
+        if (data == null) {
+            return false;
+        }
+        if (specificDate != null) {
+            return specificDate.equals(data);
+        }
+        return diaDaSemana() != null && data.getDayOfWeek() == diaDaSemana();
+    }
+
+    /**
+     * Verdadeiro quando as duas alocações disputam a mesma pessoa à mesma hora.
+     *
+     * <p>É o double-booking: a mesma pessoa escalada duas vezes em cima uma da
+     * outra. Duas condições têm de ser verdadeiras ao mesmo tempo.
+     *
+     * <p>Os <em>horários</em> têm de se cruzar. T1 (08h00-12h00) e T3
+     * (12h00-16h00) só se tocam à meia-noite e por isso não contam: quem acaba
+     * ao meio-dia pode entrar no turno seguinte. Já T1 e T2 (11h00-15h00)
+     * cruzam-se de verdade, e alguém não pode estar nos dois.
+     *
+     * <p>Os <em>dias</em> têm de poder ser o mesmo. Com data específica nos
+     * dois lados, tem de ser a mesma data; sem data, o dia da semana dos turnos
+     * tem de bater certo. Quando só um dos lados tem data, compara-se essa data
+     * com o dia da semana do outro turno — é assim que um T1 sem data específica
+     * ainda entra em conflito com um T1 marcado para um sábado concreto.
+     */
+    public boolean conflitaCom(ShiftScheduling outra) {
+        if (outra == null) {
+            return false;
+        }
+
+        IntervaloHorario meu = intervaloEfetivo();
+        IntervaloHorario dela = outra.intervaloEfetivo();
+
+        if (meu == null || dela == null || !meu.sobrepoe(dela)) {
+            return false;
+        }
+
+        if (specificDate != null && outra.specificDate != null) {
+            return specificDate.equals(outra.specificDate);
+        }
+        if (specificDate != null) {
+            return specificDate.getDayOfWeek() == outra.diaDaSemana();
+        }
+        if (outra.specificDate != null) {
+            return diaDaSemana() == outra.specificDate.getDayOfWeek();
+        }
+
+        return diaDaSemana() != null && diaDaSemana() == outra.diaDaSemana();
     }
 
     public void setSpecificDate(LocalDate specificDate) {

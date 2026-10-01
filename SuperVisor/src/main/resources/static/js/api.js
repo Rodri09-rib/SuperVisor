@@ -106,6 +106,38 @@ const SuperVisorApi = (() => {
         criarUtilizador: (utilizador) => request('/api/v1/users',
             { metodo: 'POST', corpo: utilizador }),
 
+        /**
+         * Lista de utilizadores com contas inativas incluídas.
+         *
+         * <p>Separada de {@link listarUtilizadores} porque as duas respondem a
+         * perguntas diferentes: a primeira alimenta o <select> do editor de
+         * alocações, onde uma conta desativada não pode aparecer; esta alimenta a
+         * gestão de contas, onde a conta desativada é precisamente o que se
+         * procura para a reativar.
+         */
+        listarTodosUtilizadores: () => request('/api/v1/users/todos'),
+
+        /**
+         * Alteração de cadastro. Não leva e-mail: o servidor não o aceita, porque
+         * é a identidade da conta e o que está dentro do token.
+         */
+        atualizarUtilizador: (id, utilizador) => request(
+            '/api/v1/users/' + encodeURIComponent(id), { metodo: 'PUT', corpo: utilizador }),
+
+        /**
+         * Ativa ou desativa uma conta.
+         *
+         * <p>Um PATCH e não um PUT porque só o estado muda; o resto do cadastro
+         * fica como está.
+         */
+        alterarEstadoUtilizador: (id, active) => request(
+            '/api/v1/users/' + encodeURIComponent(id) + '/estado',
+            { metodo: 'PATCH', corpo: { active: active } }),
+
+        redefinirSenhaUtilizador: (id, password) => request(
+            '/api/v1/users/' + encodeURIComponent(id) + '/senha',
+            { metodo: 'POST', corpo: { password: password } }),
+
         listarTurnos: () => request('/api/v1/shifts'),
         listarAtribuicoes: () => request('/api/v1/assignments'),
 
@@ -114,11 +146,32 @@ const SuperVisorApi = (() => {
         criarEscala: (escala) => request('/api/v1/scales', { metodo: 'POST', corpo: escala }),
         publicarEscala: (id) => request('/api/v1/scales/' + encodeURIComponent(id) + '/publish', { metodo: 'POST' }),
 
+        /**
+         * Relatório de cobertura e conflitos de uma escala, numa só resposta.
+         *
+         * <p>É leitura, como o resto das escalas: qualquer utilizador
+         * autenticado o pode pedir. O relatório não traz o motivo das folgas
+         * precisamente por isso.
+         */
+        relatorioCoberturaEscala: (id) => request(
+            '/api/v1/scales/' + encodeURIComponent(id) + '/coverage'),
+
         listarAlocacoes: (escalaId) => request('/api/v1/allocations'
             + (escalaId ? '?editionScaleId=' + encodeURIComponent(escalaId) : '')),
         criarAlocacao: (alocacao) => request('/api/v1/allocations', { metodo: 'POST', corpo: alocacao }),
         atualizarAlocacao: (id, alocacao) => request('/api/v1/allocations/' + encodeURIComponent(id),
             { metodo: 'PUT', corpo: alocacao }),
+
+        /**
+         * Resposta do analista ao turno escalado: aceite ou recusa.
+         *
+         * <p>Quem pode responder não é decidido aqui: o dono do turno e a
+         * supervisão podem, e o servidor devolve 403 a quem não pode. Um PATCH
+         * porque é uma transição de estado, não uma substituição.
+         */
+        responderAlocacao: (id, status) => request(
+            '/api/v1/allocations/' + encodeURIComponent(id) + '/acceptance',
+            { metodo: 'PATCH', corpo: { status: status } }),
 
         pedirTroca: (pedido) => request('/api/v1/exchanges', { metodo: 'POST', corpo: pedido }),
 

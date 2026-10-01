@@ -8,6 +8,7 @@ import domain.model.entities.User;
 import domain.model.enums.AllocationStatus;
 import domain.model.enums.AssignmentType;
 import domain.model.enums.ShiftType;
+import domain.model.enums.UserProfile;
 import exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -45,6 +47,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -359,6 +362,113 @@ class AllocationControllerTest {
                     .andExpect(status().isForbidden());
 
             verify(allocationService, never()).create(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/v1/allocations/{id}/acceptance")
+    class Responder {
+
+        private void responderComo(String token, String estado) throws Exception {
+            mockMvc.perform(patch("/api/v1/allocations/42/acceptance")
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"status\":\"" + estado + "\"}"));
+        }
+
+        @Test
+        @DisplayName("devolve 200 com a alocacao ja com o novo estado")
+        void devolveAlocacaoAtualizada() throws Exception {
+            User ana = TestFixtures.analyst();
+            ana.setId(5L);
+            autenticarComo(ana);
+            when(allocationService.responder(42L, AllocationStatus.ACCEPTED, 5L))
+                    .thenReturn(alocacao());
+
+            mockMvc.perform(patch("/api/v1/allocations/42/acceptance")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"status\":\"ACCEPTED\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(42))
+                    .andExpect(jsonPath("$.analystAcceptanceStatus").value("PENDING"));
+        }
+
+        @Test
+        @DisplayName("encaminha o estado e o id de quem responde, para o servico decidir")
+        void encaminhaEstadoEUtilizador() throws Exception {
+            User ana = TestFixtures.analyst();
+            ana.setId(5L);
+            autenticarComo(ana);
+            when(allocationService.responder(anyLong(), any(), anyLong())).thenReturn(alocacao());
+
+            responderComo("irrelevante", "REJECTED");
+
+            verify(allocationService).responder(42L, AllocationStatus.REJECTED, 5L);
+        }
+
+        @Test
+        @DisplayName("sem estado no corpo da 400 e o servico nao e chamado")
+        void semEstadoDa400() throws Exception {
+            User ana = TestFixtures.analyst();
+            ana.setId(5L);
+            autenticarComo(ana);
+
+            mockMvc.perform(patch("/api/v1/allocations/42/acceptance")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.fields.status").exists());
+
+            verify(allocationService, never()).responder(anyLong(), any(), anyLong());
+        }
+
+        @Test
+        @DisplayName("um estado que nao existe da 400, em vez de falhar a converter")
+        void estadoDesconhecidoDa400() throws Exception {
+            User ana = TestFixtures.analyst();
+            ana.setId(5L);
+            autenticarComo(ana);
+
+            mockMvc.perform(patch("/api/v1/allocations/42/acceptance")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"status\":\"TALVEZ\"}"))
+                    .andExpect(status().isBadRequest());
+
+            verify(allocationService, never()).responder(anyLong(), any(), anyLong());
+        }
+
+        @Test
+        @DisplayName("sem principal autenticado o id chega a null ao servico, que e quem nega")
+        void semPrincipalEncaminhaIdNulo() throws Exception {
+            SecurityContextHolder.clearContext();
+            when(allocationService.responder(42L, AllocationStatus.ACCEPTED, null))
+                    .thenThrow(new AccessDeniedException(
+                            "Apenas a pessoa a quem o turno foi escalado, ou a supervisão, pode responder."));
+
+            mockMvc.perform(patch("/api/v1/allocations/42/acceptance")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"status\":\"ACCEPTED\"}"))
+                    .andExpect(status().isForbidden());
+
+            verify(allocationService).responder(42L, AllocationStatus.ACCEPTED, null);
+        }
+
+        @Test
+        @DisplayName("um ANALIST nao e barrado pela rota: quem responde e decidido no servico")
+        void analistaDa403QuandoOMServicoRecusa() throws Exception {
+            User bruno = TestFixtures.user("Bruno", "bruno@teste.com", UserProfile.ANALIST);
+            bruno.setId(6L);
+            autenticarComo(bruno);
+            when(allocationService.responder(42L, AllocationStatus.ACCEPTED, 6L))
+                    .thenThrow(new AccessDeniedException(
+                            "Apenas a pessoa a quem o turno foi escalado, ou a supervisão, pode responder."));
+
+            mockMvc.perform(patch("/api/v1/allocations/42/acceptance")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"status\":\"ACCEPTED\"}"))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(
+                            "Apenas a pessoa a quem o turno foi escalado")));
         }
     }
 }
