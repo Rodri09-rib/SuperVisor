@@ -21,8 +21,8 @@ import jakarta.validation.Valid;
  * Folgas.
  *
  * <p>A leitura é aberta a qualquer perfil autenticado e a escrita é exclusiva da
- * supervisão. É a mesma divisão do registo de utilizadores e das alocações, e
- * pelo mesmo motivo: registar uma falta é escrever no estado de uma pessoa, e
+ * supervisão. É a mesma divisão do registo de usuários e das alocações, e
+ * pelo mesmo motivo: registrar uma falta é escrever no estado de uma pessoa, e
  * isso é decisão de quem supervisiona, não de quem a serve.
  */
 @RestController
@@ -39,7 +39,7 @@ public class LeaveController {
      * Lista de folgas, opcionalmente filtrada por pessoa.
      *
      * <p>Não é filtrada por perfil: ver quem está de folga é informação de toda
-     * a equipa, e o que a aplicação restringe é a escrita.
+     * a equipe, e o que a aplicação restringe é a escrita.
      */
     @GetMapping
     public ResponseEntity<List<UserLeaveDTO>> listar(@RequestParam(required = false) Long userId) {
@@ -79,7 +79,7 @@ public class LeaveController {
      * perfil desconhecido, o que devolve {@code canEdit} a falso em vez de
      * rebentar com um {@code NullPointerException}. A cadeia de filtros já
      * rejeita quem não está autenticado; o que este método cobre é o token
-     * válido que não resolve para um utilizador.
+     * válido que não resolve para um usuário.
      */
     private UserProfile perfilDeQuemPede() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

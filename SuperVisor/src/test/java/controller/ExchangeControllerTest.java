@@ -67,7 +67,7 @@ class ExchangeControllerTest {
     }
 
     private User utilizador(Long id, String email) {
-        return new User(id, "Utilizador", email, "hash", UserProfile.ANALIST);
+        return new User(id, "Usuário", email, "hash", UserProfile.ANALIST);
     }
 
     private User supervisor(Long id, String email) {
@@ -91,7 +91,7 @@ class ExchangeControllerTest {
         }
 
         @Test
-        @DisplayName("sem filtros, o serviço recebe todos os parâmetros a null e o utilizador autenticado")
+        @DisplayName("sem filtros, o serviço recebe todos os parâmetros a null e o usuário autenticado")
         void semFiltros() throws Exception {
             User logado = supervisor(1L, "admin@teste.com");
             autenticarComo(logado);
@@ -170,7 +170,7 @@ class ExchangeControllerTest {
         }
 
         @Test
-        @DisplayName("o histórico é pedido com o utilizador autenticado, que decide o que é visível")
+        @DisplayName("o histórico é pedido com o usuário autenticado, que decide o que é visível")
         void visibilidadeDelegadaAoServico() throws Exception {
             // Não há @PreAuthorize nesta rota: quem vê o quê depende de quem
             // pergunta, e a rota limita-se a entregar o principal ao serviço. O
@@ -206,7 +206,7 @@ class ExchangeControllerTest {
         }
 
         @Test
-        @DisplayName("encaminha as duas alocações e o id do utilizador autenticado ao serviço")
+        @DisplayName("encaminha as duas alocações e o id do usuário autenticado ao serviço")
         void encaminhaIdsAoServico() throws Exception {
             autenticarComo(utilizador(2L, "joao@teste.com"));
 
@@ -221,7 +221,7 @@ class ExchangeControllerTest {
         }
 
         @Test
-        @DisplayName("o id vem do utilizador autenticado, não do corpo da requisição")
+        @DisplayName("o id vem do usuário autenticado, não do corpo da requisição")
         void idVemDaAutenticacao() throws Exception {
             autenticarComo(utilizador(99L, "admin@teste.com"));
 
@@ -344,11 +344,11 @@ class ExchangeControllerTest {
         }
 
         @Test
-        @DisplayName("quem responde é o utilizador autenticado, e não um id do corpo")
+        @DisplayName("quem responde é o usuário autenticado, e não um id do corpo")
         void respondeQuemEstaAutenticado() throws Exception {
             // A rota não recebe um id de quem responde. Antes de o serviço
             // verificar quem tem direito a responder, o controlador tinha de
-            // saber quem está autenticado — e sem isso qualquer utilizador
+            // saber quem está autenticado — e sem isso qualquer usuário
             // autenticado respondia ao pedido de outra pessoa.
             autenticarComo(utilizador(42L, "terceira@teste.com"));
 
@@ -391,8 +391,8 @@ class ExchangeControllerTest {
         @Test
         @DisplayName("a negação de autorização do serviço propaga-se como AccessDeniedException")
         void negacaoDeAutorizacao() {
-            // O utilizador tem de estar autenticado: o controller lê o principal
-            // para saber quem está a responder, e sem isso rebentava com um NPE
+            // O usuário tem de estar autenticado: o controller lê o principal
+            // para saber quem está respondendo, e sem isso rebentava com um NPE
             // antes de o serviço ter oportunidade de recusar.
             autenticarComo(utilizador(7L, "terceiro@teste.com"));
             org.mockito.Mockito.doThrow(new org.springframework.security.access.AccessDeniedException(

@@ -45,7 +45,7 @@ class WorkModalityAutomationServiceTest {
      *
      * <p>2026-03-16 é a semana ISO 12, par. 2026-03-23 é a semana 13, ímpar.
      * Ambas começam à segunda-feira, para a conversão do início da semana não
-     * ser ela própria o que se está a testar.
+     * ser ela própria o que se está sendo testado.
      */
     private static final LocalDate SEMANA_PAR = LocalDate.of(2026, 3, 16);
     private static final LocalDate SEMANA_IMPAR = LocalDate.of(2026, 3, 23);
@@ -71,14 +71,14 @@ class WorkModalityAutomationServiceTest {
 
         // Lenient porque nem todos os testes geram escala: os da listagem não
         // passam por aqui, e um stubbing estrito que fica por usar faria o
-        // teste falhar por uma razão que nada tem com o que se está a testar.
+        // teste falhar por uma razão que nada tem com o que se está sendo testado.
         lenient().when(workModalityScheduleRepository.saveAll(any()))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
     }
 
     private User utilizador(Long id, String nome, TeamGroup equipa) {
-        // Passa pelas fixtures do projeto em vez de construir o utilizador à
-        // mão: é onde a equipa é atribuída, e é o mesmo caminho que os testes
+        // Passa pelas fixtures do projeto em vez de construir o usuário à
+        // mão: é onde a equipe é atribuída, e é o mesmo caminho que os testes
         // de integração usam, para não haver duas formas de montar a mesma
         // coisa.
         User user = equipa == null
@@ -150,7 +150,7 @@ class WorkModalityAutomationServiceTest {
     class Alternancia {
 
         @Test
-        @DisplayName("numa semana ímpar, a equipa A está presencial à segunda, quarta e sexta")
+        @DisplayName("numa semana ímpar, a equipe A está presencial à segunda, quarta e sexta")
         void imparEquipeAPresencial() {
             colaboradores(ana);
             semRegistosExistentes();
@@ -163,7 +163,7 @@ class WorkModalityAutomationServiceTest {
         }
 
         @Test
-        @DisplayName("numa semana ímpar, a equipa A está em home office à terça e quinta")
+        @DisplayName("numa semana ímpar, a equipe A está em home office à terça e quinta")
         void imparEquipeAHomeOffice() {
             colaboradores(ana);
             semRegistosExistentes();
@@ -175,7 +175,7 @@ class WorkModalityAutomationServiceTest {
         }
 
         @Test
-        @DisplayName("as duas equipas nunca coincidem no mesmo dia")
+        @DisplayName("as duas equipes nunca coincidem no mesmo dia")
         void asDequipasNuncaCoincidem() {
             colaboradores(ana, bruno);
             semRegistosExistentes();
@@ -188,7 +188,7 @@ class WorkModalityAutomationServiceTest {
                         .put(registo.getUser().getId(), registo.getModality());
             }
 
-            // Um dia em que as duas equipas tivessem a mesma modalidade seria
+            // Um dia em que as duas equipes tivessem a mesma modalidade seria
             // o sinal de que o padrão deixou de alternar: a semana inteira
             // ficaria igual, e a escala de um escritório não é isso.
             assertThat(porDiaEEquipa).hasSize(5);
@@ -259,11 +259,11 @@ class WorkModalityAutomationServiceTest {
     class QuemEntra {
 
         @Test
-        @DisplayName("quem não tem equipa é excluído pela consulta, e o serviço não volta a perguntar")
+        @DisplayName("quem não tem equipe é excluído pela consulta, e o serviço não volta a perguntar")
         void semEquipaExcluidoPelaConsulta() {
-            // Não há teste possível para "devolve a escala de alguém sem equipa"
-            // a este nível: o serviço pede à base só quem tem equipa, e um
-            // repositório mocked que devolvesse alguém sem equipa estaria a
+            // Não há teste possível para "devolve a escala de alguém sem equipe"
+            // a este nível: o serviço pede à base só quem tem equipe, e um
+            // repositório mocked que devolvesse alguém sem equipe estaria a
             // mentir sobre a consulta que o serviço fez. O filtro é da
             // consulta, e o que o serviço garante é não fazer outra.
             colaboradores(ana);
@@ -277,7 +277,7 @@ class WorkModalityAutomationServiceTest {
         }
 
         @Test
-        @DisplayName("a consulta à base é a que filtra os ativos com equipa, pela ordem do nome")
+        @DisplayName("a consulta à base é a que filtra os ativos com equipe, pela ordem do nome")
         void apenasAtivosComEquipa() {
             colaboradores(ana, bruno);
             semRegistosExistentes();
@@ -285,20 +285,20 @@ class WorkModalityAutomationServiceTest {
             workModalityAutomationService.gerar(SEMANA_IMPAR);
 
             // Fixar o método chamado é o que impede uma troca por "todos os
-            // utilizadores" que trouxesse quem não tem equipa, ou uma ordenação
+            // usuários" que trouxesse quem não tem equipe, ou uma ordenação
             // diferente que fizesse a grelha aparecer por ordem de entrada.
             verify(userRepository).findByActiveTrueAndTeamGroupIsNotNullOrderByNameAsc();
         }
 
         @Test
-        @DisplayName("sem ninguém com equipa, a geração falha com uma mensagem que diz porquê")
+        @DisplayName("sem ninguém com equipe, a geração falha com uma mensagem que diz porquê")
         void semNinguemComEquipa() {
             colaboradores();
             semRegistosExistentes();
 
             assertThatThrownBy(() -> workModalityAutomationService.gerar(SEMANA_IMPAR))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Nenhum utilizador ativo tem equipa");
+                    .hasMessageContaining("Nenhum usuário ativo tem equipe");
 
             verify(workModalityScheduleRepository, never()).saveAll(any());
         }

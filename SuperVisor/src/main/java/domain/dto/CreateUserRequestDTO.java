@@ -8,9 +8,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * Pedido de criação de um utilizador.
+ * Pedido de criação de um usuário.
  *
- * <p>A senha chega em claro e é encriptada no serviço antes de tocar na base
+ * <p>A senha chega em claro e é criptografada no serviço antes de tocar na base
  * de dados: o {@code PasswordEncoder} é um detalhe da persistência e não
  * pertence ao contrato HTTP.
  *
@@ -31,22 +31,22 @@ public record CreateUserRequestDTO(
         @Size(max = 160, message = "O e-mail não pode ter mais de 160 caracteres.")
         String email,
 
-        @NotBlank(message = "A password é obrigatória.")
-        @Size(min = 6, message = "A password tem de ter pelo menos 6 caracteres.")
+        @NotBlank(message = "A senha é obrigatória.")
+        @Size(min = 6, message = "A senha tem de ter pelo menos 6 caracteres.")
         String password,
 
         @NotNull(message = "O perfil é obrigatório.")
         UserProfile profile,
 
         /**
-         * Equipa a que a pessoa pertence, ou {@code null} se ainda não foi
+         * Equipe a que a pessoa pertence, ou {@code null} se ainda não foi
          * atribuída.
          *
-         * <p>Estava ausente e com ele não havia forma de atribuir uma equipa a
-         * um utilizador novo: o campo só podia ser preenchido a partir da base
-         * de dados, e sem equipa a pessoa nunca aparecia na escala de
+         * <p>Estava ausente e com ele não havia forma de atribuir uma equipe a
+         * um usuário novo: o campo só podia ser preenchido a partir da base
+         * de dados, e sem equipe a pessoa nunca aparecia na escala de
          * presencialidade gerada. Aceitar {@code null} continua a ser válido,
-         * porque as contas anteriores a este campo não têm equipa e inventar uma
+         * porque as contas anteriores a este campo não têm equipe e inventar uma
          * seria inventar um dado.
          */
         TeamGroup teamGroup,

@@ -31,11 +31,11 @@ import java.util.TreeMap;
 /**
  * Cobertura e conflitos de uma escala.
  *
- * <p>Existe para apanhar o que as regras de escrita não apanham. O
+ * <p>Existe para pegar o que as regras de escrita não pegam. O
  * double-booking está bloqueado na criação e atualização de alocações, e isso
  * chega para o caminho normal; mas a aplicação tem alocações anteriores a essa
  * regra, o bloqueio é feito por aplicação e não por restrição de base de dados,
- * e a folga é registada numa tabela à parte que ninguém liga à escala. Tudo o
+ * e a folga é registrada numa tabela à parte que ninguém liga à escala. Tudo o
  * que é inconsistência entre registos já existentes em vez de entre uma
  * operação nova é o que este serviço lê.
  *

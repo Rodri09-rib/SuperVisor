@@ -65,10 +65,10 @@ public class ChangeTimeService {
         }
 
         User requester = userRepository.findById(loggedUserId)
-                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         // O turno de origem tem de ser de quem pede. Sem esta guarda, um
-        // utilizador apontava para o turno de um colega como "origem" e para o
+        // usuário apontava para o turno de um colega como "origem" e para o
         // seu próprio como "destino": ficava a ser o colega pedido — ou seja, o
         // próprio — eRespondia ao próprio pedido, ficando com os dois turnos e
         // deixando o dono do primeiro sem ele.
@@ -134,11 +134,11 @@ public class ChangeTimeService {
     }
 
     /**
-     * Se a alocação pertence ao utilizador.
+     * Se a alocação pertence ao usuário.
      *
      * <p>Compara pelo id, e não pelo objeto: um {@code User} lido de outra
      * alocação é outra instância com o mesmo id, e a comparação por identidade
-     * daria {@code false} a uma alocação que é mesmo do utilizador.
+     * daria {@code false} a uma alocação que é mesmo do usuário.
      */
     private boolean pertenceA(ShiftScheduling alocacao, User user) {
         return alocacao.getUser() != null
@@ -229,7 +229,7 @@ public class ChangeTimeService {
      * foram pedidas. Um pedido de filtro {@code userId} de um analista é
      * ignorado em vez de recusado, e o filtro é-forçado ao próprio id: se a
      * aplicação devolvesse 403 por um parâmetro que o frontend preenche com o
-     * próprio utilizador, a página pareceria avariada.
+     * próprio usuário, a página pareceria avariada.
      */
     @Transactional(readOnly = true)
     public List<ShiftExchangeDTO> listarHistorico(ExchangeStatus status, Long userId,
@@ -250,7 +250,7 @@ public class ChangeTimeService {
      * pedido é deitado fora.
      *
      * <p>Descartar o parâmetro em vez de recusar o pedido é deliberado: o
-     * selector da página é preenchido com o utilizador corrente, e devolver 403
+     * seletor da página é preenchido com o usuário corrente, e devolver 403
      * por um parâmetro que a própria interface enviou faria a página parecer
      * avariada. O efeito é o mesmo nos dois casos — o analista não vê o histórico
      * dos outros.

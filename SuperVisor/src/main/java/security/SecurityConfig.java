@@ -46,9 +46,9 @@ public class SecurityConfig {
                         // A dashboard já cá estava, pelas mesmas razões.
                         .requestMatchers(HttpMethod.GET, "/login", "/dashboard",
                                 "/exchanges", "/work-modality", "/leaves", "/error").permitAll()
-                        // Os scripts e folhas de estilo sao carregados pelo
-                        // navegador sem o header Authorization, por isso nao
-                        // podem ficar sujeitos a autenticacao.
+                        // Os scripts e folhas de estilo são carregados pelo
+                        // navegador sem o header Authorization, por isso não
+                        // podem ficar sujeitos a autenticação.
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                         .anyRequest().authenticated()
                 )

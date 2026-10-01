@@ -19,7 +19,7 @@ import java.time.LocalTime;
  * <p>Os intervalos são <em>meios-abertos</em>: o fim não pertence ao intervalo.
  * É o que faz {@code T1} (08h00-12h00) e {@code T3} (12h00-16h00) serem turnos
  * seguidos e não sobrepostos, que é como operacionalmente se pensam: quem
- * acaba ao meio-dia pode entrar no turno seguinte sem estar em dois sítios.
+ * acaba ao meio-dia pode entrar no turno seguinte sem estar em dois lugares.
  */
 public record IntervaloHorario(int inicioMin, int fimMin) {
 
@@ -58,7 +58,7 @@ public record IntervaloHorario(int inicioMin, int fimMin) {
     }
 
     /**
-     * Verdadeiro quando os dois intervalos partilham algum tempo.
+     * Verdadeiro quando os dois intervalos compartilham algum tempo.
      *
      * <p>Meios-abertos, como a classe: intervalos que só se tocam na fronteira
      * — o fim de um é o início do outro — não se sobrepõem. T1 e T3 são o
@@ -80,7 +80,7 @@ public record IntervaloHorario(int inicioMin, int fimMin) {
      * Verdadeiro quando este intervalo contém o outro, extremidades incluído.
      *
      * <p>Um intervalo invertido não cabe em nada, incluindo em si próprio, pela
-     * mesma razão de {@link #sobrepoe(IntervaloHorario)}.
+     * mesma razão de {@link #sobrepõe(IntervaloHorario)}.
      */
     public boolean contem(IntervaloHorario outro) {
         if (outro == null || invertido() || outro.invertido()) {

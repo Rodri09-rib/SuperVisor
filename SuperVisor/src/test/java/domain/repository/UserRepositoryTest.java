@@ -36,7 +36,7 @@ class UserRepositoryTest extends AbstractJpaIntegrationTest {
         }
 
         @Test
-        @DisplayName("findAll devolve todos os utilizadores gravados")
+        @DisplayName("findAll devolve todos os usuários gravados")
         void findAll() {
             userRepository.saveAndFlush(TestFixtures.user("Ana", "ana@teste.com", UserProfile.ANALIST));
             userRepository.saveAndFlush(TestFixtures.user("Bia", "bia@teste.com", UserProfile.SUPERVISOR));
@@ -60,7 +60,7 @@ class UserRepositoryTest extends AbstractJpaIntegrationTest {
         }
 
         @Test
-        @DisplayName("saveAll persiste vários utilizadores de uma vez")
+        @DisplayName("saveAll persiste vários usuários de uma vez")
         void saveAll() {
             userRepository.saveAllAndFlush(java.util.List.of(
                     TestFixtures.user("Ana", "ana@teste.com", UserProfile.ANALIST),
@@ -71,7 +71,7 @@ class UserRepositoryTest extends AbstractJpaIntegrationTest {
         }
 
         @Test
-        @DisplayName("deleteById remove o registo")
+        @DisplayName("deleteById remove o registro")
         void deleteById() {
             User saved = userRepository.saveAndFlush(
                     TestFixtures.user("Ana", "ana@teste.com", UserProfile.ANALIST));
@@ -105,7 +105,7 @@ class UserRepositoryTest extends AbstractJpaIntegrationTest {
     class FindByEmail {
 
         @Test
-        @DisplayName("devolve o utilizador correspondente ao e-mail")
+        @DisplayName("devolve o usuário correspondente ao e-mail")
         void encontraPorEmail() {
             userRepository.saveAndFlush(
                     TestFixtures.user("Administrador", "admin@teste.com", UserProfile.SUPERVISOR));

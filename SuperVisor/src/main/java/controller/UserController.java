@@ -28,11 +28,11 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 /**
- * Utilizadores.
+ * Usuários.
  *
- * <p>A leitura fica aberta a qualquer utilizador autenticado, porque o nome e
+ * <p>A leitura fica aberta a qualquer usuário autenticado, porque o nome e
  * o e-mail dos colegas são informação partilhada: são eles que alimentam o
- * selector de pessoas do editor de alocações. Já criar um utilizador — e portanto
+ * seletor de pessoas do editor de alocações. Já criar um usuário — e portanto
  * definir a senha de alguém — é restrito ao perfil {@code SUPERVISOR}, tal como
  * a escrita de alocações em {@link AllocationController}.
  */
@@ -47,7 +47,7 @@ public class UserController {
     private ProfileAuthorization profileAuthorization;
 
     /**
-     * Utilizadores ativos, por ordem de nome. Alimenta o selector de pessoas
+     * Usuários ativos, por ordem de nome. Alimenta o seletor de pessoas
      * do editor de alocações. Fica acima de {@code /me} para não ser
      * interceptada por essa rota.
      */
@@ -64,7 +64,7 @@ public class UserController {
     }
 
     /**
-     * Cadastra um utilizador e responde 201 com o que se pode mostrar sobre
+     * Cadastra um usuário e responde 201 com o que se pode mostrar sobre
      * ele. A resposta é um {@link ActiveUserDTO} e não a entidade: como
      * {@code User} implementa {@code UserDetails}, serializá-la poria o hash da
      * senha na resposta.
@@ -85,8 +85,8 @@ public class UserController {
     }
 
     /**
-     * Todos os utilizadores, ativos e inativos. Reservado à supervisão porque é
-     * a vista de administração: mostra quem está fora, o que o selector de
+     * Todos os usuários, ativos e inativos. Reservado à supervisão porque é
+     * a vista de administração: mostra quem está fora, o que o seletor de
      * pessoas — só com contas ativas — por definição não mostra.
      */
     @GetMapping("/todos")
@@ -128,7 +128,7 @@ public class UserController {
     }
 
     /**
-     * Redefine a senha de um utilizador. Restrito à supervisão porque define a
+     * Redefine a senha de um usuário. Restrito à supervisão porque define a
      * senha de outra pessoa, que é o mesmo motivo de {@link #criar}.
      */
     @PostMapping("/{id}/senha")
@@ -142,19 +142,19 @@ public class UserController {
     }
 
     /**
-     * O utilizador autenticado, lido do contexto de segurança.
+     * O usuário autenticado, lido do contexto de segurança.
      *
      * <p>Usa o mesmo caminho que {@code ExchangeController} e
      * {@code ProfileAuthorization} em vez de {@code @AuthenticationPrincipal},
      * por duas razões. A primeira é a segurança: a regra de autodesativação
-     * depende de saber quem está a pedir, e esse dado não deve passar por um
+     * depende de saber quem está pedindo, e esse dado não deve passar por um
      * mecanismo que o cliente possa influenciar. A segunda é a testabilidade:
      * {@code @AuthenticationPrincipal} é resolvido por um {@code
-     * HandlerMethodArgumentResolver} que o MockMvc isolado não regista, e o
+     * HandlerMethodArgumentResolver} que o MockMvc isolado não registra, e o
      * parâmetro acabava por ser preenchido por encadernação de parâmetros de
      * pedido — o que faria o teste passar sem nunca exercitar o principal real.
      *
-     * <p>O contexto já foi guaranteeing não estar vazio a este ponto: sem token
+     * <p>O contexto já está garantido que não está vazio neste ponto: sem token
      * a cadeia de filtros responde 401 antes de chegar aqui, e
      * {@code exigirSupervisor} já devolveu 403 quando não há principal.
      */

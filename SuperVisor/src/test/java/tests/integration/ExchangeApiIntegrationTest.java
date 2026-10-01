@@ -72,7 +72,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
     class Pedir {
 
         @Test
-        @DisplayName("regista a solicitação em PENDING e devolve 200")
+        @DisplayName("registra a solicitação em PENDING e devolve 200")
         void criaSolicitacaoPendente() throws Exception {
             prepararCenario();
 
@@ -106,7 +106,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("o requisitante é o utilizador autenticado, não o dono da alocação de origem")
+        @DisplayName("o requisitante é o usuário autenticado, não o dono da alocação de origem")
         void requisitanteVemDoToken() throws Exception {
             prepararCenario();
 
@@ -296,7 +296,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
     class Aceitar {
 
         @Test
-        @DisplayName("troca os utilizadores entre as duas alocações")
+        @DisplayName("troca os usuários entre as duas alocações")
         void trocaUtilizadores() throws Exception {
             prepararCenario();
             Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
@@ -321,7 +321,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("regista a data da resposta")
+        @DisplayName("registra a data da resposta")
         void registaDataDeResposta() throws Exception {
             prepararCenario();
             Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
@@ -336,7 +336,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         @Test
         @DisplayName("o colega que não pediu nada não pode responder")
         void terceiroNaoPodeResponder() throws Exception {
-            // Antes esta resposta era aceite: o endpoint não verificava quem
+            // Antes esta resposta era aceita: o endpoint não verificava quem
             // respondia. Com dois pedidos cruzados — cada um aceitando o
             // pedido do outro — os dois turnos trocavam de dono e voltavam ao
             // lugar, com ambos os pedidos marcados como aceites.
@@ -470,7 +470,7 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("uma segunda resposta não volta a trocar os utilizadores")
+        @DisplayName("uma segunda resposta não volta a trocar os usuários")
         void segundaRespostaNaoTrocaNovamente() throws Exception {
             prepararCenario();
             Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());

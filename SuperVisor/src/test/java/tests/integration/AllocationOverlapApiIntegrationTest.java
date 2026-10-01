@@ -126,7 +126,7 @@ class AllocationOverlapApiIntegrationTest extends AbstractApiIntegrationTest {
         @Test
         @DisplayName("uma alteração que cairia em cima de outro turno é recusada")
         void recusaAlteracaoQueCriaSobreposicao() throws Exception {
-            // O que está a proteger: T1 e T3 juntos são legítimos porque só se
+            // O que está protegendo: T1 e T3 juntos são legítimos porque só se
             // tocam, mas empurrar o T3 para T2 cruza o T1 que já lá está. A
             // sobreposição tem de ser vista também na alteração, e não só na
             // criação — senão a regra só valia para o primeiro turno.
@@ -295,7 +295,7 @@ class AllocationOverlapApiIntegrationTest extends AbstractApiIntegrationTest {
         @DisplayName("a mesma pessoa pode ter turnos sobrepostos em escalas diferentes")
         void escalasDiferentesNaoConflitam() throws Exception {
             // O conflito é dentro da escala: quem cobre T1 num mês e T2 no mês
-            // seguinte não está em dois sítios ao mesmo tempo.
+            // seguinte não está em dois lugares ao mesmo tempo.
             alocar(ShiftType.T1_SAB, null);
             EditionScale outra = criarEscala("Escala Novembro", supervisor);
 

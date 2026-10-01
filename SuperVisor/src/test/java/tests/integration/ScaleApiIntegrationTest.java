@@ -86,7 +86,7 @@ class ScaleApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("a resposta não inclui o utilizador criador")
+        @DisplayName("a resposta não inclui o usuário criador")
         void naoExpoeCriador() throws Exception {
             prepararUtilizador();
 
@@ -126,17 +126,17 @@ class ScaleApiIntegrationTest extends AbstractApiIntegrationTest {
                             .content(criarEscalaJson("Escala Outubro", "2025-10-01", "2025-10-31", 9999L)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.error").value("Bad Request"))
-                    .andExpect(jsonPath("$.message").value("Utilizador não encontrado"))
+                    .andExpect(jsonPath("$.message").value("Usuário não encontrado"))
                     .andReturn();
 
             assertThat(resposta.getResponse().getContentAsString(StandardCharsets.UTF_8))
                     .contains("\"error\":\"Bad Request\"")
-                    .contains("Utilizador não encontrado");
+                    .contains("Usuário não encontrado");
             assertThat(editionScaleRepository.count()).isZero();
         }
 
         @Test
-        @DisplayName("datas invertidas são aceites, por não haver validação no serviço")
+        @DisplayName("datas invertidas são aceitos, por não haver validação no serviço")
         void datasInvertidasSaoAceites() throws Exception {
             prepararUtilizador();
 
@@ -178,7 +178,7 @@ class ScaleApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("qualquer utilizador autenticado pode criar escalas, não só o SUPERVISOR")
+        @DisplayName("qualquer usuário autenticado pode criar escalas, não só o SUPERVISOR")
         void qualquerAutenticadoCria() throws Exception {
             var analist = criarUsuario("João", "joao@teste.com", domain.model.enums.UserProfile.ANALIST);
 

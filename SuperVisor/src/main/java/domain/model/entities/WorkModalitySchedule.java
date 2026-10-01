@@ -14,9 +14,9 @@ import java.time.LocalDate;
  * sem esta restrição a segunda passagem criaria duplicados em vez de corrigir
  * a semana.
  *
- * <p>{@code teamGroup} é uma cópia da equipa no momento da geração. Vive aqui
- * para que o histórico não mude se alguém mudar de equipa mais tarde: a escala
- * de inadmissão responde "onde é que esta pessoa estava em março", e a equipa
+ * <p>{@code teamGroup} é uma cópia da equipe no momento da geração. Vive aqui
+ * para que o histórico não mude se alguém mudar de equipe mais tarde: a escala
+ * de inadmissão responde "onde é que esta pessoa estava em março", e a equipe
  * dela em março pode não ser a de hoje.
  */
 @Entity

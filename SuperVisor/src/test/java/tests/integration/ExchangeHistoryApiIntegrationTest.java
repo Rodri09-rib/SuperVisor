@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>Estes testes existem porque os correspondentes com mocks não provam nada
  * sobre a consulta. Um {@code Specification} pode passar todos os testes de
  * unidade — o mock não distingue {@code requestingUser} de {@code requestedUser}
- * porque ambos são um ecrã vazio — e falhar na base por um nome de atributo
+ * porque ambos são uma tela vazia — e falhar na base por um nome de atributo
  * errado, por um {@code join} a um enum, ou por um limite de data deslocado.
  * Só a base real distingue essas coisas.
  */
@@ -47,7 +47,7 @@ class ExchangeHistoryApiIntegrationTest extends AbstractApiIntegrationTest {
     /**
      * Fixo com uma data de criação explícita, para os limites de intervalo
      * terem algo com que se medir. O serviço carimba a data atual, e sem
-     * escrever à mão todas as pedidos nasceriam no mesmo instante.
+     * escrever à mão todos os pedidos nasceriam no mesmo instante.
      */
     private ExchangeRequest pedido(ExchangeStatus status, User requerente, User colega,
                                    LocalDate dia) {
@@ -133,7 +133,7 @@ class ExchangeHistoryApiIntegrationTest extends AbstractApiIntegrationTest {
 
             // admin é o colega no primeiro e o requerente no segundo: aparece
             // nos dois, e é isso que um filtro de "as minhas trocas" tem de
-            // apanhar.
+            // pegar.
             mockMvc.perform(get("/api/v1/exchanges")
                             .header("Authorization", "Bearer " + tokenAdmin)
                             .param("userId", String.valueOf(admin.getId())))
@@ -221,7 +221,7 @@ class ExchangeHistoryApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("um intervalo que não apanha nada devolve uma lista vazia, e não um erro")
+        @DisplayName("um intervalo que não pega nada devolve uma lista vazia, e não um erro")
         void intervaloSemResultados() throws Exception {
             gravar(pedido(ExchangeStatus.PENDING, joao, admin, LocalDate.of(2026, 3, 10)));
 
@@ -289,7 +289,7 @@ class ExchangeHistoryApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("a lista não vaza a palavra-passe, nem a entidade, a nenhum dos lados")
+        @DisplayName("a lista não vaza a senha, nem a entidade, a nenhum dos lados")
         void naoVazaDadosSensiveis() throws Exception {
             gravar(pedido(ExchangeStatus.PENDING, joao, admin, LocalDate.of(2026, 3, 10)));
 

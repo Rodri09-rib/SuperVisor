@@ -62,9 +62,9 @@ class SecurityFilterTest {
     }
 
     @Test
-    @DisplayName("autentica quando o token e valido e a conta esta ativa")
+    @DisplayName("autentica quando o token é válido e a conta está ativa")
     void autenticaContaAtiva() throws Exception {
-        comToken("token.valido");
+        comToken("token.válido");
         when(userRepository.findByEmail("admin@teste.com")).thenReturn(TestFixtures.supervisor());
 
         filter.doFilter(request, response, chain);
@@ -75,9 +75,9 @@ class SecurityFilterTest {
     }
 
     @Test
-    @DisplayName("nao autentica uma conta desativada, mesmo com token bem assinado")
+    @DisplayName("não autentica uma conta desativada, mesmo com token bem assinado")
     void naoAutenticaContaDesativada() throws Exception {
-        comToken("token.valido");
+        comToken("token.válido");
         when(userRepository.findByEmail("admin@teste.com"))
                 .thenReturn(contaDesativada(UserProfile.SUPERVISOR));
 
@@ -87,9 +87,9 @@ class SecurityFilterTest {
     }
 
     @Test
-    @DisplayName("nao autentica quando o token nao corresponde a nenhuma conta")
+    @DisplayName("não autentica quando o token não corresponde a nenhuma conta")
     void naoAutenticaTokenOrfao() throws Exception {
-        comToken("token.valido");
+        comToken("token.válido");
         when(userRepository.findByEmail("admin@teste.com")).thenReturn(null);
 
         filter.doFilter(request, response, chain);
@@ -98,7 +98,7 @@ class SecurityFilterTest {
     }
 
     @Test
-    @DisplayName("sem header, nao ha autenticacao nem consulta a base de dados")
+    @DisplayName("sem header, não há autenticação nem consulta à base de dados")
     void semHeaderNaoConsulta() throws Exception {
         filter.doFilter(request, response, chain);
 
@@ -107,9 +107,9 @@ class SecurityFilterTest {
     }
 
     @Test
-    @DisplayName("o header sem prefixo Bearer e ignorado")
+    @DisplayName("o header sem prefixo Bearer é ignorado")
     void semPrefixoBearerEIgnorado() throws Exception {
-        request.addHeader("Authorization", "token.valido");
+        request.addHeader("Authorization", "token.válido");
 
         filter.doFilter(request, response, chain);
 
@@ -118,9 +118,9 @@ class SecurityFilterTest {
     }
 
     @Test
-    @DisplayName("uma conta desativada nao impede a continuacao da cadeia: o 401 e decidido mais tarde")
+    @DisplayName("uma conta desativada não impede a continuação da cadeia: o 401 é decidido mais tarde")
     void contaDesativadaNaoBloqueiaACadeia() throws Exception {
-        comToken("token.valido");
+        comToken("token.válido");
         when(userRepository.findByEmail("admin@teste.com"))
                 .thenReturn(contaDesativada(UserProfile.ANALIST));
 
@@ -130,11 +130,11 @@ class SecurityFilterTest {
     }
 
     @Test
-    @DisplayName("um perfil sem nome continua a autenticar: a falta de perfil nao e falta de conta")
+    @DisplayName("um perfil sem nome continua a autenticar: a falta de perfil não é falta de conta")
     void perfilNuloAutentica() throws Exception {
         User semPerfil = TestFixtures.analyst();
         semPerfil.setProfile(null);
-        comToken("token.valido");
+        comToken("token.válido");
         when(userRepository.findByEmail("admin@teste.com")).thenReturn(semPerfil);
 
         filter.doFilter(request, response, chain);
@@ -143,7 +143,7 @@ class SecurityFilterTest {
     }
 
     @Test
-    @DisplayName("o valor default de active e true, para os registos existentes continuarem a entrar")
+    @DisplayName("o valor default de active é true, para os registros existentes continuarem a entrar")
     void activePorDefeito() {
         User novo = new User(1L, "Novo", "novo@teste.com", "hash", UserProfile.ANALIST);
 

@@ -136,7 +136,7 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("cada utilizador tem exatamente uma autoridade")
+        @DisplayName("cada usuário tem exatamente uma autoridade")
         void umaUnicaAutoridade() {
             Collection<? extends GrantedAuthority> authorities =
                     new User(1L, "A", "a@t.com", "x", UserProfile.ANALIST).getAuthorities();

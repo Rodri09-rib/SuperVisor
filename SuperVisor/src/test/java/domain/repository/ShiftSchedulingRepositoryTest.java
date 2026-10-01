@@ -41,7 +41,7 @@ class ShiftSchedulingRepositoryTest extends AbstractJpaIntegrationTest {
     class JpaRepository {
 
         @Test
-        @DisplayName("save persiste a ligação com a escala e com o utilizador")
+        @DisplayName("save persiste a ligação com a escala e com o usuário")
         void guardaEscalaEUtilizador() {
             ShiftScheduling alocacao = shiftSchedulingRepository.saveAndFlush(TestFixtures.allocation(escala, joao));
             entityManager.clear();
@@ -79,7 +79,7 @@ class ShiftSchedulingRepositoryTest extends AbstractJpaIntegrationTest {
         }
 
         @Test
-        @DisplayName("trocar o utilizador da alocação é persistido (base da troca de turno)")
+        @DisplayName("trocar o usuário da alocação é persistido (base da troca de turno)")
         void trocaUtilizadorPersistida() {
             ShiftScheduling alocacao = shiftSchedulingRepository.saveAndFlush(TestFixtures.allocation(escala, admin));
 
@@ -262,7 +262,7 @@ class ShiftSchedulingRepositoryTest extends AbstractJpaIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Obrigatoriedade do utilizador, da escala e do turno")
+    @DisplayName("Obrigatoriedade do usuário, da escala e do turno")
     class Obrigatoriedade {
 
         @Test
@@ -277,7 +277,7 @@ class ShiftSchedulingRepositoryTest extends AbstractJpaIntegrationTest {
         }
 
         @Test
-        @DisplayName("o utilizador não pode ficar nulo em base de dados")
+        @DisplayName("o usuário não pode ficar nulo em base de dados")
         void utilizadorObrigatorio() {
             ShiftScheduling alocacao = new ShiftScheduling();
             alocacao.setEditionScale(escala);
@@ -299,7 +299,7 @@ class ShiftSchedulingRepositoryTest extends AbstractJpaIntegrationTest {
         }
 
         @Test
-        @DisplayName("as colunas turno, utilizador e escala estão definidas como NOT NULL")
+        @DisplayName("as colunas turno, usuário e escala estão definidas como NOT NULL")
         void colunasNotNull() {
             java.util.List<String> colunas = entityManager
                     .createNativeQuery("""

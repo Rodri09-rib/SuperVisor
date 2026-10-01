@@ -13,7 +13,7 @@ import java.time.LocalDate;
  * os dois com a mesma data.
  *
  * <p>{@code createdAt} é o registo de quando a folga foi lançada, e não um dado
- * pedido ao utilizador: serve para ordenar o histórico e para se perceber quem
+ * pedido ao usuário: serve para ordenar o histórico e para se perceber quem
  * foi atualizado mais tarde. Fica preenchido pela aplicação, nunca pelo
  * cliente.
  */
@@ -41,7 +41,7 @@ public class UserLeave {
     /**
      * Momento do registo. Anotado como {@code Instant} e não {@code OffsetDateTime}
      * porque é um instante, e não uma data com fusos: o que interessa é "quando
-     * foi escrito", e a base guarda o mesmo formato nos dois casos.
+     * foi escrito", e a base salva o mesmo formato nos dois casos.
      */
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();

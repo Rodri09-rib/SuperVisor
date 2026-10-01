@@ -26,10 +26,10 @@ public class LeaveService {
      * Todas as folgas, ou as de uma pessoa.
      *
      * <p>Ao contrário do histórico de trocas, aqui a leitura não é filtrada por
-     * perfil. A falta de uma pessoa é informação de toda a equipa — o resto
+     * perfil. A falta de uma pessoa é informação de toda a equipe — o resto
      * precisa de saber quem não está — e o que a aplicação protege não é o
      * facto de estar de folga, que já é visível no calendário, mas o texto
-     * opcional do motivo. A lista devolve o que a equipa precisa de ver.
+     * opcional do motivo. A lista devolve o que a equipe precisa ver.
      */
     @Transactional(readOnly = true)
     public List<UserLeaveDTO> listar(Long userId, UserProfile perfilDeQuemPede) {
@@ -87,10 +87,10 @@ public class LeaveService {
 
     private User utilizadorAtivo(Long userId) {
         User utilizador = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado."));
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
         if (!utilizador.isActive()) {
-            throw new IllegalArgumentException("Não é possível registar folga a um utilizador inativo.");
+            throw new IllegalArgumentException("Não é possível registrar folga a um usuário inativo.");
         }
 
         return utilizador;

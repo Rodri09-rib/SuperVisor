@@ -67,8 +67,8 @@ class UserControllerTest {
     void setUp() {
         UserController controller = new UserController();
         ReflectionTestUtils.setField(controller, "userService", userService);
-        // A ProfileAuthorization real, e nao um mock, para o teste cobrir a
-        // ligacao entre o perfil do principal e o 403 devolvido.
+        // A ProfileAuthorization real, e não um mock, para o teste cobrir a
+        // ligação entre o perfil do principal e o 403 devolvido.
         ReflectionTestUtils.setField(controller, "profileAuthorization", new ProfileAuthorization());
         ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().build();
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -92,13 +92,13 @@ class UserControllerTest {
 
     private ActiveUserDTO criado() {
         return new ActiveUserDTO(7L, "João Silva", "joao.silva@teste.com", UserProfile.ANALIST,
-                null, "Sem equipa", true);
+                null, "Sem equipe", true);
     }
 
-    /** O mesmo utilizador, mas já desativado, para as respostas de estado. */
+    /** O mesmo usuário, mas já desativado, para as respostas de estado. */
     private ActiveUserDTO desativado() {
         return new ActiveUserDTO(7L, "João Silva", "joao.silva@teste.com", UserProfile.ANALIST,
-                null, "Sem equipa", false);
+                null, "Sem equipe", false);
     }
 
     @Nested
@@ -106,7 +106,7 @@ class UserControllerTest {
     class Leitura {
 
         @Test
-        @DisplayName("GET devolve 200 com a lista de utilizadores ativos")
+        @DisplayName("GET devolve 200 com a lista de usuários ativos")
         void listaAtivos() throws Exception {
             when(userService.listarAtivos()).thenReturn(java.util.List.of(criado()));
 
@@ -116,7 +116,7 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("GET não expõe a password de nenhum utilizador")
+        @DisplayName("GET não expõe a senha de nenhum usuário")
         void listaNaoExpõeASenha() throws Exception {
             when(userService.listarAtivos()).thenReturn(java.util.List.of(criado()));
 
@@ -134,7 +134,7 @@ class UserControllerTest {
     class Criacao {
 
         @Test
-        @DisplayName("o SUPERVISOR cria o utilizador e recebe 201")
+        @DisplayName("o SUPERVISOR cria o usuário e recebe 201")
         void supervisorCria() throws Exception {
             autenticarComo(TestFixtures.supervisor());
             when(userService.criar(any(CreateUserRequestDTO.class))).thenReturn(criado());
@@ -148,7 +148,7 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("a resposta não inclui a password, mesmo quando o serviço devolve a entidade")
+        @DisplayName("a resposta não inclui a senha, mesmo quando o serviço devolve a entidade")
         void respostaNaoExpõeASenha() throws Exception {
             autenticarComo(TestFixtures.supervisor());
             when(userService.criar(any(CreateUserRequestDTO.class))).thenReturn(criado());
@@ -262,7 +262,7 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("uma password com menos de 6 caracteres dá 400 e nomeia o campo")
+        @DisplayName("uma senha com menos de 6 caracteres dá 400 e nomeia o campo")
         void passwordCurta() throws Exception {
             autenticarComo(TestFixtures.supervisor());
 
@@ -325,7 +325,7 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("a equipa pode vir na criação, que era o campo que não tinha forma de ser preenchida")
+        @DisplayName("a equipe pode vir na criação, que era o campo que não tinha forma de ser preenchida")
         void equipaNaCriacao() throws Exception {
             autenticarComo(TestFixtures.supervisor());
             when(userService.criar(any(CreateUserRequestDTO.class))).thenReturn(criado());
@@ -345,7 +345,7 @@ class UserControllerTest {
     }
 
     @Nested
-    @DisplayName("Gestão de utilizadores, restrita ao SUPERVISOR")
+    @DisplayName("Gerenciamento de usuários, restrita ao SUPERVISOR")
     class Gestao {
 
         private static final String ID = "7";
@@ -367,7 +367,7 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("PUT altera o cadastro e devolve 200 com o utilizador")
+        @DisplayName("PUT altera o cadastro e devolve 200 com o usuário")
         void supervisorAlteraOCadastro() throws Exception {
             autenticarComo(TestFixtures.supervisor());
             when(userService.atualizar(any(Long.class), any(UpdateUserRequestDTO.class)))
@@ -415,7 +415,7 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("PATCH encaminha o id de quem está a pedir, para a regra de autodesativação")
+        @DisplayName("PATCH encaminha o id de quem está pedindo, para a regra de autodesativação")
         void encaminhaOPrincipal() throws Exception {
             autenticarComoSupervisor();
             when(userService.alterarEstado(any(Long.class), anyBoolean(), anyLong()))
@@ -468,7 +468,7 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("o ANALIST recebe 403 em todas as operações de gestão, e o serviço não é chamado")
+        @DisplayName("o ANALIST recebe 403 em todas as operações de gerenciamento, e o serviço não é chamado")
         void analistRecebe403EmTodoOGesto() throws Exception {
             autenticarComo(TestFixtures.analyst());
 
@@ -495,7 +495,7 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("uma equipa fora do enum é recusada na desserialização")
+        @DisplayName("uma equipe fora do enum é recusada na desserialização")
         void equipaDesconhecidaDa400() throws Exception {
             autenticarComo(TestFixtures.supervisor());
 
@@ -524,17 +524,17 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("utilizador inexistente, levantado pelo serviço, vira 400 com a mensagem")
+        @DisplayName("usuário inexistente, levantado pelo serviço, vira 400 com a mensagem")
         void inexistenteDa400() throws Exception {
             autenticarComo(TestFixtures.supervisor());
             when(userService.atualizar(any(Long.class), any(UpdateUserRequestDTO.class)))
-                    .thenThrow(new RegraDeNegocioException("Utilizador não encontrado."));
+                    .thenThrow(new RegraDeNegocioException("Usuário não encontrado."));
 
             mockMvc.perform(put(url(""))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(alteracaoJson()))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value("Utilizador não encontrado."));
+                    .andExpect(jsonPath("$.message").value("Usuário não encontrado."));
         }
     }
 }

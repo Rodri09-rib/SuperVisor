@@ -12,7 +12,7 @@ import java.time.LocalDate;
  *
  * <p>A referência é uma data qualquer da semana pretendida, não o primeiro dia.
  * Pedir a escala de quinta-feira é a operação mais comum — é quando se percebe
- * que a semana ainda não foi feita — e exigir que o utilizador calculasse a
+ * que a semana ainda não foi feita — e exigir que o usuário calculasse a
  * segunda-feira da semana seria trabalho inútil.
  *
  * <p>A data chega como {@link LocalDate} e o Jackson trata-a em ISO-8601, que é

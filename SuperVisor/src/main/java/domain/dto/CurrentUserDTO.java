@@ -4,7 +4,7 @@ import domain.model.entities.User;
 import domain.model.enums.UserProfile;
 
 /**
- * Vista do utilizador autenticado usada pelo frontend: identifica quem está
+ * Vista do usuário autenticado usada pelo frontend: identifica quem está
  * logged in (nome para a saudação) e qual o seu perfil, sem expor a senha.
  */
 public record CurrentUserDTO(

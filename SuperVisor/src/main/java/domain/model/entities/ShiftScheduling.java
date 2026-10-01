@@ -30,7 +30,7 @@ public class ShiftScheduling {
     private EditionScale editionScale;
 
     /**
-     * Utilizador cadastrado que cobre o turno. Obrigatório por regra de
+     * Usuário cadastrado que cobre o turno. Obrigatório por regra de
      * negócio: é proibido registrar nomes em texto livre, portanto não existe
      * alocação sem {@link User} associado.
      */
@@ -50,7 +50,7 @@ public class ShiftScheduling {
     private LocalDate specificDate;
 
     /**
-     * Atribuições especiais do utilizador dentro deste turno (opcional). A
+     * Atribuições especiais do usuário dentro deste turno (opcional). A
      * coleção é um {@code Set} porque a ordem não faz parte do domínio; a
      * ordem estável para leitura (ordem de declaração do enum) é garantida na
      * transformação para DTO.
@@ -63,7 +63,7 @@ public class ShiftScheduling {
     private Set<AssignmentType> assignments = new LinkedHashSet<>();
 
     /**
-     * Horário especial dentro do turno, para os casos em que o utilizador
+     * Horário especial dentro do turno, para os casos em que o usuário
      * faz um horário diferenciado. Ambos são opcionais, mas têm de ser
      * informados em conjunto (ver a validação no serviço).
      */

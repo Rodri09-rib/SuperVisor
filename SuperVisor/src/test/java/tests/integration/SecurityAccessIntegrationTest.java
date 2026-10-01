@@ -129,7 +129,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
     class ComTokenValido {
 
         @Test
-        @DisplayName("o utilizador autenticado acede aos recursos protegidos")
+        @DisplayName("o usuário autenticado acede aos recursos protegidos")
         void acessoLiberadoComToken() throws Exception {
             criarUsuario("Administrador", "admin@teste.com",
                     domain.model.enums.UserProfile.SUPERVISOR);
@@ -183,7 +183,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("um token bem assinado cujo utilizador foi removido deixa de autenticar com 401")
+        @DisplayName("um token bem assinado cujo usuário foi removido deixa de autenticar com 401")
         void tokenDeUtilizadorRemovido() throws Exception {
             var user = criarUsuario("Temporário", "temporario@teste.com",
                     domain.model.enums.UserProfile.ANALIST);
@@ -197,7 +197,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("um token válido continua válido depois que a senha do utilizador muda")
+        @DisplayName("um token válido continua válido depois que a senha do usuário muda")
         void tokenSobreviveATrocaDeSenha() throws Exception {
             var user = criarUsuario("Administrador", "admin@teste.com",
                     domain.model.enums.UserProfile.SUPERVISOR);
@@ -211,7 +211,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         /**
          * O {@code SecurityFilter} valida o formato do header em vez de remover
          * o prefixo por substituição global: só aceita um header que comece
-         * exactamente por {@code "Bearer "} e rejeita explicitamente um prefixo
+         * exatamente por {@code "Bearer "} e rejeita explicitamente um prefixo
          * duplicado. Um token cru ou mal formado nunca chega a ser validado, e o
          * pedido é recusado com 401.
          */
@@ -386,7 +386,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("um ANALIST desativado recebe 401, e não 403: sem conta ativa não há utilizador reconhecido")
+        @DisplayName("um ANALIST desativado recebe 401, e não 403: sem conta ativa não há usuário reconhecido")
         void inativoNaoAutentica() throws Exception {
             mockMvc.perform(post("/api/v1/allocations")
                             .with(autorizacao("inativo@teste.com"))
@@ -432,12 +432,12 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
     }
 
     /**
-     * Criar um utilizador é a operação que define a password de alguém, e por
+     * Criar um usuário é a operação que define a senha de alguém, e por
      * isso é restrita ao perfil {@code SUPERVISOR} — o mesmo motivo pelo qual
      * a escrita de alocações o é.
      */
     @Nested
-    @DisplayName("Criação de utilizadores restrita ao SUPERVISOR")
+    @DisplayName("Criação de usuários restrita ao SUPERVISOR")
     class CriacaoDeUtilizadores {
 
         private static final String NOVO = "nova.pessoa@teste.com";
@@ -449,7 +449,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
                 .formatted(NOVO, PASSWORD_EM_CLARO);
 
         @Test
-        @DisplayName("SUPERVISOR cria o utilizador, recebe 201, e a password fica encriptada")
+        @DisplayName("SUPERVISOR cria o usuário, recebe 201, e a senha fica criptografada")
         void supervisorCriaComPasswordEncriptada() throws Exception {
             criarUsuario("Administrador", "admin@teste.com",
                     domain.model.enums.UserProfile.SUPERVISOR);
@@ -465,7 +465,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
                     .andExpect(jsonPath("$.profile").value("ANALIST"))
                     .andReturn();
 
-            // A resposta é um DTO e não a entidade: se a password viesse no
+            // A resposta é um DTO e não a entidade: se a senha viesse no
             // corpo, o hash de toda a gente estaria a circular pelo browser.
             org.assertj.core.api.Assertions
                     .assertThat(resultado.getResponse().getContentAsString())
@@ -483,7 +483,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("o utilizador criado nasce ativo e pode entrar logo a seguir")
+        @DisplayName("o usuário criado nasce ativo e pode entrar logo a seguir")
         void utilizadorCriadoNasceAtivo() throws Exception {
             criarUsuario("Administrador", "admin@teste.com",
                     domain.model.enums.UserProfile.SUPERVISOR);
@@ -509,7 +509,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("a conta nova aparece na lista de utilizadores ativos")
+        @DisplayName("a conta nova aparece na lista de usuários ativos")
         void apareceNaListaDeAtivos() throws Exception {
             criarUsuario("Administrador", "admin@teste.com",
                     domain.model.enums.UserProfile.SUPERVISOR);
@@ -564,7 +564,7 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("e-mail duplicado dá 400 com a mensagem, e não grava um segundo registo")
+        @DisplayName("e-mail duplicado dá 400 com a mensagem, e não grava um segundo registro")
         void emailDuplicadoDa400() throws Exception {
             criarUsuario("Administrador", "admin@teste.com",
                     domain.model.enums.UserProfile.SUPERVISOR);

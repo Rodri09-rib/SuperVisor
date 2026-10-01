@@ -89,7 +89,7 @@ class AllocationServiceTest {
         return new AllocationRequestDTO(10L, 5L, turno, null, null, null, null);
     }
 
-    /** Simula o repositorio a devolver a entidade gravada, com id atribuido. */
+    /** Simula o repositorio a devolver a entidade gravada, com id atribuído. */
     private void gravacaoComId(Long id) {
         when(shiftSchedulingRepository.save(any(ShiftScheduling.class))).thenAnswer(invocacao -> {
             ShiftScheduling alocacao = invocacao.getArgument(0);
@@ -109,7 +109,7 @@ class AllocationServiceTest {
     class Create {
 
         @Test
-        @DisplayName("resolve utilizador e escala, e grava todos os campos")
+        @DisplayName("resolve usuário e escala, e grava todos os campos")
         void gravaTodosOsCampos() {
             when(editionScaleRepository.findById(10L)).thenReturn(Optional.of(escala(10L)));
             when(userRepository.findById(5L)).thenReturn(Optional.of(analistaAtivo(5L)));
@@ -137,7 +137,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("sem atribuicoes nem horario especial, a alocacao fica sem horario customizado")
+        @DisplayName("sem atribuições nem horário especial, a alocação fica sem horário customizado")
         void alocacaoMinima() {
             when(editionScaleRepository.findById(10L)).thenReturn(Optional.of(escala(10L)));
             when(userRepository.findById(5L)).thenReturn(Optional.of(analistaAtivo(5L)));
@@ -153,7 +153,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("aceita o horario 21h00-00h00 em T5")
+        @DisplayName("aceita o horário 21h00-00h00 em T5")
         void aceitaHorarioDoT5() {
             when(editionScaleRepository.findById(10L)).thenReturn(Optional.of(escala(10L)));
             when(userRepository.findById(5L)).thenReturn(Optional.of(analistaAtivo(5L)));
@@ -176,14 +176,14 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("rejeita um pedido sem utilizador")
+        @DisplayName("rejeita um pedido sem usuário")
         void exigeUtilizador() {
             AllocationRequestDTO dto = new AllocationRequestDTO(10L, null, ShiftType.T1_SAB,
                     null, null, null, null);
 
             assertThatThrownBy(() -> service.create(dto))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Escolha o utilizador que cobre o turno.");
+                    .hasMessageContaining("Escolha o usuário que cobre o turno.");
             verify(shiftSchedulingRepository, never()).save(any());
         }
 
@@ -200,14 +200,14 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("rejeita um utilizador inexistente")
+        @DisplayName("rejeita um usuário inexistente")
         void rejeitaUtilizadorInexistente() {
             when(editionScaleRepository.findById(10L)).thenReturn(Optional.of(escala(10L)));
             when(userRepository.findById(5L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.create(pedido(ShiftType.T1_SAB)))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Utilizador n\u00e3o encontrado.");
+                    .hasMessageContaining("Usuário n\u00e3o encontrado.");
             verify(shiftSchedulingRepository, never()).save(any());
         }
 
@@ -223,7 +223,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("rejeita um utilizador inativo")
+        @DisplayName("rejeita um usuário inativo")
         void rejeitaUtilizadorInativo() {
             when(editionScaleRepository.findById(10L)).thenReturn(Optional.of(escala(10L)));
             when(userRepository.findById(5L)).thenReturn(Optional.of(analistaInativo(5L)));
@@ -235,7 +235,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("exige o inicio e o fim do horario especial em conjunto")
+        @DisplayName("exige o inicio e o fim do horário especial em conjunto")
         void exigeInicioEFimEmConjunto() {
             when(editionScaleRepository.findById(10L)).thenReturn(Optional.of(escala(10L)));
             when(userRepository.findById(5L)).thenReturn(Optional.of(analistaAtivo(5L)));
@@ -250,7 +250,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("rejeita um horario especial fora do turno")
+        @DisplayName("rejeita um horário especial fora do turno")
         void rejeitaHorarioForaDoTurno() {
             when(editionScaleRepository.findById(10L)).thenReturn(Optional.of(escala(10L)));
             when(userRepository.findById(5L)).thenReturn(Optional.of(analistaAtivo(5L)));
@@ -270,7 +270,7 @@ class AllocationServiceTest {
     class Update {
 
         @Test
-        @DisplayName("substitui os campos editaveis da alocacao existente")
+        @DisplayName("substitui os campos editáveis da alocação existente")
         void substituiCamposEditaveis() {
             ShiftScheduling existente = TestFixtures.allocation(escala(10L), analistaAtivo(5L));
             existente.setId(42L);
@@ -294,7 +294,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("rejeita uma alocacao inexistente")
+        @DisplayName("rejeita uma alocação inexistente")
         void rejeitaAlocacaoInexistente() {
             when(shiftSchedulingRepository.findById(404L)).thenReturn(Optional.empty());
 
@@ -305,7 +305,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("aplica as mesmas regras de validacao da criacao")
+        @DisplayName("aplica as mesmas regras de validação da criação")
         void reaplicaAsValidacoesDaCriacao() {
             ShiftScheduling existente = TestFixtures.allocation(escala(10L), analistaAtivo(5L));
             existente.setId(42L);
@@ -507,8 +507,8 @@ class AllocationServiceTest {
         void alteracaoRecusadaNaoDeixaRastro() {
             // Na alteração a entidade é gerida pelo Hibernate. Se os valores
             // novos fossem escritos antes da regra de sobreposição correr, um
-            // pedido recusado deixaria a linha alterada na mesma transacão: o
-            // utilizador receberia um erro e, ainda assim, a escala mudaria.
+            // pedido recusado deixaria a linha alterada na mesma transação: o
+            // usuário receberia um erro e, ainda assim, a escala mudaria.
             ShiftScheduling existente = TestFixtures.allocation(
                     escala(10L), analistaAtivo(5L), ShiftType.T3_SAB, null);
             existente.setId(100L);
@@ -539,7 +539,7 @@ class AllocationServiceTest {
     class Delete {
 
         @Test
-        @DisplayName("remove a alocacao existente")
+        @DisplayName("remove a alocação existente")
         void removeAlocacaoExistente() {
             ShiftScheduling existente = TestFixtures.allocation(escala(10L), analistaAtivo(5L));
             existente.setId(42L);
@@ -552,7 +552,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("rejeita uma alocacao inexistente sem chegar ao delete")
+        @DisplayName("rejeita uma alocação inexistente sem chegar ao delete")
         void rejeitaAlocacaoInexistente() {
             when(shiftSchedulingRepository.findById(404L)).thenReturn(Optional.empty());
 
@@ -563,7 +563,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("nao apaga a entidade quando o pedido e recusado")
+        @DisplayName("não apaga a entidade quando o pedido é recusado")
         void naoApagaQuandoRecusado() {
             when(shiftSchedulingRepository.findById(42L)).thenReturn(Optional.empty());
 

@@ -13,16 +13,16 @@
 -- tabela com dados: as linhas existentes são preenchidas com `true` e as contas
 -- antigas continuam a funcionar sem backfill manual.
 --
--- Este ficheiro corre no arranque, depois do Hibernate (ver
+-- Este arquivo corre no arranque, depois do Hibernate (ver
 -- `spring.jpa.defer-datasource-initialization` em application.yml), por isso a
 -- tabela já existe quando estas instruções correm.
 --
 -- Só há DDL simples, sem blocos `DO $$ ... $$`: o leitor de scripts do Spring
--- parte o ficheiro em `;` e não percebe dollar-quoting do PostgreSQL, pelo que
+-- parte o arquivo em `;` e não percebe dollar-quoting do PostgreSQL, pelo que
 -- um bloco procedural era truncado e falhava com "unterminated dollar quote".
 
 ALTER TABLE tb_user ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT true;
 
 -- Numa base nova, o Hibernate cria a coluna sem default; sem esta instrução, um
--- registo inserido sem a coluna ficava com `false` em vez de ativo.
+-- registro inserido sem a coluna ficava com `false` em vez de ativo.
 ALTER TABLE tb_user ALTER COLUMN active SET DEFAULT true;

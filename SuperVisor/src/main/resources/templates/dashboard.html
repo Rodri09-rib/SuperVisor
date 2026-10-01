@@ -1,11 +1,22 @@
 <!DOCTYPE html>
-<html lang="pt-PT" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SuperVisor - Painel Central</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .modal-dialog-scrollable .modal-content {
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-dialog-scrollable .modal-body {
+            overflow-y: auto !important;
+            max-height: calc(85vh - 130px);
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -23,10 +34,10 @@
             <h3 class="fw-bold text-secondary mb-0">Escalas</h3>
             <div class="d-flex gap-2">
                 <button id="btnGerirUtilizadores" class="btn btn-outline-primary d-none">
-                    <i class="bi bi-person-gear"></i> Gerir utilizadores
+                    <i class="bi bi-person-gear"></i> Gerenciar usuários
                 </button>
                 <button id="btnNovoUsuario" class="btn btn-primary d-none">
-                    <i class="bi bi-person-plus"></i> Novo Utilizador
+                    <i class="bi bi-person-plus"></i> Novo Usuário
                 </button>
                 <button id="btnNovaEscala" class="btn btn-primary d-none">
                     <i class="bi bi-plus-lg"></i> Nova Escala
@@ -54,9 +65,9 @@
                     <tr>
                         <td colspan="4" class="text-center py-5 text-muted">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">A carregar escalas...</span>
+                                <span class="visually-hidden">Carregando escalas...</span>
                             </div>
-                            <div class="mt-2">A carregar escalas...</div>
+                            <div class="mt-2">Carregando escalas...</div>
                         </td>
                     </tr>
                     </tbody>
@@ -86,7 +97,7 @@
                         <tr>
                             <th scope="col">Data</th>
                             <th scope="col">Turno</th>
-                            <th scope="col">Utilizador</th>
+                            <th scope="col">Usuário</th>
                             <th scope="col">Estado</th>
                             <th scope="col"><span class="visually-hidden">Resposta</span></th>
                         </tr>
@@ -97,7 +108,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary d-none" id="btnEditarAlocacoes">
-                    <i class="bi bi-people"></i> Gerir alocações
+                    <i class="bi bi-people"></i> Gerenciar alocações
                 </button>
                 <button type="button" class="btn btn-success" id="btnTrocarDaEscala">
                     <i class="bi bi-arrow-left-right"></i> Pedir troca nesta escala
@@ -108,7 +119,7 @@
     </div>
 </div>
 
-<!-- Modal: Gestão de alocações (administrador) -->
+<!-- Modal: Gerenciamento de alocações (administrador) -->
 <div class="modal fade" id="alocacoesModal" tabindex="-1" aria-labelledby="alocacoesTitulo" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -128,10 +139,10 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="alocacaoUtilizador" class="form-label fw-semibold">
-                                Utilizador <span class="text-danger">*</span>
+                                Usuário <span class="text-danger">*</span>
                             </label>
                             <select id="alocacaoUtilizador" class="form-select"></select>
-                            <div class="form-text">Apenas utilizadores cadastrados e ativos.</div>
+                            <div class="form-text">Apenas usuários cadastrados e ativos.</div>
                         </div>
 
                         <div class="col-md-6">
@@ -219,7 +230,7 @@
                     <div class="mb-3">
                         <label for="trocaDestino" class="form-label fw-semibold">Turno que pretendo receber</label>
                         <select id="trocaDestino" class="form-select"></select>
-                        <div class="form-text">Só são aceites turnos de colegas da mesma escala.</div>
+                        <div class="form-text">Só são aceitos turnos de colegas da mesma escala.</div>
                     </div>
 
                     <div class="mb-0">
@@ -284,13 +295,13 @@
     </div>
 </div>
 
-<!-- Modal: Novo utilizador (administrador) -->
+<!-- Modal: Novo usuário (administrador) -->
 <div class="modal fade" id="modalNovoUsuario" tabindex="-1" aria-labelledby="novoUsuarioTitulo" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form id="novoUsuarioForm" novalidate>
                 <div class="modal-header">
-                    <h5 class="modal-title" id="novoUsuarioTitulo">Novo utilizador</h5>
+                    <h5 class="modal-title" id="novoUsuarioTitulo">Novo usuário</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
@@ -309,10 +320,10 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="novoUsuarioPassword" class="form-label fw-semibold">Password</label>
+                        <label for="novoUsuarioPassword" class="form-label fw-semibold">Senha</label>
                         <input type="password" id="novoUsuarioPassword" class="form-control"
                                minlength="6" autocomplete="new-password">
-                        <div class="form-text">Mínimo de 6 caracteres. É a que o utilizador vai usar para entrar.</div>
+                        <div class="form-text">Mínimo de 6 caracteres. É a que o usuário vai usar para entrar.</div>
                     </div>
 
                     <div class="mb-3">
@@ -321,23 +332,23 @@
                             <option value="ANALIST">Analista</option>
                             <option value="SUPERVISOR">Supervisor (administrador)</option>
                         </select>
-                        <div class="form-text">O supervisor é quem pode criar utilizadores e gerir alocações.</div>
+                        <div class="form-text">O supervisor é quem pode criar usuários e gerenciar alocações.</div>
                     </div>
 
                     <div class="mb-0">
-                        <label for="novoUsuarioEquipa" class="form-label fw-semibold">Equipa</label>
+                        <label for="novoUsuarioEquipa" class="form-label fw-semibold">Equipe</label>
                         <select id="novoUsuarioEquipa" class="form-select">
-                            <option value="">Sem equipa</option>
-                            <option value="EQUIPE_A">Equipa A</option>
-                            <option value="EQUIPE_B">Equipa B</option>
+                            <option value="">Sem equipe</option>
+                            <option value="EQUIPE_A">Equipe A</option>
+                            <option value="EQUIPE_B">Equipe B</option>
                         </select>
-                        <div class="form-text">Quem não tem equipa não entra na escala de presencialidade gerada.</div>
+                        <div class="form-text">Quem não tem equipe não entra na escala de presencialidade gerada.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="btnSubmeterUsuario">
-                        <i class="bi bi-person-plus"></i> Cadastrar utilizador
+                        <i class="bi bi-person-plus"></i> Cadastrar usuário
                     </button>
                 </div>
             </form>
@@ -345,12 +356,12 @@
     </div>
 </div>
 
-<!-- Modal: Gestão de utilizadores (administrador) -->
+<!-- Modal: Gerenciamento de usuários (administrador) -->
 <div class="modal fade" id="utilizadoresModal" tabindex="-1" aria-labelledby="utilizadoresTitulo" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="utilizadoresTitulo">Gerir utilizadores</h5>
+                <h5 class="modal-title" id="utilizadoresTitulo">Gerenciar usuários</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
@@ -359,7 +370,7 @@
                 <div class="alert alert-light border small">
                     <i class="bi bi-info-circle me-2"></i>
                     O e-mail não é editável: é a identidade da conta e o que vai dentro do token.
-                    Trocá-lo deixaria no ar os tokens já emitidos. Use a redefinição de password
+                    Trocá-lo deixaria no ar os tokens já emitidos. Use a redefinição de senha
                     quando alguém precisar de recuperar o acesso.
                 </div>
 
@@ -370,7 +381,7 @@
                             <th scope="col">Nome</th>
                             <th scope="col">E-mail</th>
                             <th scope="col">Perfil</th>
-                            <th scope="col">Equipa</th>
+                            <th scope="col">Equipe</th>
                             <th scope="col">Conta</th>
                             <th scope="col" class="text-end">Ações</th>
                         </tr>
@@ -386,13 +397,13 @@
     </div>
 </div>
 
-<!-- Modal: Editar utilizador -->
+<!-- Modal: Editar usuário -->
 <div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form id="editarUsuarioForm" novalidate>
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editarUsuarioTitulo">Editar utilizador</h5>
+                    <h5 class="modal-title" id="editarUsuarioTitulo">Editar usuário</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
@@ -419,19 +430,19 @@
                     </div>
 
                     <div class="mb-0">
-                        <label for="editarUsuarioEquipa" class="form-label fw-semibold">Equipa</label>
+                        <label for="editarUsuarioEquipa" class="form-label fw-semibold">Equipe</label>
                         <select id="editarUsuarioEquipa" class="form-select">
-                            <option value="">Sem equipa</option>
-                            <option value="EQUIPE_A">Equipa A</option>
-                            <option value="EQUIPE_B">Equipa B</option>
+                            <option value="">Sem equipe</option>
+                            <option value="EQUIPE_A">Equipe A</option>
+                            <option value="EQUIPE_B">Equipe B</option>
                         </select>
-                        <div class="form-text">Escolher "Sem equipa" retira a pessoa da equipa.</div>
+                        <div class="form-text">Escolher "Sem equipe" retira a pessoa da equipe.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="btnGuardarUsuario">
-                        <i class="bi bi-check-lg"></i> Guardar alterações
+                        <i class="bi bi-check-lg"></i> Salvar alterações
                     </button>
                 </div>
             </form>
@@ -439,13 +450,13 @@
     </div>
 </div>
 
-<!-- Modal: Redefinir password -->
+<!-- Modal: Redefinir senha -->
 <div class="modal fade" id="senhaModal" tabindex="-1" aria-labelledby="senhaTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form id="senhaForm" novalidate>
                 <div class="modal-header">
-                    <h5 class="modal-title" id="senhaTitulo">Redefinir password</h5>
+                    <h5 class="modal-title" id="senhaTitulo">Redefinir senha</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
@@ -454,7 +465,7 @@
                     <p class="small text-muted mb-3" id="senhaUtilizadorNome"></p>
 
                     <div class="mb-0">
-                        <label for="senhaNova" class="form-label fw-semibold">Nova password</label>
+                        <label for="senhaNova" class="form-label fw-semibold">Nova senha</label>
                         <input type="password" id="senhaNova" class="form-control"
                                minlength="6" autocomplete="new-password">
                         <div class="form-text">Mínimo de 6 caracteres. A anterior deixa de funcionar.</div>

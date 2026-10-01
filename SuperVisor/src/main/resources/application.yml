@@ -28,9 +28,9 @@ spring:
 api:
   security:
     token:
-      # Segredo de assinatura do JWT. OBRIGATORIO e SEM valor por omissao, de
-      # proposito: a aplicacao deve recusar arrancar em vez de assinar tokens com
-      # uma chave previsivel. Definir como variavel de ambiente (ver .env.example).
-      # Os testes nao dependem deste valor - a propriedade e sobrescrita em
+      # Segredo de assinatura do JWT. OBRIGATÓRIO e SEM valor por omissão, de
+      # propósito: a aplicação deve recusar arrancar em vez de assinar tokens com
+      # uma chave previsível. Definir como variável de ambiente (ver .env.example).
+      # Os testes não dependem deste valor - a propriedade e sobrescrita em
       # PostgresTestContainer.registerProperties.
       secret: ${JWT_SECRET}

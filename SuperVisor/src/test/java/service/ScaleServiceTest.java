@@ -107,7 +107,7 @@ class ScaleServiceTest {
 
             assertThatThrownBy(() -> scaleService.createScale(dto(404L)))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Utilizador não encontrado");
+                    .hasMessage("Usuário não encontrado");
 
             verify(editionScaleRepository, never()).save(any());
         }

@@ -57,13 +57,13 @@ class LeaveApiIntegrationTest extends AbstractApiIntegrationTest {
     }
 
     /**
-     * Cria um utilizador a partir de uma fixture, mudando apenas o nome e o
+     * Cria um usuário a partir de uma fixture, mudando apenas o nome e o
      * e-mail.
      *
      * <p>Não se escreve o perfil à mão de propósito: o perfil vem da fixture,
-     * que é o mesmo caminho que os restantes testes usam, e assim este ficheiro
+     * que é o mesmo caminho que os restantes testes usam, e assim este arquivo
      * não fica a depender de uma constante que compila de forma inconsistente
-     * entre ficheiros novos.
+     * entre arquivos novos.
      */
     private User criarSupervisor() {
         var base = tests.support.TestFixtures.supervisor();
@@ -106,7 +106,7 @@ class LeaveApiIntegrationTest extends AbstractApiIntegrationTest {
     class Criar {
 
         @Test
-        @DisplayName("o supervisor regista a folga, e ela fica mesmo na base")
+        @DisplayName("o supervisor registra a folga, e ela fica mesmo na base")
         void supervisorCria() throws Exception {
             var resposta = mockMvc.perform(post("/api/v1/leaves")
                             .header("Authorization", "Bearer " + tokenAdmin)
@@ -253,7 +253,7 @@ class LeaveApiIntegrationTest extends AbstractApiIntegrationTest {
         }
 
         @Test
-        @DisplayName("registar folga a um utilizador inativo é 400")
+        @DisplayName("registrar folga a um usuário inativo é 400")
         void utilizadorInativo() throws Exception {
             mockMvc.perform(post("/api/v1/leaves")
                             .header("Authorization", "Bearer " + tokenAdmin)
@@ -261,26 +261,26 @@ class LeaveApiIntegrationTest extends AbstractApiIntegrationTest {
                             .content(folga(inativo.getId(), INICIO, FIM, null)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message")
-                            .value("Não é possível registar folga a um utilizador inativo."));
+                            .value("Não é possível registrar folga a um usuário inativo."));
 
             assertThat(userLeaveRepository.count()).isZero();
         }
 
         @Test
-        @DisplayName("registar folga a um utilizador que não existe é 400, não 500 de chave estrangeira")
+        @DisplayName("registrar folga a um usuário que não existe é 400, não 500 de chave estrangeira")
         void utilizadorInexistente() throws Exception {
             mockMvc.perform(post("/api/v1/leaves")
                             .header("Authorization", "Bearer " + tokenAdmin)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(folga(999_999L, INICIO, FIM, null)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value("Utilizador não encontrado."));
+                    .andExpect(jsonPath("$.message").value("Usuário não encontrado."));
 
             assertThat(userLeaveRepository.count()).isZero();
         }
 
         @Test
-        @DisplayName("um motivo com mais de 500 caracteres é 400, com o campo assinalado")
+        @DisplayName("um motivo com mais de 500 caracteres é 400, com o campo marcado")
         void motivoLongoDemais() throws Exception {
             mockMvc.perform(post("/api/v1/leaves")
                             .header("Authorization", "Bearer " + tokenAdmin)
@@ -298,7 +298,7 @@ class LeaveApiIntegrationTest extends AbstractApiIntegrationTest {
     class Listar {
 
         @Test
-        @DisplayName("sem filtro, traz as folgas de toda a equipa")
+        @DisplayName("sem filtro, traz as folgas de toda a equipe")
         void todas() throws Exception {
             gravar(joao, INICIO, FIM, "Ferro");
             gravar(maria, INICIO.plusDays(7), INICIO.plusDays(9), "Férias");

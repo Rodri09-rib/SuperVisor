@@ -164,7 +164,7 @@ class IntervaloHorarioTest {
         @DisplayName("a meia-noite escreve-se 00h00, e não 24h00")
         void meiaNoiteEscreve00() {
             // O rótulo que se lê é 20h00-00h00; 24h00 seria um horário que não
-            // existe e apareceria no ecrã do supervisor.
+            // existe e apareceria na tela do supervisor.
             assertThat(IntervaloHorario.de(LocalTime.of(20, 0), MEIA_NOITE).formatado())
                     .isEqualTo("20h00-00h00");
         }

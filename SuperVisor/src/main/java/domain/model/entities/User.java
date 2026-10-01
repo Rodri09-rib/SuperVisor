@@ -28,9 +28,9 @@ public class User implements UserDetails {
     private UserProfile profile;
 
     /**
-     * Conta ativa. Só os utilizadores ativos podem entrar na aplicação e
-     * receber alocações, pelo que o selector de pessoas do dashboard os lista a
-     * partir daqui. O valor predefinido é {@code true} para que os utilizadores
+     * Conta ativa. Só os usuários ativos podem entrar na aplicação e
+     * receber alocações, pelo que o seletor de pessoas do dashboard os lista a
+     * partir daqui. O valor predefinido é {@code true} para que os usuários
      * existentes continuem a poder ser escalados sem necessidade de backfill.
      *
      * <p>O nome da coluna é explícito porque o DDL de arranque a cria com
@@ -42,13 +42,13 @@ public class User implements UserDetails {
     private boolean active = true;
 
     /**
-     * Equipa a que o colaborador pertence, ou {@code null} se ainda não foi
+     * Equipe a que o colaborador pertence, ou {@code null} se ainda não foi
      * atribuído a nenhuma.
      *
      * <p>Anulável de propósito: as contas criadas antes de existir o conceito
-     * de equipa não têm equipa, e inventar uma seria inventar um dado. Um
-     * colaborador sem equipa não entra na escala de presencialidade gerada, e a
-     * lista de pessoas mostra-o como "Sem equipa" para que a situação seja
+     * de equipe não têm equipe, e inventar uma seria inventar um dado. Um
+     * colaborador sem equipe não entra na escala de presencialidade gerada, e a
+     * lista de pessoas mostra-o como "Sem equipe" para que a situação seja
      * visível em vez de silenciosa.
      */
     @Enumerated(EnumType.STRING)

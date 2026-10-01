@@ -22,7 +22,7 @@ import java.time.LocalDate;
  * classe não expresses isso. O serviço trata disso e explica o motivo.
  */
 public record UserLeaveRequestDTO(
-        @NotNull(message = "O utilizador da folga é obrigatório.")
+        @NotNull(message = "O usuário da folga é obrigatório.")
         Long userId,
 
         @NotNull(message = "A data de início da folga é obrigatória.")

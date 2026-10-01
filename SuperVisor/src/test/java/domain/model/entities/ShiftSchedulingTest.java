@@ -27,7 +27,7 @@ class ShiftSchedulingTest {
     }
 
     @Test
-    @DisplayName("nova alocação nasce sem atribuições, para não partilhar a coleção")
+    @DisplayName("nova alocação nasce sem atribuições, para não compartilhar a coleção")
     void atribuicoesPadrao() {
         ShiftScheduling allocation = new ShiftScheduling();
 
@@ -136,7 +136,7 @@ class ShiftSchedulingTest {
     }
 
     @Test
-    @DisplayName("o utilizador da alocação pode ser trocado, base da troca de turno")
+    @DisplayName("o usuário da alocação pode ser trocado, base da troca de turno")
     void utilizadorPodeSerTrocado() {
         User original = new User(1L, "A", "a@t.com", "x", null);
         User novo = new User(2L, "B", "b@t.com", "x", null);

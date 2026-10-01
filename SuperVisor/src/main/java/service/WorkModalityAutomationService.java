@@ -57,10 +57,10 @@ public class WorkModalityAutomationService {
      *
      * <p>A operação é repetível: as células que já existam são reescritas com o
      * valor do padrão em vez de duplicadas. A restrição de unicidade
-     * {@code (utilizador, dia)} garante que a segunda passagem não pode criar
+     * {@code (usuário, dia)} garante que a segunda passagem não pode criar
      * linhas iguais, mesmo que duas gerações concorram.
      *
-     * <p>Um colaborador sem equipa não gera linha. Atribuir-lhe um padrão
+     * <p>Um colaborador sem equipe não gera linha. Atribuir-lhe um padrão
      * arbitrário produziria uma escala plausível e errada, e a grelha não
      * distinguiria os dois casos.
      */
@@ -76,7 +76,7 @@ public class WorkModalityAutomationService {
 
         if (colaboradores.isEmpty()) {
             throw new IllegalStateException(
-                    "Nenhum utilizador ativo tem equipa atribuída, por isso não há escala para gerar.");
+                    "Nenhum usuário ativo tem equipe atribuída, por isso não há escala para gerar.");
         }
 
         Map<ChaveCelula, WorkModalitySchedule> existentes = new HashMap<>();
@@ -115,9 +115,9 @@ public class WorkModalityAutomationService {
     /**
      * Escala já existente num intervalo, para a grelha.
      *
-     * <p>Devolve só as linhas que existem. Um utilizador sem equipa não aparece
+     * <p>Devolve só as linhas que existem. Um usuário sem equipe não aparece
      * aqui, o que é coerente com a geração: a grelha mostra quem tem escala, e
-     * a lista de equipas mostra quem está sem equipa atribuída.
+     * a lista de equipes mostra quem está sem equipe atribuída.
      */
     @Transactional(readOnly = true)
     public List<WorkModalityScheduleDTO> listar(LocalDate inicio, LocalDate fim) {
@@ -159,8 +159,8 @@ public class WorkModalityAutomationService {
     /**
      * Regra de alternância.
      *
-     * <p>Comprimida ao essencial: a equipa que está presencial à segunda-feira
-     * numa semana ímpar é a equipa A, e a semana par é a sua imagem espelhada.
+     * <p>Comprimida ao essencial: a equipe que está presencial à segunda-feira
+     * numa semana ímpar é a equipe A, e a semana par é a sua imagem espelhada.
      * Tudo o que o enunciado descreve — A ímpar presencial seg/qua/sex, B ímpar
      * home office nos mesmos dias, e a inversão nas semanas pares — sai daqui
      * sem uma tabela de 4 linhas nem uma condição por dia.

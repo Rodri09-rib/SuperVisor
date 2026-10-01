@@ -14,7 +14,7 @@ import java.time.LocalDate;
  * dia em que pediu para folgar.
  *
  * <p>O motivo da folga não entra aqui: este relatório é visível a qualquer
- * utilizador autenticado, tal como a leitura das escalas, e o motivo de uma
+ * usuário autenticado, tal como a leitura das escalas, e o motivo de uma
  * baixa não é informação partilhada.
  */
 public record LeaveConflictDTO(
@@ -26,7 +26,7 @@ public record LeaveConflictDTO(
         LocalDate date
 ) {
 
-    /** Frase para mostrar ao supervisor. Vai no JSON para existir num sítio só. */
+    /** Frase para mostrar ao supervisor. Vai no JSON para existir num lugar só. */
     @JsonProperty("descricao")
     public String descricao() {
         return userName + " está escalado em " + shift + " (" + interval + ") no dia "

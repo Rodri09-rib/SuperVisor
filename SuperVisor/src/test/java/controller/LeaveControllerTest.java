@@ -214,7 +214,7 @@ class LeaveControllerTest {
                                     }
                                     """))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value("O utilizador da folga é obrigatório."))
+                    .andExpect(jsonPath("$.message").value("O usuário da folga é obrigatório."))
                     .andExpect(jsonPath("$.fields.userId").exists());
 
             verify(leaveService, never()).criar(any(), any());

@@ -141,27 +141,27 @@ class LeaveServiceTest {
         }
 
         @Test
-        @DisplayName("recusa registar folga a um utilizador inativo")
+        @DisplayName("recusa registrar folga a um usuário inativo")
         void recusaUtilizadorInativo() {
             when(userRepository.findById(9L)).thenReturn(Optional.of(inativo));
 
             assertThatThrownBy(() -> leaveService.criar(pedido(9L, INICIO, FIM, null),
                     UserProfile.SUPERVISOR))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Não é possível registar folga a um utilizador inativo.");
+                    .hasMessage("Não é possível registrar folga a um usuário inativo.");
 
             verify(userLeaveRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("um utilizador inexistente dá erro, e nada é gravado")
+        @DisplayName("um usuário inexistente dá erro, e nada é gravado")
         void utilizadorInexistente() {
             when(userRepository.findById(404L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> leaveService.criar(pedido(404L, INICIO, FIM, null),
                     UserProfile.SUPERVISOR))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Utilizador não encontrado.");
+                    .hasMessage("Usuário não encontrado.");
 
             verify(userLeaveRepository, never()).save(any());
         }
@@ -220,11 +220,11 @@ class LeaveServiceTest {
             when(userLeaveRepository.findById(100L)).thenReturn(Optional.of(folga));
             when(userLeaveRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-            // O corpo aponta para o id 9, de outro utilizador.
+            // O corpo aponta para o id 9, de outro usuário.
             leaveService.atualizar(100L, pedido(9L, INICIO, FIM, null), UserProfile.SUPERVISOR);
 
             // Se o serviço obedecesse, a ausência passaria a dizer que o
-            // utilizador que faltou era outro, e o calendário da equipa
+            // usuário que faltou era outro, e o calendário da equipe
             // passaria a errar em nome de alguém que não faltou.
             assertThat(folga.getUser()).isSameAs(joao);
             verify(userRepository, never()).findById(any());
@@ -293,7 +293,7 @@ class LeaveServiceTest {
     class Listar {
 
         @Test
-        @DisplayName("sem filtro, devolve as folgas de toda a equipa")
+        @DisplayName("sem filtro, devolve as folgas de toda a equipe")
         void todas() {
             when(userLeaveRepository.listar(null))
                     .thenReturn(List.of(folgaDe(joao, INICIO, FIM, "Ferro")));
@@ -318,7 +318,7 @@ class LeaveServiceTest {
         }
 
         @Test
-        @DisplayName("um analista também vê as folgas dos outros, porque a falta é informação de equipa")
+        @DisplayName("um analista também vê as folgas dos outros, porque a falta é informação de equipe")
         void analistaVeTodas() {
             when(userLeaveRepository.listar(null))
                     .thenReturn(List.of(folgaDe(joao, INICIO, FIM, "Ferro")));
@@ -326,7 +326,7 @@ class LeaveServiceTest {
             var resultado = leaveService.listar(null, UserProfile.ANALIST);
 
             // Ao contrário do histórico de trocas, aqui não há filtro por
-            // perfil: quem está de folga já é visível no calendário da equipa, e
+            // perfil: quem está de folga já é visível no calendário da equipe, e
             // esconder isso só faria com que alguém soubesse da falta no dia em
             // que ela acontece.
             assertThat(resultado).hasSize(1);
@@ -399,7 +399,7 @@ class LeaveServiceTest {
     class FolgaSemDono {
 
         @Test
-        @DisplayName("uma folga sem utilizador não rebenta a serialização")
+        @DisplayName("uma folga sem usuário não rebenta a serialização")
         void folgaSemUtilizador() {
             // Uma leitura que trouxesse uma folga órfã — o que a base impede
             // hoje, mas que uma migração podia deixar — não pode rebentar a

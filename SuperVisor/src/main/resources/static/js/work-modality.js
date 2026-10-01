@@ -119,7 +119,7 @@
 
                 // Sem célula, traço. Preencher com o valor que o padrão mandaria
                 // seria inventar uma escala que o servidor não gravou, e o
-                // utilizador acabaria por trabalhar a partir de uma grelha que
+                // usuário acabaria por trabalhar a partir de uma grelha que
                 // ninguém confirmou.
                 html += '<td class="text-center">'
                     + (modalidade
@@ -151,8 +151,8 @@
         el.corpo.innerHTML = '<tr><td colspan="' + (DIAS.length + 1)
             + '" class="text-center py-5 text-muted">'
             + '<div class="spinner-border text-primary" role="status">'
-            + '<span class="visually-hidden">A carregar a escala...</span></div>'
-            + '<div class="mt-2">A carregar a escala...</div></td></tr>';
+            + '<span class="visually-hidden">Carregando a escala...</span></div>'
+            + '<div class="mt-2">Carregando a escala...</div></td></tr>';
 
         try {
             celulas = (await SuperVisorApi.listarEscalaWorkModality(inicio, fim)) || [];
@@ -170,7 +170,7 @@
      * O botão de gerar só aparece a um supervisor.
      *
      * <p>É a mesma regra do servidor,chega aqui por conveniência visual: escondê-lo
-     * evita um clique que só ia devolver 403. Quem o manipulate pela consola
+     * evita um clique que só ia devolver 403. Quem o manipulate pela console
      * continua a ser recusado pelo serviço.
      */
     async function carregarPerfil() {
@@ -191,7 +191,7 @@
         el.gerarAviso.classList.add('d-none');
         el.gerarTexto.textContent = celulas.length
             ? 'A escala desta semana já existe e vai ser reescrita. As modalidades mudam conforme a paridade da semana.'
-            : 'A escala desta semana vai ser gerada para quem tem equipa atribuída.';
+            : 'A escala desta semana vai ser gerada para quem tem equipe atribuída.';
         modal.show();
     }
 

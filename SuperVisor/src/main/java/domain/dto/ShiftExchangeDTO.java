@@ -18,7 +18,7 @@ import java.time.OffsetDateTime;
  * eles a grelha do frontend não consegue distinguir "esta linha é uma troca
  * minha" de "esta linha é uma troca entre duas pessoas que não sou eu": só há
  * o nome para comparar, e comparar nomes é comparar cadeiras de valores que
- * podem coincidir. Os dois identificadores são o que permite assinalar a linha
+ * podem coincidir. Os dois identificadores são o que permite marcar a linha
  * sem adivinar.
 
  */

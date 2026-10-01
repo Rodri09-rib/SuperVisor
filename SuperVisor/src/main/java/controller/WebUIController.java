@@ -16,8 +16,8 @@ public class WebUIController {
      * Dashboard principal.
      *
      * <p>Devolve {@code "dashboard"} e não {@code "Dashboard"}: o resolvedor de
-     * vistas procura o ficheiro pelo nome exacto, e a comparação não é
-     * normalizada. Funcionava em Windows, onde o sistema de ficheiros ignora as
+     * vistas procura o arquivo pelo nome exato, e a comparação não é
+     * normalizada. Funcionava em Windows, onde o sistema de arquivos ignora as
      * maiúsculas, e falhava em Linux e em qualquer contentor, que não ignoram —
      * o mesmo código passava o teste em casa e dava 500 no servidor.
      */
@@ -32,13 +32,13 @@ public class WebUIController {
         return "exchanges";
     }
 
-    /** Escala semanal de presencialidade / home office por equipa. */
+    /** Escala semanal de presencialidade / home office por equipe. */
     @GetMapping("/work-modality")
     public String workModalityPage(){
         return "work-modality";
     }
 
-    /** Registo e consulta de folgas. */
+    /** Registro e consulta de folgas. */
     @GetMapping("/leaves")
     public String leavesPage(){
         return "leaves";

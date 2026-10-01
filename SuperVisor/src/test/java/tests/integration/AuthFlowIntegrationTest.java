@@ -114,7 +114,7 @@ class AuthFlowIntegrationTest extends AbstractApiIntegrationTest {
 
         /**
          * O token carrega um identificador único ({@code jti}) e o instante de
-         * emissão ({@code iat}), pelo que dois logins do mesmo utilizador no
+         * emissão ({@code iat}), pelo que dois logins do mesmo usuário no
          * mesmo segundo produzem tokens distintos. Sem estes claims, o valor do
          * token seria determinístico e não seria possível revogá-lo
          * individualmente nem distinguish duas sessões.

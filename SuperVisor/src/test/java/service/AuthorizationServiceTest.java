@@ -34,7 +34,7 @@ class AuthorizationServiceTest {
     }
 
     @Test
-    @DisplayName("devolve o utilizador encontrado pelo e-mail")
+    @DisplayName("devolve o usuário encontrado pelo e-mail")
     void devolveUtilizadorEncontrado() {
         User user = new User(1L, "Administrador", "admin@teste.com", "hash", UserProfile.SUPERVISOR);
         when(userRepository.findByEmail("admin@teste.com")).thenReturn(user);
