@@ -4,6 +4,7 @@ import domain.dto.ShiftExchangeDTO;
 import domain.model.entities.ExchangeRequest;
 import domain.model.entities.ShiftScheduling;
 import domain.model.entities.User;
+import domain.model.enums.AllocationStatus;
 import domain.model.enums.ExchangeStatus;
 import domain.model.enums.UserProfile;
 import domain.repository.ExchangeRequestRepository;
@@ -79,6 +80,8 @@ public class ChangeTimeService {
             throw new IllegalArgumentException("O turno de destino já é seu, por isso não há nada a trocar.");
         }
 
+        impedirPedidoDuplicado(originAllocationId, destinationAllocationId);
+
         ExchangeRequest request = new ExchangeRequest();
         request.setSourceAllocation(origin);
         request.setDestinationAllocation(destination);
@@ -100,6 +103,34 @@ public class ChangeTimeService {
             return null;
         }
         return reason.trim();
+    }
+
+    /**
+     * Recusa repetir um pedido de troca que já está à espera de resposta.
+     *
+     * <p>Sem esta guarda, carregar no botão outra vez, ou recarregar a página e
+     * voltar a carregar, criava pedidos infinitamente idênticos. O colega
+     * pedido passava a ver o mesmo pedido dez vezes na fila, e o histórico
+     * deixava de ser um histórico.
+     *
+     * <p>Só o estado pendente conta, e por isso o sentido é o que é. Um pedido
+     * recusado ou aceite já tem resposta e não trava um novo pedido pela mesma
+     * troca; e o sentido contrário não é duplicado, porque inverte quem cede e
+     * quem recebe.
+     *
+     * <p>A guarda fica depois das validações das alocações e da autorização: um
+     * pedido que não podia ser feito por outro motivo tem de continuar a falhar
+     * por esse motivo, e não a dizer que há duplicados.
+     */
+    private void impedirPedidoDuplicado(Long originAllocationId, Long destinationAllocationId) {
+        boolean jaPendente = exchangeRequestRepository
+                .existsByStatusAndSourceAllocationIdAndDestinationAllocationId(
+                        ExchangeStatus.PENDING, originAllocationId, destinationAllocationId);
+
+        if (jaPendente) {
+            throw new IllegalArgumentException(
+                    "Já existe um pedido de troca pendente para estes dois turnos.");
+        }
     }
 
     /**
@@ -135,6 +166,13 @@ public class ChangeTimeService {
 
             destination.setUser(origin.getUser());
             origin.setUser(originalDestinationUser);
+
+            // As duas alocações voltam a pendentes. O aceite que cada dono deu
+            // era sobre um turno que deixou de lhe pertencer, e quem fica com ele
+            // agora é uma pessoa que nunca o viu: sem isto, quem aprovasse a
+            // troca estava a aceitar um turno em nome do colega.
+            destination.setAnalystAcceptanceStatus(AllocationStatus.PENDING);
+            origin.setAnalystAcceptanceStatus(AllocationStatus.PENDING);
 
             shiftSchedulingRepository.save(origin);
             shiftSchedulingRepository.save(destination);

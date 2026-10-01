@@ -360,12 +360,17 @@ class SecurityAccessIntegrationTest extends AbstractApiIntegrationTest {
         @Test
         @DisplayName("POST com SUPERVISOR é aceite")
         void postDeSupervisorEAceite() throws Exception {
+            // A alocação vai para o supervisor e não para o analista: este já
+            // tem um T1 na escala, e repetir o mesmo turno para a mesma pessoa
+            // no mesmo dia é agora recusado como sobreposição. O que este teste
+            // quer verificar é que o perfil passa, e não que o T1 pode ser
+            // repetido.
             mockMvc.perform(post("/api/v1/allocations")
                             .with(autorizacao("admin@teste.com"))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(pedido(escala.getId(), analist.getId())))
+                            .content(pedido(escala.getId(), supervisor.getId())))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.userId").value(analist.getId()));
+                    .andExpect(jsonPath("$.userId").value(supervisor.getId()));
         }
 
         @Test

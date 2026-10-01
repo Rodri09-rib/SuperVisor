@@ -1,13 +1,18 @@
 package controller;
 
+import domain.dto.AllocationAcceptanceRequestDTO;
 import domain.dto.AllocationDTO;
 import domain.dto.AllocationRequestDTO;
+import domain.model.entities.User;
 import security.ProfileAuthorization;
 import service.AllocationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+
+import jakarta.validation.Valid;
 
 /**
  * Alocações de turno.
@@ -72,5 +79,40 @@ public class AllocationController {
         allocationService.delete(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * O analista aceita ou recusa o turno que lhe foi escalado.
+     *
+     * <p>Não é uma escrita restrita à supervisão, ao contrário das outras desta
+     * rota: é justamente a pessoa escalada que tem de responder, e a
+     * supervisão responde por cima para desbloquear alguém que não está
+     * disponível. Quem pode é o dono do turno ou um supervisor.
+     *
+     * <p>Quem responde é lido do contexto de segurança e não do corpo do pedido
+     * pelo mesmo motivo de {@code UserController}: o id de quem responde não pode
+     * ser escolhido pelo cliente.
+     */
+    @PatchMapping("/{id}/acceptance")
+    public ResponseEntity<AllocationDTO> responder(@PathVariable Long id,
+                                                   @Valid @RequestBody AllocationAcceptanceRequestDTO dto) {
+        return ResponseEntity.ok(allocationService.responder(id, dto.status(), utilizadorAutenticadoId()));
+    }
+
+    /**
+     * O utilizador autenticado, ou {@code null} quando não há principal.
+     *
+     * <p>Devolve {@code null} em vez de rebentar para que a negação venha do
+     * serviço, como {@code AccessDeniedException} e 403, e não como uma
+     * {@code NullPointerException} transformada em 400.
+     */
+    private Long utilizadorAutenticadoId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            return null;
+        }
+
+        return user.getId();
     }
 }

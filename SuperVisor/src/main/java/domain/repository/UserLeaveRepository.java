@@ -42,4 +42,26 @@ public interface UserLeaveRepository extends JpaRepository<UserLeave, Long> {
             ORDER BY l.startDate ASC
             """)
     List<UserLeave> listarQueCobrem(@Param("data") LocalDate data);
+
+    /**
+     * Folgas que se cruzam com um período, para o relatório de conflitos.
+     *
+     * <p>Uma consulta para o período inteiro em vez de uma por dia: o relatório
+     * percorre todas as datas da escala, e repetir a consulta por cada uma
+     * transformava uma leitura em dezenas de idas ao base de dados para o mesmo
+     * dado.
+     *
+     * <p>A condição é a mesma de {@link #listarQueCobrem} aplicada às pontas do
+     * período, e não «a folga está dentro do período»: uma folga de 20 dias que
+     * começa antes da escala e acaba dentro dela é exatamente o caso que este
+     * relatório existe para apanhar.
+     */
+    @Query("""
+            SELECT l FROM UserLeave l
+            JOIN FETCH l.user
+            WHERE l.startDate <= :fim AND l.endDate >= :inicio
+            ORDER BY l.startDate ASC, l.id ASC
+            """)
+    List<UserLeave> listarQueSeCruzamCom(
+            @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 }

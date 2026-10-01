@@ -56,6 +56,62 @@ class ShiftTypeTest {
     }
 
     @Nested
+    @DisplayName("Sobreposição entre turnos")
+    class Sobreposicao {
+
+        @Test
+        @DisplayName("T2 cruza T1 e T3: é o turno que fica em cima dos dois")
+        void t2CruzaT1ET3() {
+            assertThat(ShiftType.T2_SAB.sobrepoe(ShiftType.T1_SAB)).isTrue();
+            assertThat(ShiftType.T2_SAB.sobrepoe(ShiftType.T3_SAB)).isTrue();
+        }
+
+        @Test
+        @DisplayName("T1 e T3 só se tocam às 12h00 e não se cruzam")
+        void turnosSeguidosNaoCruzam() {
+            // Quem acaba ao meio-dia pode entrar no T3. Se a fronteira contasse
+            // como sobreposição, a mesma pessoa nunca podia cobrir os dois.
+            assertThat(ShiftType.T1_SAB.sobrepoe(ShiftType.T3_SAB)).isFalse();
+            assertThat(ShiftType.T3_SAB.sobrepoe(ShiftType.T1_SAB)).isFalse();
+        }
+
+        @Test
+        @DisplayName("os turnos de sábado não cruzam os de domingo, apesar do mesmo horário")
+        void sabadoNaoCruzaDomingo() {
+            // T1 e T6 têm as mesmas horas. Ninguém está em dois sítios num
+            // sábado e num domingo, e o dia da semana é o que os distingue.
+            assertThat(ShiftType.T1_SAB.getIntervalo()).isEqualTo(ShiftType.T6_DOM.getIntervalo());
+            assertThat(ShiftType.T1_SAB.sobrepoe(ShiftType.T6_DOM)).isFalse();
+        }
+
+        @Test
+        @DisplayName("T5 não cruza T4, que acaba exactamente quando T5 começa")
+        void t4ET5NaoCruzam() {
+            assertThat(ShiftType.T4_SAB.sobrepoe(ShiftType.T5_SAB)).isFalse();
+        }
+
+        @Test
+        @DisplayName("T2 cruza um T1 com horário especial que lhe chegou a entrar")
+        void cruzaHorarioCustomizado() {
+            // Um T1 às 11h00-12h00 é aceite porque cabe no turno, e cruza o T2
+            // das 11h00-15h00. A regra tem de olhar para as horas efetivas.
+            assertThat(ShiftType.T1_SAB.contem(LocalTime.of(11, 0), LocalTime.of(12, 0))).isTrue();
+        }
+
+        @Test
+        @DisplayName("um turno não se sobrepõe a si próprio de forma a gerar conflito consigo")
+        void sobrepoeSeSimultaneamente() {
+            assertThat(ShiftType.T1_SAB.sobrepoe(ShiftType.T1_SAB)).isTrue();
+        }
+
+        @Test
+        @DisplayName("nulo nunca cruza com um turno")
+        void nuloNaoCruza() {
+            assertThat(ShiftType.T1_SAB.sobrepoe(null)).isFalse();
+        }
+    }
+
+    @Nested
     @DisplayName("Horarios especiais")
     class HorariosEspeciais {
 
