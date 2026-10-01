@@ -13,9 +13,11 @@
 
 ## Sobre
 
-O SuperVisor é uma plataforma web para equipas de trabalho operacional que precisam de
-montar escalas de fim de semana, gerir ausências e confirmar que as regras do negócio
-não estão a ser violadas. O foco não é o CRUD: é responder a perguntas como *esta escala
+O SuperVisor é uma plataforma web que nasceu da nescessidade de uma equipe de SAC
+que trabalho, onde utilizavasse apenas planilhas de excel. Estou deixando publico 
+para equipes de trabalho operacional que precisam de um modelo mais atual e moderno de
+montar escalas de fim de semana, gerir ausências e confirmar que as regras do negócio.
+O foco não é o CRUD: é responder a perguntas como *esta escala
 está correta?*, *quem está com dois turnos ao mesmo tempo?* e *esta pessoa foi escalada
 num dia em que pediu para folgar?*.
 
