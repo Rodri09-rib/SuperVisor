@@ -13,19 +13,11 @@
 
 ## Sobre
 
-<<<<<<< Updated upstream
 O SuperVisor é uma plataforma web que nasceu da nescessidade de uma equipe de SAC
 que trabalho, onde utilizavam-se apenas planilhas de excel. Estou deixando publico 
 para equipes de trabalho operacional que precisam de um modelo mais atual e moderno de
 montar escalas de fim de semana, gerir ausências e confirmar que as regras do negócio.
-O foco não é o CRUD: é responder a perguntas como *esta escala
-=======
-O SuperVisor é uma plataforma web para equipes de trabalho operacional que precisam de
-montar escalas de fim de semana, gerenciar ausências e confirmar que as regras do negócio
-não estão a ser violadas. O foco não é o CRUD: é responder a perguntas como *esta escala
->>>>>>> Stashed changes
-está correta?*, *quem está com dois turnos ao mesmo tempo?* e *esta pessoa foi escalada
-num dia em que pediu para folgar?*.
+
 
 O nome vem do **`SuperVisor`**, o perfil de supervisão: é quem cria escalas, gere
 alocações e responde pelo estado das contas.
@@ -105,49 +97,6 @@ muda de forma.
 | Frontend | Thymeleaf, Bootstrap 5.3, Vanilla JS, `fetch` com token em `localStorage` |
 | Testes | JUnit 5, Mockito, MockMvc, Spring Security Test, Testcontainers (PostgreSQL real) |
 
-## Como executar
-
-**Requisitos:** JDK 21, Maven 3.9+ e PostgreSQL 16 acessível em `localhost:5432`
-(usuário `supervisor`, senha `supervisor`, base `supervisor` — ver
-`src/main/resources/application.yml`).
-
-O segredo de assinatura do JWT é **obrigatório e não tem valor por omissão**: sem
-`JWT_SECRET` a aplicação recusa arrancar, para nunca assinar tokens com uma chave
-previsível.
-
-```bash
-# 1. Segredo do JWT (mínimo 32 bytes aleatórios)
-cp .env.example .env
-openssl rand -base64 48        # ou, em PowerShell:
-# [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
-
-# 2. Carregar as variáveis de ambiente
-set -a; . ./.env; set +a        # bash / PowerShell: ver .env.example
-
-# 3. Correr
-mvn spring-boot:run
-```
-
-A aplicação fica em `http://localhost:8080/login`.
-
-As migrações de esquema (`V1` a `V3`) correm no arranque e são idempotentes, por isso
-repetir não faz mal. O `ddl-auto: update` do Hibernate é complementado pelos scripts porque
-o Hibernate não consegue adicionar a coluna `active` a uma base já povoada — omite o
-`DEFAULT` e o PostgreSQL recusa o `ALTER TABLE`.
-
-## Testes
-
-**761 testes**, todos a passar, sem falhas nem erros.
-
-```bash
-mvn clean test
-```
-
-A suíte é dividido em testes unitários (regras de sobreposição, serviços, controladores com
-MockMvc) e testes de integração ponta a ponta, que carregam a aplicação inteira contra um
-PostgreSQL real em contentor Testcontainers. As regras de negócio estão fixadas por testes
-de integração, não apenas por unitários: autenticação, autorização por perfil, persistência
-e recusas do servidor só podem ser observadas com a aplicação a correr.
 
 ## Estrutura
 
