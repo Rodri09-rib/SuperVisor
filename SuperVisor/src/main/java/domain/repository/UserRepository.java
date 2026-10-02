@@ -47,10 +47,23 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * atribuir equipes ou reativar quem ficou desativado. A conta ficava presa
      * e a única saída seria mexer na base de dados à mão.
      */
-    long countByProfileAndActiveTrue(UserProfile profile);
+long countByProfileAndActiveTrue(UserProfile profile);
 
-    /** Todos os usuários, ativos ou não, para a vista de administração. */
-    List<User> findAllByOrderByNameAsc();
+   /**
+    * Quantas contas têm o perfil, ativas ou não.
+    *
+    * <p>Distingue-se de {@link #countByProfileAndActiveTrue} por uma razão
+    * concreta: desativar e excluir não correm o mesmo risco. Uma conta
+    * desativada continua a existir e pode ser reativada, portanto o que não pode
+    * acontecer é ficar sem nenhum supervisor <em>ativo</em>. Uma conta excluída
+    * deixa de existir, e um supervisor desativado que fica para trás já não é
+    * caminho de volta para ninguém: contá-lo como meio de lá chegar seria contar
+    * uma porta que não abre.
+    */
+   long countByProfile(UserProfile profile);
+
+   /** Todos os usuários, ativos ou não, para a vista de administração. */
+   List<User> findAllByOrderByNameAsc();
 
 }
 

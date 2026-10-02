@@ -138,6 +138,18 @@ const SuperVisorApi = (() => {
             '/api/v1/users/' + encodeURIComponent(id) + '/senha',
             { metodo: 'POST', corpo: { password: password } }),
 
+        /**
+         * Exclusão definitiva da conta, ao contrário de `alterarEstadoUtilizador`
+         * que é reversível.
+         *
+         * <p>O servidor recusa a conta que ainda tenha turnos marcados, com uma
+         * mensagem que diz quantos são. A decisão de cascadear folgas e presencialidade
+         * e de recusar turnos é do servidor e não é negociável pelo cliente, por
+         * isso aqui não há parâmetro nenhum.
+         */
+        apagarUtilizador: (id) => request('/api/v1/users/' + encodeURIComponent(id),
+            { metodo: 'DELETE' }),
+
         listarTurnos: () => request('/api/v1/shifts'),
         listarAtribuicoes: () => request('/api/v1/assignments'),
 
@@ -155,6 +167,24 @@ const SuperVisorApi = (() => {
          */
         relatorioCoberturaEscala: (id) => request(
             '/api/v1/scales/' + encodeURIComponent(id) + '/coverage'),
+
+        /**
+         * Quantos turnos e pedidos de troca a exclusão de uma escala leva.
+         *
+         * <p>Lida antes de perguntar, para que a confirmação diga um número em vez
+         * de «tem a certeza?». Uma escala com doze turnos em jogo e uma escala
+         * recém-criada e vazia pedem decisões diferentes.
+         */
+        resumoExclusaoEscala: (id) => request(
+            '/api/v1/scales/' + encodeURIComponent(id) + '/exclusao'),
+
+        /**
+         * Exclui a escala com os turnos dela e os pedidos de troca que os
+         * referenciam. Devolve nada: quem apaga é a supervisão e a resposta é o
+         * estado de um recurso que a tabela volta a ler de seguida.
+         */
+        apagarEscala: (id) => request(
+            '/api/v1/scales/' + encodeURIComponent(id), { metodo: 'DELETE' }),
 
         listarAlocacoes: (escalaId) => request('/api/v1/allocations'
             + (escalaId ? '?editionScaleId=' + encodeURIComponent(escalaId) : '')),
@@ -220,6 +250,22 @@ const SuperVisorApi = (() => {
         gerarEscalaWorkModality: (dataReferencia) => request(
             '/api/v1/work-modality-schedules/generate',
             { metodo: 'POST', corpo: { dataReferencia: dataReferencia } }),
+
+        /**
+         * Apaga a escala de presencialidade de um intervalo, que é a semana que a
+         * grelha está a mostrar.
+         *
+         * <p>O intervalo vai na query e não no corpo porque não há corpo numa
+         * operação de apagamento, e é também o que a página envia ao listar: as
+         * duas chamadas partilham as mesmas datas, e mandá-las de outra forma
+         * abriria espaço para a grelha estar a mostrar uma semana e o botão a
+         * apagar outra.
+         */
+        apagarEscalaWorkModality: (inicio, fim) => request(
+            '/api/v1/work-modality-schedules'
+            + '?inicio=' + encodeURIComponent(inicio)
+            + '&fim=' + encodeURIComponent(fim),
+            { metodo: 'DELETE' }),
 
         listarFolgas: (userId) => request('/api/v1/leaves'
             + (userId ? '?userId=' + encodeURIComponent(userId) : '')),

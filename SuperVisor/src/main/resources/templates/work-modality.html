@@ -62,6 +62,9 @@
                 <button type="button" class="btn btn-primary btn-sm d-none" id="btnGerarEscala">
                     <i class="bi bi-magic"></i> Gerar escala da semana
                 </button>
+                <button type="button" class="btn btn-outline-danger btn-sm d-none" id="btnApagarEscala">
+                    <i class="bi bi-trash"></i> Apagar escala da semana
+                </button>
             </div>
         </div>
     </div>
@@ -126,6 +129,32 @@
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="btnConfirmarGerar">
                     <i class="bi bi-magic"></i> Gerar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: confirmação de exclusão -->
+<div class="modal fade" id="apagarModal" tabindex="-1" aria-labelledby="apagarTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="apagarTitulo">
+                    <i class="bi bi-exclamation-triangle text-danger me-2"></i> Apagar escala
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="apagarAviso" class="alert d-none" role="alert"></div>
+                <p class="mb-0" id="apagarTexto">
+                    A escala desta semana será apagada.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarApagar">
+                    <i class="bi bi-trash"></i> Apagar
                 </button>
             </div>
         </div>

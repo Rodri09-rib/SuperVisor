@@ -2,7 +2,9 @@ package controller;
 
 import domain.dto.CreateScaleDTO;
 import domain.dto.ScaleCoverageDTO;
+import domain.dto.ScaleDeletionSummaryDTO;
 import domain.model.entities.EditionScale;
+import security.ProfileAuthorization;
 import service.ScaleCoverageService;
 import service.ScaleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class ScaleController {
 
     @Autowired
     private ScaleCoverageService scaleCoverageService;
+
+    @Autowired
+    private ProfileAuthorization profileAuthorization;
 
     @PostMapping
     public ResponseEntity<EditionScale> createScale(@RequestBody CreateScaleDTO dto) {
@@ -66,5 +71,42 @@ public class ScaleController {
     public ResponseEntity<ScaleCoverageDTO> coverage(@PathVariable Long id) {
 
         return ResponseEntity.ok(scaleCoverageService.relatorio(id));
+    }
+
+    /**
+     * O que a exclusão de uma escala leva consigo.
+     *
+     * <p>A exclusão em cascata é a única desta aplicação que apaga registos que
+     * ninguém pediu para apagar: uma escala com turnos leva também os pedidos de
+     * troca que os referenciam. Expor a contagem antes de perguntar é o que
+     * transforma a confirmação numa decisão em vez de um reflexo.
+     *
+     * <p>É leitura, mas não é leitura como as outras duas desta rota. O relatório
+     * de cobertura é aberto a toda a gente autenticada porque é o que serve para
+     * todos verem o que está errado na escala; este conta o que a supervisão está
+     * a prestes a destruir, e só a supervisão o pode destruir.
+     */
+    @GetMapping("/{id:[0-9]+}/exclusao")
+    public ResponseEntity<ScaleDeletionSummaryDTO> resumoExclusao(@PathVariable Long id) {
+        profileAuthorization.exigirSupervisor();
+
+        return ResponseEntity.ok(scaleService.resumoExclusao(id));
+    }
+
+    /**
+     * Exclui uma escala, os turnos dela e os pedidos de troca que os referenciam.
+     *
+     * <p>Restrito à supervisão, ao contrário de criar e publicar, que são
+     * operações de trabalho e não de administração. A regra de negócio está em
+     * {@link ScaleService#apagar} e não aqui: a autorização é da camada web, e o
+     * serviço mantém-se responsável apenas pela ordem em que as coisas caem.
+     */
+    @DeleteMapping("/{id:[0-9]+}")
+    public ResponseEntity<Void> apagar(@PathVariable Long id) {
+        profileAuthorization.exigirSupervisor();
+
+        scaleService.apagar(id);
+
+        return ResponseEntity.noContent().build();
     }
 }

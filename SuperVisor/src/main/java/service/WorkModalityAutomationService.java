@@ -121,15 +121,48 @@ public class WorkModalityAutomationService {
      */
     @Transactional(readOnly = true)
     public List<WorkModalityScheduleDTO> listar(LocalDate inicio, LocalDate fim) {
+        exigirIntervalo(inicio, fim);
+
+        return workModalityScheduleRepository.listarIntervalo(inicio, fim).stream()
+                .map(WorkModalityScheduleDTO::from)
+                .toList();
+    }
+
+    /**
+     * Apaga a escala de presencialidade de um intervalo.
+     *
+     * <p>O inverso de {@link #gerar}, e existe porque a escala é reproduzível:
+     * apagá-la não perde informação que a geração não consiga refazer a partir da
+     * equipe de cada pessoa. Apagar aqui e voltar a gerar é o caminho para
+     * corrigir uma semana que foi gerada com as equipas erradas, e é a razão de
+     * a operação existir em vez de a correção ser fazer a alteração pessoa a
+     * pessoa.
+     *
+     * <p>Devolve quantas linhas caíram, para o frontend poder dizer o que
+     * aconteceu em vez de repetir que a escala foi apagada.
+     */
+    @Transactional
+    public int apagarIntervalo(LocalDate inicio, LocalDate fim) {
+        exigirIntervalo(inicio, fim);
+
+        return workModalityScheduleRepository.apagarDoIntervalo(inicio, fim);
+    }
+
+    /**
+     * As duas pontas do intervalo, validadas.
+     *
+     * <p>Estão na leitura e na exclusão pelo mesmo motivo: o intervalo é o que
+     * define o recorte, e um intervalo invertido não é um intervalo — o período
+     * da frente seria apagado no lugar do que se queria apagar, o que numa
+     * exclusão é a diferença entre deitar fora uma semana e deitar fora o ano.
+     */
+    private void exigirIntervalo(LocalDate inicio, LocalDate fim) {
         if (inicio == null || fim == null) {
             throw new IllegalArgumentException("O intervalo da escala é obrigatório.");
         }
         if (fim.isBefore(inicio)) {
             throw new IllegalArgumentException("A data final do intervalo é anterior à inicial.");
         }
-        return workModalityScheduleRepository.listarIntervalo(inicio, fim).stream()
-                .map(WorkModalityScheduleDTO::from)
-                .toList();
     }
 
     /**

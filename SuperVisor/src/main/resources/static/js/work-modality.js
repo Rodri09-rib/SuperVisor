@@ -14,6 +14,7 @@
     let segunda = null;
     let celulas = [];
     let modal = null;
+    let modalApagar = null;
 
     const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 
@@ -172,12 +173,17 @@
      * <p>É a mesma regra do servidor,chega aqui por conveniência visual: escondê-lo
      * evita um clique que só ia devolver 403. Quem o manipulate pela console
      * continua a ser recusado pelo serviço.
+     *
+     * <p>O botão de apagar vem na mesma condição e pelo mesmo motivo, e estão
+     * juntos porque são as duas pontas da mesma operação: o que um desfaz é
+     * exatamente o que o outro faz.
      */
     async function carregarPerfil() {
         try {
             const utilizador = await SuperVisorApi.utilizadorAtual();
             const ehSupervisor = utilizador && utilizador.profile === 'SUPERVISOR';
             el.btnGerar.classList.toggle('d-none', !ehSupervisor);
+            el.btnApagar.classList.toggle('d-none', !ehSupervisor);
         } catch (erro) {
             console.warn('Perfil indisponível:', erro);
         }
@@ -210,6 +216,47 @@
     }
 
     /* ------------------------------------------------------------------ */
+    /* Exclusão                                                            */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * A confirmação diz o que se está a apagar e o que acontece a seguir.
+     *
+     * <p>Apagar aqui não perde nada que não se possa refazer: a escala é gerada a
+     * partir da equipe de cada pessoa e voltar a gerá-la repõe a mesma. Dizer isso
+     * na confirmação é o que distingue esta operação da de apagar uma conta, e é
+     * a razão de não precisar de um segundo passo de confirmação.
+     */
+    function abrirApagar() {
+        el.apagarAviso.classList.add('d-none');
+        el.apagarTexto.textContent = celulas.length
+            ? 'A escala desta semana será apagada para todas as pessoas. A grelha fica vazia '
+              + 'até alguém gerar de novo, e a geração repõe a mesma escala a partir das equipas '
+              + 'de hoje.'
+            : 'Não há escala gerada para esta semana, pelo que não há nada a apagar.';
+        el.btnConfirmarApagar.disabled = !celulas.length;
+        modalApagar.show();
+    }
+
+    async function apagar() {
+        const inicio = iso(segunda);
+        const fim = iso(somarDias(segunda, DIAS.length - 1));
+
+        el.btnConfirmarApagar.disabled = true;
+        try {
+            await SuperVisorApi.apagarEscalaWorkModality(inicio, fim);
+            celulas = [];
+            modalApagar.hide();
+            desenhar();
+        } catch (erro) {
+            el.apagarAviso.textContent = erro.message;
+            el.apagarAviso.className = 'alert alert-danger';
+        } finally {
+            el.btnConfirmarApagar.disabled = false;
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
     /* Arranque                                                            */
     /* ------------------------------------------------------------------ */
 
@@ -224,6 +271,10 @@
         el.gerarAviso = document.getElementById('gerarAviso');
         el.gerarTexto = document.getElementById('gerarTexto');
         el.btnConfirmar = document.getElementById('btnConfirmarGerar');
+        el.btnApagar = document.getElementById('btnApagarEscala');
+        el.apagarAviso = document.getElementById('apagarAviso');
+        el.apagarTexto = document.getElementById('apagarTexto');
+        el.btnConfirmarApagar = document.getElementById('btnConfirmarApagar');
     }
 
     function registarEventos() {
@@ -244,6 +295,8 @@
 
         el.btnGerar.addEventListener('click', abrirGerar);
         el.btnConfirmar.addEventListener('click', gerar);
+        el.btnApagar.addEventListener('click', abrirApagar);
+        el.btnConfirmarApagar.addEventListener('click', apagar);
     }
 
     function iniciar() {
@@ -251,6 +304,7 @@
         registarEventos();
         segunda = inicioDaSemanaIso(new Date());
         modal = new bootstrap.Modal(document.getElementById('gerarModal'));
+        modalApagar = new bootstrap.Modal(document.getElementById('apagarModal'));
         carregarPerfil();
         carregar();
     }
