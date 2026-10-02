@@ -2,6 +2,7 @@ package domain.repository;
 
 import domain.model.entities.UserLeave;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -64,4 +65,19 @@ public interface UserLeaveRepository extends JpaRepository<UserLeave, Long> {
             """)
     List<UserLeave> listarQueSeCruzamCom(
             @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    /**
+     * Apaga as folgas de uma pessoa.
+     *
+     * <p>Entra em cascata na exclusão da conta, e é o que torna a exclusão
+     * possível: uma folga descreve a ausência de uma pessoa, e sem ela a conta
+     * ficava presa atrás de linhas que já não têm a quem pertencer.
+     *
+     * <p>Por isso o contraste com os turnos é deliberado. Um turno é um
+     * compromisso com uma escala e sobrevive à pessoa que o tinha; uma folga é
+     * informação sobre a própria pessoa e não tem sentido sem ela.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM UserLeave l WHERE l.user.id = :userId")
+    int apagarDoUtilizador(@Param("userId") Long userId);
 }

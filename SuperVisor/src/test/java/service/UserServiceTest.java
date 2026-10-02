@@ -6,7 +6,12 @@ import domain.dto.UpdateUserRequestDTO;
 import domain.model.entities.User;
 import domain.model.enums.TeamGroup;
 import domain.model.enums.UserProfile;
+import domain.repository.EditionScaleRepository;
+import domain.repository.ExchangeRequestRepository;
+import domain.repository.ShiftSchedulingRepository;
+import domain.repository.UserLeaveRepository;
 import domain.repository.UserRepository;
+import domain.repository.WorkModalityScheduleRepository;
 import exception.RegraDeNegocioException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +19,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -28,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,12 +48,33 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ShiftSchedulingRepository shiftSchedulingRepository;
+
+    @Mock
+    private UserLeaveRepository userLeaveRepository;
+
+    @Mock
+    private WorkModalityScheduleRepository workModalityScheduleRepository;
+
+    @Mock
+    private EditionScaleRepository editionScaleRepository;
+
+    @Mock
+    private ExchangeRequestRepository exchangeRequestRepository;
+
     private UserService service;
 
     @BeforeEach
     void setUp() {
         service = new UserService();
         ReflectionTestUtils.setField(service, "userRepository", userRepository);
+        ReflectionTestUtils.setField(service, "shiftSchedulingRepository", shiftSchedulingRepository);
+        ReflectionTestUtils.setField(service, "userLeaveRepository", userLeaveRepository);
+        ReflectionTestUtils.setField(service, "workModalityScheduleRepository",
+                workModalityScheduleRepository);
+        ReflectionTestUtils.setField(service, "editionScaleRepository", editionScaleRepository);
+        ReflectionTestUtils.setField(service, "exchangeRequestRepository", exchangeRequestRepository);
         // O BCrypt real, e não um mock: o que se verifica aqui é a criptografia
         // propriamente dita, e um encoder simulado confirmaria sempre o que
         // lhe fosse pedido.
@@ -530,6 +558,204 @@ class UserServiceTest {
             when(userRepository.findAllByOrderByNameAsc()).thenReturn(List.of(semEquipa));
 
             assertThat(service.listarTodos().get(0).teamGroupLabel()).isEqualTo("Sem equipe");
+        }
+    }
+
+    @Nested
+    @DisplayName("Exclusão definitiva")
+    class Exclusao {
+
+        private final Long ID = 30L;
+
+        /** Alvo sem nenhum vínculo, que é o caso normal de quem sai da empresa. */
+        private User semVinculos() {
+            User user = existente(ID);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+            when(shiftSchedulingRepository.countByUserId(ID)).thenReturn(0L);
+            when(exchangeRequestRepository.countByRequestingUserId(ID)).thenReturn(0L);
+            return user;
+        }
+
+        @Test
+        @DisplayName("apaga a conta de quem não tem turnos nem folgas nem presença")
+        void apagaContaLimpa() {
+            User user = semVinculos();
+
+            service.apagar(ID, 99L);
+
+            verify(userRepository).delete(user);
+        }
+
+        @Test
+        @DisplayName("leva as folgas e a escala de presencialidade da pessoa, que não fazem sentido sem ela")
+        void apagaOQueDescreveAPessoa() {
+            semVinculos();
+
+            service.apagar(ID, 99L);
+
+            verify(userLeaveRepository).apagarDoUtilizador(ID);
+            verify(workModalityScheduleRepository).apagarDoUtilizador(ID);
+        }
+
+        @Test
+        @DisplayName("solta as escalas que a pessoa criou em vez de as apagar: a escala sobrevive à conta")
+        void apagaMasPreservaEscalas() {
+            semVinculos();
+
+            service.apagar(ID, 99L);
+
+            verify(editionScaleRepository).soltarCriador(ID);
+            verify(editionScaleRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("a ordem respeita o grafo: o que aponta para a conta cai antes de a conta")
+        void apagaPorOrdemDeGrafo() {
+            semVinculos();
+
+            service.apagar(ID, 99L);
+
+            InOrder ordem = inOrder(workModalityScheduleRepository, userLeaveRepository,
+                    editionScaleRepository, userRepository);
+            ordem.verify(workModalityScheduleRepository).apagarDoUtilizador(ID);
+            ordem.verify(userLeaveRepository).apagarDoUtilizador(ID);
+            ordem.verify(editionScaleRepository).soltarCriador(ID);
+            ordem.verify(userRepository).delete(any(User.class));
+        }
+
+        @Test
+        @DisplayName("recusa quem tem turnos marcados, e diz quantos")
+        void recusaComTurnosMarcados() {
+            User user = existente(ID);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+            when(shiftSchedulingRepository.countByUserId(ID)).thenReturn(3L);
+
+            assertThatThrownBy(() -> service.apagar(ID, 99L))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("3 turnos marcados")
+                    .hasMessageContaining("Retire-os antes");
+
+            verify(userRepository, never()).delete(any(User.class));
+        }
+
+        @Test
+        @DisplayName("um turno só é dito no singular, porque é uma pessoa a ler")
+        void singularQuandoSoHaUmTurno() {
+            User user = existente(ID);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+            when(shiftSchedulingRepository.countByUserId(ID)).thenReturn(1L);
+
+            assertThatThrownBy(() -> service.apagar(ID, 99L))
+                    .hasMessageContaining("1 turno marcado");
+        }
+
+        @Test
+        @DisplayName("recusa quem iniciou pedidos de troca, mesmo sem turnos, porque o pedido aponta para a conta")
+        void recusaComPedidosDeTroca() {
+            User user = existente(ID);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+            when(shiftSchedulingRepository.countByUserId(ID)).thenReturn(0L);
+            when(exchangeRequestRepository.countByRequestingUserId(ID)).thenReturn(2L);
+
+            assertThatThrownBy(() -> service.apagar(ID, 99L))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("2 pedidos de troca iniciados");
+
+            verify(userRepository, never()).delete(any(User.class));
+        }
+
+        @Test
+        @DisplayName("não se exclui a si próprio")
+        void naoSeExclui() {
+            User user = TestFixtures.supervisor();
+            user.setId(ID);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> service.apagar(ID, ID))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessage("Não pode excluir a sua própria conta.");
+
+            verify(userRepository, never()).delete(any(User.class));
+        }
+
+        @Test
+        @DisplayName("a autoexclusão tem precedência sobre o resto, mesmo sendo o único supervisor")
+        void autoexclusaoTemPrecedencia() {
+            User user = TestFixtures.supervisor();
+            user.setId(ID);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> service.apagar(ID, ID))
+                    .hasMessage("Não pode excluir a sua própria conta.");
+
+            verify(userRepository, never()).countByProfile(any(UserProfile.class));
+        }
+
+        @Test
+        @DisplayName("o único supervisor não pode ser excluído, nem desativado, porque a aplicação ficava sem gestão de contas")
+        void ultimoSupervisorNaoPodeSerExcluido() {
+            User user = TestFixtures.supervisor();
+            user.setId(ID);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+            when(userRepository.countByProfile(UserProfile.SUPERVISOR)).thenReturn(1L);
+
+            assertThatThrownBy(() -> service.apagar(ID, 99L))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("único supervisor");
+
+            verify(userRepository, never()).delete(any(User.class));
+        }
+
+        @Test
+        @DisplayName("conta todos os supervisores, ativos ou não: um supervisor desativado não é caminho de volta")
+        void contaSupervisoresInativos() {
+            User user = TestFixtures.supervisor();
+            user.setId(ID);
+            user.setActive(false);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+            when(userRepository.countByProfile(UserProfile.SUPERVISOR)).thenReturn(1L);
+
+            assertThatThrownBy(() -> service.apagar(ID, 99L))
+                    .hasMessageContaining("único supervisor");
+
+            verify(userRepository, never()).countByProfileAndActiveTrue(any(UserProfile.class));
+        }
+
+        @Test
+        @DisplayName("com dois supervisores, excluir um deles é uma decisão normal e passa")
+        void excluiSupervisorQuandoHaOutro() {
+            User user = TestFixtures.supervisor();
+            user.setId(ID);
+            when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+            when(userRepository.countByProfile(UserProfile.SUPERVISOR)).thenReturn(2L);
+            when(shiftSchedulingRepository.countByUserId(ID)).thenReturn(0L);
+            when(exchangeRequestRepository.countByRequestingUserId(ID)).thenReturn(0L);
+
+            service.apagar(ID, 99L);
+
+            verify(userRepository).delete(user);
+        }
+
+        @Test
+        @DisplayName("excluir um analista nunca pergunta por supervisores")
+        void excluirAnalistaNaoContaSupervisores() {
+            semVinculos();
+
+            service.apagar(ID, 99L);
+
+            verify(userRepository, never()).countByProfile(any(UserProfile.class));
+        }
+
+        @Test
+        @DisplayName("usuário inexistente dá erro e não apaga nada")
+        void inexistenteDaErro() {
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.apagar(99L, 1L))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessage("Usuário não encontrado.");
+
+            verify(userRepository, never()).delete(any(User.class));
         }
     }
 }

@@ -1,17 +1,23 @@
 package service;
 
 import domain.dto.CreateScaleDTO;
+import domain.dto.ScaleDeletionSummaryDTO;
 import domain.model.entities.EditionScale;
+import domain.model.entities.ShiftScheduling;
 import domain.model.entities.User;
 import domain.model.enums.EditionStatus;
+import domain.model.enums.ShiftType;
 import domain.model.enums.UserProfile;
 import domain.repository.EditionScaleRepository;
+import domain.repository.ExchangeRequestRepository;
+import domain.repository.ShiftSchedulingRepository;
 import domain.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -39,6 +46,12 @@ class ScaleServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ShiftSchedulingRepository shiftSchedulingRepository;
+
+    @Mock
+    private ExchangeRequestRepository exchangeRequestRepository;
 
     @InjectMocks
     private ScaleService scaleService;
@@ -232,6 +245,140 @@ class ScaleServiceTest {
             assertThat(create.getAnnotation(Transactional.class).readOnly()).isFalse();
             assertThat(publish.getAnnotation(Transactional.class)).isNotNull();
             assertThat(list.getAnnotation(Transactional.class).readOnly()).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("Resumo da exclusão")
+    class ResumoDaExclusao {
+
+        private EditionScale escala(long id) {
+            return new EditionScale(id, "Escala Outubro", null, null, EditionStatus.DRAFT, criador());
+        }
+
+        @Test
+        @DisplayName("conta os turnos e os pedidos de troca que a exclusão leva")
+        void contaOQueSai() {
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala(1L)));
+            when(shiftSchedulingRepository.idsPorEscala(1L)).thenReturn(List.of(10L, 11L, 12L));
+            when(exchangeRequestRepository.contarDasAlocacoes(List.of(10L, 11L, 12L)))
+                    .thenReturn(2L);
+
+            ScaleDeletionSummaryDTO resumo = scaleService.resumoExclusao(1L);
+
+            assertThat(resumo.alocacoes()).isEqualTo(3);
+            assertThat(resumo.trocas()).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("uma escala sem turnos conta zero e não pergunta pelos pedidos: um IN vazio não é JPQL válido")
+        void escalaSemTurnosNaoConsultaTrocas() {
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala(1L)));
+            when(shiftSchedulingRepository.idsPorEscala(1L)).thenReturn(List.of());
+
+            ScaleDeletionSummaryDTO resumo = scaleService.resumoExclusao(1L);
+
+            assertThat(resumo.alocacoes()).isZero();
+            assertThat(resumo.trocas()).isZero();
+            verify(exchangeRequestRepository, never()).contarDasAlocacoes(any());
+        }
+
+        @Test
+        @DisplayName("uma escala inexistente dá erro, e não um relatório de zero que se leria como «pode apagar»")
+        void escalaInexistenteDaErro() {
+            when(editionScaleRepository.findById(42L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> scaleService.resumoExclusao(42L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Edição de Escala não encontrada.");
+        }
+
+        @Test
+        @DisplayName("não escreve nada: o resumo é só leitura")
+        void somenteLeitura() {
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala(1L)));
+            when(shiftSchedulingRepository.idsPorEscala(1L)).thenReturn(List.of());
+
+            scaleService.resumoExclusao(1L);
+
+            verify(editionScaleRepository, never()).delete(any());
+            verify(shiftSchedulingRepository, never()).deleteAll(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Exclusão")
+    class Exclusao {
+
+        private EditionScale escala(long id) {
+            return new EditionScale(id, "Escala Outubro", null, null, EditionStatus.DRAFT, criador());
+        }
+
+        private ShiftScheduling turno(long id, EditionScale escala) {
+            ShiftScheduling alocacao = new ShiftScheduling();
+            alocacao.setId(id);
+            alocacao.setEditionScale(escala);
+            alocacao.setShift(ShiftType.T1_SAB);
+            return alocacao;
+        }
+
+        @Test
+        @DisplayName("apaga os pedidos de troca antes dos turnos que eles referenciam")
+        void pedidosCaemAntesDosTurnos() {
+            EditionScale escala = escala(1L);
+            ShiftScheduling turno = turno(10L, escala);
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala));
+            when(shiftSchedulingRepository.findByEditionScaleIdOrderByIdAsc(1L))
+                    .thenReturn(List.of(turno));
+
+            scaleService.apagar(1L);
+
+            verify(exchangeRequestRepository).apagarDasAlocacoes(List.of(10L));
+            InOrder ordem = inOrder(exchangeRequestRepository, shiftSchedulingRepository,
+                    editionScaleRepository);
+            ordem.verify(exchangeRequestRepository).apagarDasAlocacoes(List.of(10L));
+            ordem.verify(shiftSchedulingRepository).deleteAll(List.of(turno));
+            ordem.verify(editionScaleRepository).delete(escala);
+        }
+
+        @Test
+        @DisplayName("uma escala vazia apaga-se sem tocar nos pedidos de troca")
+        void escalaVaziaNaoTocaEmPedidos() {
+            EditionScale escala = escala(1L);
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala));
+            when(shiftSchedulingRepository.findByEditionScaleIdOrderByIdAsc(1L)).thenReturn(List.of());
+
+            scaleService.apagar(1L);
+
+            verify(exchangeRequestRepository, never()).apagarDasAlocacoes(any());
+            verify(shiftSchedulingRepository).deleteAll(List.of());
+            verify(editionScaleRepository).delete(escala);
+        }
+
+        @Test
+        @DisplayName("apaga a escala mesmo que já esteja publicada: não há estado que impeça a exclusão")
+        void apagaEscalaPublicada() {
+            EditionScale escala = new EditionScale(1L, "Escala Outubro", null, null,
+                    EditionStatus.PUBLISHED, criador());
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala));
+            when(shiftSchedulingRepository.findByEditionScaleIdOrderByIdAsc(1L)).thenReturn(List.of());
+
+            scaleService.apagar(1L);
+
+            verify(editionScaleRepository).delete(escala);
+        }
+
+        @Test
+        @DisplayName("escala inexistente dá erro e nada é apagado")
+        void escalaInexistenteDaErro() {
+            when(editionScaleRepository.findById(42L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> scaleService.apagar(42L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Edição de Escala não encontrada.");
+
+            verify(editionScaleRepository, never()).delete(any());
+            verify(shiftSchedulingRepository, never()).deleteAll(any());
         }
     }
 }

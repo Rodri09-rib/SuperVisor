@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
         escalas: [],
         alocacoes: [],
         escalaA_Publicar: null,
+        escalaA_Apagar: null,
+        utilizadorA_Apagar: null,
         escalaEmEdicao: null,
         utilizadores: [],
         turnos: [],
@@ -74,6 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
         el.publicacaoNome = document.getElementById('publicacaoEscalaNome');
         el.btnConfirmarPublicacao = document.getElementById('btnConfirmarPublicacao');
 
+        el.exclusaoEscalaNome = document.getElementById('exclusaoEscalaNome');
+        el.exclusaoEscalaImpacto = document.getElementById('exclusaoEscalaImpacto');
+        el.exclusaoEscalaAviso = document.getElementById('exclusaoEscalaAviso');
+        el.btnConfirmarExclusaoEscala = document.getElementById('btnConfirmarExclusaoEscala');
+
         el.utilizadorFormulario = document.getElementById('novoUsuarioForm');
         el.utilizadorNome = document.getElementById('novoUsuarioNome');
         el.utilizadorEmail = document.getElementById('novoUsuarioEmail');
@@ -102,6 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
         el.senhaNova = document.getElementById('senhaNova');
         el.senhaAviso = document.getElementById('senhaAviso');
         el.senhaSubmeter = document.getElementById('btnGuardarSenha');
+
+        el.exclusaoUtilizadorNome = document.getElementById('exclusaoUtilizadorNome');
+        el.exclusaoUtilizadorAviso = document.getElementById('exclusaoUtilizadorAviso');
+        el.btnConfirmarExclusaoUtilizador = document.getElementById('btnConfirmarExclusaoUtilizador');
     }
 
     /* ------------------------------------------------------------------ */
@@ -257,6 +268,14 @@ document.addEventListener('DOMContentLoaded', () => {
               + '<i class="bi bi-send"></i> Publicar</button> '
             : '';
 
+        // Apagar a escala leva com ela os turnos e os pedidos de troca que os
+        // referenciam, e por isso fica atrás de uma confirmação que diz o
+        // número. Só o supervisor o vê, pela mesma razão de não o ver a criação.
+        const botaoApagar = ehAdministrador()
+            ? '<button class="btn btn-sm btn-outline-danger js-apagar-escala" data-id="' + id + '">'
+              + '<i class="bi bi-trash"></i> Apagar</button> '
+            : '';
+
         return '<tr>'
             + '<td class="align-middle fw-semibold">' + nome + '</td>'
             + '<td class="align-middle">'
@@ -271,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             + '<button class="btn btn-sm btn-outline-secondary js-trocar" data-id="' + id + '">'
             + '<i class="bi bi-arrow-left-right"></i> Trocar</button> '
             + botaoPublicar
+            + botaoApagar
             + '</td>'
             + '</tr>';
     }
@@ -995,6 +1015,97 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Confirmação da exclusão de uma escala.
+     *
+     * <p>A confirmação diz quantos turnos e quantos pedidos de troca vão atrás
+     * da escala, e o número vem do servidor em vez de ser contado aqui: a
+     * resposta do servidor é a mesma que a exclusção vai respeitar, e contar no
+     * browser dava um número que podia divergir do que ia acontecer.
+     *
+     * <p>O aviso é lido antes de a confirmação aparecer, e não depois. Pedir a
+     * confirmação primeiro e dizer o que se vai perder a seguir obriga a pessoa
+     * a confirmar duas vezes para ter a informação que a decisão precisava.
+     */
+    async function confirmarExclusaoEscala(id) {
+        const escala = escalaPorId(id);
+        if (!escala) {
+            return;
+        }
+
+        estado.escalaA_Apagar = escala;
+        el.exclusaoEscalaNome.textContent = escala.name || 'Escala #' + escala.id;
+        el.exclusaoEscalaImpacto.innerHTML =
+            '<div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>'
+            + '<span>A contar o que será apagado...</span>';
+        mostrarAviso(el.exclusaoEscalaAviso, null);
+        ocupado(el.btnConfirmarExclusaoEscala, true, 'A apagar...');
+        abrirModal('exclusaoEscalaModal');
+
+        let resumoPronto = false;
+
+        try {
+            const resumo = await SuperVisorApi.resumoExclusaoEscala(escala.id);
+            el.exclusaoEscalaImpacto.innerHTML = impactoDaExclusao(resumo);
+            resumoPronto = true;
+        } catch (erro) {
+            // Sem a contagem, a confirmação deixaria de dizer o que se vai
+            // perder, que é a única coisa que a torna uma decisão. Fica sem
+            //possibilidade de confirmar em vez de confirmar às cegas.
+            mostrarAviso(el.exclusaoEscalaAviso, erro.message, 'danger');
+        } finally {
+            ocupado(el.btnConfirmarExclusaoEscala, false);
+            el.btnConfirmarExclusaoEscala.disabled = !resumoPronto;
+        }
+    }
+
+    /**
+     * O que a exclusão leva, em prosa.
+     *
+     * <p>Uma escala vazia é o caso que não precisa de aviso nenhum: apagar uma
+     * escala que não tem turnos não tira nada a ninguém, e apresentar a mesma
+     * lista de avisos onde não há nada desperdiça o texto que tem de informar
+     * quando há.
+     */
+    function impactoDaExclusao(resumo) {
+        if (!resumo) {
+            return '<span>Não foi possível contar o que será apagado.</span>';
+        }
+
+        if (!resumo.alocacoes) {
+            return '<span>Esta escala ainda não tem turnos atribuídos, e portanto não há '
+                + 'turnos nem pedidos de troca a perder.</span>';
+        }
+
+        const turnos = resumo.alocacoes + (resumo.alocacoes === 1 ? ' turno' : ' turnos');
+        const trocas = resumo.trocas + (resumo.trocas === 1 ? ' pedido de troca' : ' pedidos de troca');
+
+        return '<span>Esta escala tem ' + turnos + ' atribuídos e ' + trocas + ' que os referenciam. '
+            + 'Todos serão apagados, e a exclusão não pode ser desfeita.</span>';
+    }
+
+    async function apagarEscala() {
+        if (!estado.escalaA_Apagar) {
+            return;
+        }
+
+        const nome = estado.escalaA_Apagar.name;
+        ocupado(el.btnConfirmarExclusaoEscala, true, 'A apagar...');
+
+        try {
+            await SuperVisorApi.apagarEscala(estado.escalaA_Apagar.id);
+            fecharModal('exclusaoEscalaModal');
+            notificar('Escala "' + nome + '" apagada.', 'sucesso');
+            await carregarEscalas();
+        } catch (erro) {
+            fecharModal('exclusaoEscalaModal');
+            notificar(erro.message, 'erro');
+        } finally {
+            ocupado(el.btnConfirmarExclusaoEscala, false);
+            estado.escalaA_Apagar = null;
+        }
+    }
+
     /* ------------------------------------------------------------------ */
     /* Administração: gerenciamento de usuários                                */
     /* ------------------------------------------------------------------ */
@@ -1120,6 +1231,13 @@ document.addEventListener('DOMContentLoaded', () => {
               + 'data-id="' + id + '" data-ativo="true">'
               + '<i class="bi bi-person-check"></i> Reativar</button> ';
 
+        // Apagar e desativar aparecem lado a lado e não são a mesma coisa:
+        // desativar tira o acesso e deixa o histórico, apagar tira a conta. Por
+        // isso o botão de apagar fica no fim e é o único vermelho da linha — o
+        // único que não tem volta.
+        const apagar = '<button class="btn btn-sm btn-outline-danger js-apagar-utilizador" '
+            + 'data-id="' + id + '"><i class="bi bi-trash"></i> Apagar</button>';
+
         return '<tr class="' + (u.active ? '' : 'opacity-75') + '">'
             + '<td class="fw-semibold">' + SuperVisorFormat.escapar(u.name || '—') + '</td>'
             + '<td>' + SuperVisorFormat.escapar(u.email || '—') + '</td>'
@@ -1132,6 +1250,7 @@ document.addEventListener('DOMContentLoaded', () => {
             + '<button class="btn btn-sm btn-outline-secondary js-redefinir-senha" '
             + 'data-id="' + id + '"><i class="bi bi-key"></i> Senha</button> '
             + alternar
+            + apagar
             + '</td>'
             + '</tr>';
     }
@@ -1260,6 +1379,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /* ------------------------------------------------------------------ */
+    /* Administração: excluir conta                                         */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Abre a confirmação de exclusão de uma conta.
+     *
+     * <p>O texto explica a política em vez de a repetir palavra por palavra, e
+     * o motivo é que ela não é uniforme: as folgas e a escala de presencialidade
+     * são apagadas com a conta, os turnos não — e quem tem turnos é recusado com
+     * uma mensagem que diz quantos. Quem lê a confirmação antes de decidir sabe
+     * o que o servidor está para fazer e não descobre no caminho.
+     *
+     * <p>A exclusão da própria conta aparece desativada e não escondida: a
+     * recusa é do servidor e nenhuma quantidade de botão escondido a altera, mas
+     * um botão que não faz nada com o motivo ao lado é mais útil do que uma
+     * ação que desaparece sem explicação.
+     */
+    function abrirExclusaoUtilizador(id) {
+        const alvo = utilizadorPorId(id);
+        if (!alvo) {
+            return;
+        }
+
+        if (estado.utilizador && String(estado.utilizador.id) === String(alvo.id)) {
+            mostrarAviso(el.utilizadoresAviso,
+                'Não pode excluir a sua própria conta.', 'warning');
+            return;
+        }
+
+        el.exclusaoUtilizadorNome.textContent = (alvo.name || '—') + ' (' + alvo.email + ')';
+        estado.utilizadorA_Apagar = alvo;
+        mostrarAviso(el.exclusaoUtilizadorAviso, null);
+        abrirModal('exclusaoUtilizadorModal');
+    }
+
+    async function apagarUtilizador() {
+        if (!estado.utilizadorA_Apagar) {
+            return;
+        }
+
+        const nome = estado.utilizadorA_Apagar.name || estado.utilizadorA_Apagar.email;
+        ocupado(el.btnConfirmarExclusaoUtilizador, true, 'A apagar...');
+
+        try {
+            await SuperVisorApi.apagarUtilizador(estado.utilizadorA_Apagar.id);
+            fecharModal('exclusaoUtilizadorModal');
+            notificar('Usuário "' + nome + '" excluído definitivamente.', 'sucesso');
+            await Promise.all([carregarTodosUtilizadores(), carregarUtilizadores()]);
+        } catch (erro) {
+            // A recusa por turnos marcados, pela autoexclusão e pela conta do
+            // último supervisor chega do servidor com a frase que explica o
+            // porquê, e é ela que se mostra: são três motivos distintos e um
+            // aviso genérico não diria qual deles aconteceu.
+            mostrarAviso(el.exclusaoUtilizadorAviso, erro.message, 'danger');
+        } finally {
+            ocupado(el.btnConfirmarExclusaoUtilizador, false);
+        }
+    }
+
     function abrirRedefinirSenha(id) {
         const alvo = utilizadorPorId(id);
         if (!alvo) {
@@ -1316,6 +1495,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const editar = evento.target.closest('.js-editar-utilizador');
             const senha = evento.target.closest('.js-redefinir-senha');
             const estado = evento.target.closest('.js-alterar-estado');
+            const apagar = evento.target.closest('.js-apagar-utilizador');
 
             if (editar) {
                 abrirEditarUtilizador(editar.dataset.id);
@@ -1323,6 +1503,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 abrirRedefinirSenha(senha.dataset.id);
             } else if (estado) {
                 alterarEstadoUtilizador(estado);
+            } else if (apagar) {
+                abrirExclusaoUtilizador(apagar.dataset.id);
             }
         });
 
@@ -1330,6 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const detalhes = evento.target.closest('.js-detalhes');
             const trocar = evento.target.closest('.js-trocar');
             const publicar = evento.target.closest('.js-publicar');
+            const apagar = evento.target.closest('.js-apagar-escala');
 
             if (detalhes) {
                 abrirDetalhes(detalhes.dataset.id);
@@ -1337,6 +1520,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 abrirPedidoTroca(trocar.dataset.id);
             } else if (publicar) {
                 confirmarPublicacao(publicar.dataset.id);
+            } else if (apagar) {
+                confirmarExclusaoEscala(apagar.dataset.id);
             }
         });
 
@@ -1380,6 +1565,8 @@ document.addEventListener('DOMContentLoaded', () => {
         el.trocaFormulario.addEventListener('submit', submeterTroca);
         el.escalaFormulario.addEventListener('submit', submeterNovaEscala);
         el.btnConfirmarPublicacao.addEventListener('click', publicarEscala);
+        el.btnConfirmarExclusaoEscala.addEventListener('click', apagarEscala);
+        el.btnConfirmarExclusaoUtilizador.addEventListener('click', apagarUtilizador);
     }
 
     async function iniciar() {

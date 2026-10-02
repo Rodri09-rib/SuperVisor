@@ -439,4 +439,68 @@ class WorkModalityAutomationServiceTest {
             assertThat(resultado.get(0).weekOdd()).isTrue();
         }
     }
+
+    @Nested
+    @DisplayName("Exclusão")
+    class Exclusao {
+
+        @Test
+        @DisplayName("apaga o intervalo pedido e diz quantas linhas caíram")
+        void apagaOIntervalo() {
+            when(workModalityScheduleRepository
+                    .apagarDoIntervalo(SEMANA_IMPAR, SEMANA_IMPAR.plusDays(4)))
+                    .thenReturn(10);
+
+            int apagadas = workModalityAutomationService
+                    .apagarIntervalo(SEMANA_IMPAR, SEMANA_IMPAR.plusDays(4));
+
+            assertThat(apagadas).isEqualTo(10);
+        }
+
+        @Test
+        @DisplayName("sem intervalo, recusa sem tocar na base de dados")
+        void semIntervalo() {
+            assertThatThrownBy(() -> workModalityAutomationService.apagarIntervalo(null, LocalDate.now()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("O intervalo da escala é obrigatório.");
+
+            verify(workModalityScheduleRepository, never()).apagarDoIntervalo(any(), any());
+        }
+
+        @Test
+        @DisplayName("um intervalo invertido é recusado: apagar o período errado é o pior resultado possível")
+        void intervaloInvertido() {
+            assertThatThrownBy(() -> workModalityAutomationService
+                            .apagarIntervalo(LocalDate.of(2026, 3, 20), LocalDate.of(2026, 3, 10)))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("A data final do intervalo é anterior à inicial.");
+
+            verify(workModalityScheduleRepository, never()).apagarDoIntervalo(any(), any());
+        }
+
+        @Test
+        @DisplayName("uma semana sem escala devolve zero e não dá erro: já não havia nada para perder")
+        void semanaVaziaDevolveZero() {
+            when(workModalityScheduleRepository
+                    .apagarDoIntervalo(SEMANA_IMPAR, SEMANA_IMPAR.plusDays(4)))
+                    .thenReturn(0);
+
+            assertThat(workModalityAutomationService
+                    .apagarIntervalo(SEMANA_IMPAR, SEMANA_IMPAR.plusDays(4))).isZero();
+        }
+
+        @Test
+        @DisplayName("o intervalo apagado é o mesmo que a grelha está a mostrar, e não a semana corrente")
+        void apagaOIntervaloVisivel() {
+            when(workModalityScheduleRepository
+                    .apagarDoIntervalo(any(), any()))
+                    .thenReturn(3);
+
+            workModalityAutomationService.apagarIntervalo(LocalDate.of(2025, 10, 6),
+                    LocalDate.of(2025, 10, 10));
+
+            verify(workModalityScheduleRepository).apagarDoIntervalo(
+                    eq(LocalDate.of(2025, 10, 6)), eq(LocalDate.of(2025, 10, 10)));
+        }
+    }
 }

@@ -2,6 +2,7 @@ package domain.repository;
 
 import domain.model.entities.WorkModalitySchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -43,4 +44,31 @@ public interface WorkModalityScheduleRepository extends JpaRepository<WorkModali
                                                                @Param("fim") LocalDate fim);
 
     List<WorkModalitySchedule> findByUserIdAndDate(Long userId, LocalDate date);
+
+    /**
+     * Apaga a escala de um intervalo.
+     *
+     * <p>Devolve quantas linhas caíram, e não nada: o frontend diz o que
+     * aconteceu depois da exclusão, e «a escala da semana foi apagada» sem
+     * número é um resultado que não se distingue do de um intervalo já vazio.
+     *
+     * <p>É uma exclusão em bloco porque a escala é o único volume de dados que
+     * cresce com o número de pessoas e não com o número de escalas: cem
+     * colaboradores são quinhentas linhas por semana, e apagá-las uma a uma
+     * seria quinhentas idas ao banco para um intervalo que já se sabe qual é.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM WorkModalitySchedule w WHERE w.date BETWEEN :inicio AND :fim")
+    int apagarDoIntervalo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    /**
+     * Apaga a escala de uma pessoa.
+     *
+     * <p>Entra em cascata na exclusão da conta, pela mesma razão das folgas: a
+     * célula diz onde é que a pessoa estava, e sem a pessoa não há a quem a
+     * célula pertencer.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM WorkModalitySchedule w WHERE w.user.id = :userId")
+    int apagarDoUtilizador(@Param("userId") Long userId);
 }

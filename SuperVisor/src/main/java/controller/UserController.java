@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -137,6 +138,31 @@ public class UserController {
         profileAuthorization.exigirSupervisor();
 
         userService.redefinirSenha(id, dto.password());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Exclui definitivamente uma conta.
+     *
+     * <p>Difere de {@link #alterarEstado} em duas coisas, e ambas são o motivo de
+     * a operação ser recitada por {@link UserService#apagar} e não de ser um
+     * {@code delete} a seco. A primeira é que a exclusão é definitiva e por isso
+     * recusa contas que ainda tenham turnos marcados: apagar a escala inteira
+     * para libertar a conta levaria com ela o trabalho de todas as outras
+     * pessoas. A segunda é que a conta alheia não pode ser a de quem pede, e o
+     * id de quem pede vem do contexto de segurança pelo mesmo motivo de
+     * {@link #alterarEstado} — um parâmetro enviado pelo cliente não pode
+     * decidir a própria regra que o impede.
+     *
+     * <p>Um {@code 204} e não um corpo com o usuário removido: a resposta seria
+     * uma cópia de um registo que já não existe.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> apagar(@PathVariable Long id) {
+        profileAuthorization.exigirSupervisor();
+
+        userService.apagar(id, utilizadorAutenticado().getId());
 
         return ResponseEntity.noContent().build();
     }

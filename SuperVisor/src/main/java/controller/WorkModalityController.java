@@ -71,4 +71,35 @@ public class WorkModalityController {
 
         return ResponseEntity.ok(escala);
     }
+
+    /**
+     * Apaga a escala de presencialidade de um intervalo.
+     *
+     * <p>Restrita à supervisão pela mesma razão de {@link #gerar}: escrever em
+     * todas as escalas de todas as pessoas de uma vez é a operação mais
+     * abrangente da aplicação depois do cadastro de usuários, e apagá-las todas
+     * não é menos abrangente do que gerá-las todas.
+     *
+     * <p>O recorte é o intervalo visível na grelha e vem do frontend, e não uma
+     * «semana» calculada aqui, porque quem apaga está a ver uma semana
+     * específica — calculada no servidor a partir de outra base, o botão apagaria
+     * um intervalo que não é o que a pessoa está a ler. O intervalo em si é
+     * validado pelo serviço, que é quem sabe o que é um intervalo invertido.
+     *
+     * <p>Um {@code 204} e não o número de células apagadas: a resposta é o estado
+     * de um recurso que a grelha vai voltar a ler, e devolvê-lo aqui seria
+     * obrigar o frontend a ter de decidir se usa esta resposta ou faz outra
+     * leitura.
+     */
+    @DeleteMapping
+    public ResponseEntity<Void> apagar(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
+
+        profileAuthorization.exigirSupervisor();
+
+        workModalityAutomationService.apagarIntervalo(inicio, fim);
+
+        return ResponseEntity.noContent().build();
+    }
 }

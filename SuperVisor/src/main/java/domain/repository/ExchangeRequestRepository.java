@@ -4,9 +4,11 @@ import domain.model.entities.ExchangeRequest;
 import domain.model.enums.ExchangeStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ExchangeRequestRepository
@@ -70,4 +72,47 @@ public interface ExchangeRequestRepository
             """)
     boolean existePendenteParaA(@Param("status") ExchangeStatus status,
                                 @Param("alocacaoId") Long alocacaoId);
+
+    /**
+     * Quantos pedidos a pessoa iniciou.
+     *
+     * <p>É o outro lado da mesma regra que impede excluir uma conta escalada: um
+     * pedido guarda quem o pediu, e esse vínculo não pode ficar órfão. Vale para
+     * todos os estados e não só para os pendentes, porque o histórico também
+     * diz quem pediu.
+     */
+    long countByRequestingUserId(Long userId);
+
+    /**
+     * Quantos pedidos tocam num conjunto de alocações, em qualquer das pontas.
+     *
+     * <p>É a resposta que a confirmação da exclusão de uma escala precisa: os
+     * pedidos que vão atrás dos turnos que ela leva. Numa {@code or} só porque a
+     * pergunta é uma só, e perguntar duas vezes para somar os resultados dava o
+     * mesmo número com o dobro do trabalho.
+     */
+    @Query("""
+            SELECT COUNT(e) FROM ExchangeRequest e
+            WHERE e.sourceAllocation.id IN :alocacoes
+               OR e.destinationAllocation.id IN :alocacoes
+            """)
+    long contarDasAlocacoes(@Param("alocacoes") List<Long> alocacoes);
+
+    /**
+     * Apaga os pedidos que tocam num conjunto de alocações.
+     *
+     * <p>É uma exclusão em bloco e não um {@code deleteAll} sobre entidades
+     * carregadas: os pedidos são histórico, não têm nenhuma coleção própria e
+     * ninguém vai pedir cada um deles outra vez. O {@code flushAutomatically}
+     * garante que as alocações já alteradas no contexto sejam escritas antes da
+     * consulta — sem ele, o apagamento podia ser executado contra linhas que o
+     * Hibernate ainda nem tinha gravado.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            DELETE FROM ExchangeRequest e
+            WHERE e.sourceAllocation.id IN :alocacoes
+               OR e.destinationAllocation.id IN :alocacoes
+            """)
+    int apagarDasAlocacoes(@Param("alocacoes") List<Long> alocacoes);
 }
