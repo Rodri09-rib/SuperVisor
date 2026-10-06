@@ -14,13 +14,17 @@
 ## Sobre
 
 O SuperVisor é uma plataforma web que nasceu da nescessidade de uma equipe de SAC
-que trabalho, onde utilizavam-se apenas planilhas de excel. Estou deixando publico 
+que trabalho, onde utilizavam-se apenas planilhas de excel. Comecei a desenvolve-lo pela diversão
+e também por ser um projeto acadêmico, mas com o tempo foi tomando uma forma mais complexa, e estou deixando publico 
 para equipes de trabalho operacional que precisam de um modelo mais atual e moderno de
-montar escalas de fim de semana, gerir ausências e confirmar que as regras do negócio.
+montar escalas de fim de semana ou gerais, gerir ausências...
 
 
 O nome vem do **`SuperVisor`**, o perfil de supervisão: é quem cria escalas, gere
 alocações e responde pelo estado das contas.
+
+Basicamente o programa soluciona a necessidade de planilhas e centraliza a função
+que o supervisor da equipe tem. Como a gestão dos horários, folgas, controles da presencialidade e etc. 
 
 ## Funcionalidades
 
@@ -50,12 +54,12 @@ a fazer três pedidos para pintar três blocos que se atualizam em conjunto.
 
 **Gerenciamento de usuários**
 
-- Listagem de contas ativas e, separadamente, de todas as contas, incluindo as inativas —
+- Listagem de contas ativas e, separadamente, de todas as contas, incluindo as inativas 
   uma conta desativada continua a existir e tem de poder ser encontrada para ser reativada.
 - Edição de nome, perfil e equipe. **O e-mail não é editável**: é a identidade da conta e
   o que vai dentro do token JWT; alterá-lo deixaria no ar todos os tokens já emitidos.
 - Ativação e desativação com duas proteções: ninguém desativa a própria conta, e o último
-  supervisor ativo não pode ser desativado — a aplicação ficaria sem ninguém capaz de
+  supervisor ativo não pode ser desativado a aplicação ficaria sem ninguém capaz de
   gerenciar usuários.
 - Redefinição de senha, com mínimo de 6 caracteres.
 
@@ -114,9 +118,6 @@ src/main/java/
 └── exception/    # Tradução de exceções em respostas JSON
 ```
 
-As entidades nunca são serializadas diretamente: `User` implementa `UserDetails` e expunha o
-hash da senha. Todos os contratos de saída são DTOs.
-
 ## API
 
 Todas as rotas exigem token, exceto o login e o carregamento do *shell* HTML das páginas.
@@ -151,9 +152,8 @@ Todas as rotas exigem token, exceto o login e o carregamento do *shell* HTML das
 | `GET` | `/api/v1/shifts`, `/api/v1/assignments` | autenticado |
 
 Criar e publicar uma escala é acessível a qualquer perfil autenticado, por decisão: a
-supervisão tem de poder montar a grelha com o resto da equipe, e reservar a criação a um
-perfil só entregava a essa equipe o trabalho de a pedir. O que a aplicação restringe à
-supervisão é a escrita que afeta os outros — alocações, contas e modalidades de trabalho.
+supervisão tem de poder montar as escalas e outras funcionalidades com o resto da equipe. O que a aplicação restringe à
+supervisão é a escrita que afeta os outros alocações, contas e modalidades de trabalho.
 
 Erros de regra de negócio devolvem `400` com mensagem em português; falta de sessão devolve
 `401` e falta de permissão `403` — este último **não** encerra a sessão, porque o token é
