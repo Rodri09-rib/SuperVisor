@@ -13,22 +13,18 @@
 
 ## Sobre
 
-<<<<<<< Updated upstream
 O SuperVisor é uma plataforma web que nasceu da nescessidade de uma equipe de SAC
-que trabalho, onde utilizavam-se apenas planilhas de excel. Estou deixando publico 
+que trabalho, onde utilizavam-se apenas planilhas de excel. Comecei a desenvolve-lo pela diversão
+e também por ser um projeto acadêmico, mas com o tempo foi tomando uma forma mais complexa, e estou deixando publico 
 para equipes de trabalho operacional que precisam de um modelo mais atual e moderno de
-montar escalas de fim de semana, gerir ausências e confirmar que as regras do negócio.
-O foco não é o CRUD: é responder a perguntas como *esta escala
-=======
-O SuperVisor é uma plataforma web para equipes de trabalho operacional que precisam de
-montar escalas de fim de semana, gerenciar ausências e confirmar que as regras do negócio
-não estão a ser violadas. O foco não é o CRUD: é responder a perguntas como *esta escala
->>>>>>> Stashed changes
-está correta?*, *quem está com dois turnos ao mesmo tempo?* e *esta pessoa foi escalada
-num dia em que pediu para folgar?*.
+montar escalas de fim de semana ou gerais, gerir ausências...
+
 
 O nome vem do **`SuperVisor`**, o perfil de supervisão: é quem cria escalas, gere
 alocações e responde pelo estado das contas.
+
+Basicamente o programa soluciona a necessidade de planilhas e centraliza a função
+que o supervisor da equipe tem. Como a gestão dos horários, folgas, controles da presencialidade e etc. 
 
 ## Funcionalidades
 
@@ -58,12 +54,12 @@ a fazer três pedidos para pintar três blocos que se atualizam em conjunto.
 
 **Gerenciamento de usuários**
 
-- Listagem de contas ativas e, separadamente, de todas as contas, incluindo as inativas —
+- Listagem de contas ativas e, separadamente, de todas as contas, incluindo as inativas 
   uma conta desativada continua a existir e tem de poder ser encontrada para ser reativada.
 - Edição de nome, perfil e equipe. **O e-mail não é editável**: é a identidade da conta e
   o que vai dentro do token JWT; alterá-lo deixaria no ar todos os tokens já emitidos.
 - Ativação e desativação com duas proteções: ninguém desativa a própria conta, e o último
-  supervisor ativo não pode ser desativado — a aplicação ficaria sem ninguém capaz de
+  supervisor ativo não pode ser desativado a aplicação ficaria sem ninguém capaz de
   gerenciar usuários.
 - Redefinição de senha, com mínimo de 6 caracteres.
 
@@ -105,49 +101,6 @@ muda de forma.
 | Frontend | Thymeleaf, Bootstrap 5.3, Vanilla JS, `fetch` com token em `localStorage` |
 | Testes | JUnit 5, Mockito, MockMvc, Spring Security Test, Testcontainers (PostgreSQL real) |
 
-## Como executar
-
-**Requisitos:** JDK 21, Maven 3.9+ e PostgreSQL 16 acessível em `localhost:5432`
-(usuário `supervisor`, senha `supervisor`, base `supervisor` — ver
-`src/main/resources/application.yml`).
-
-O segredo de assinatura do JWT é **obrigatório e não tem valor por omissão**: sem
-`JWT_SECRET` a aplicação recusa arrancar, para nunca assinar tokens com uma chave
-previsível.
-
-```bash
-# 1. Segredo do JWT (mínimo 32 bytes aleatórios)
-cp .env.example .env
-openssl rand -base64 48        # ou, em PowerShell:
-# [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
-
-# 2. Carregar as variáveis de ambiente
-set -a; . ./.env; set +a        # bash / PowerShell: ver .env.example
-
-# 3. Correr
-mvn spring-boot:run
-```
-
-A aplicação fica em `http://localhost:8080/login`.
-
-As migrações de esquema (`V1` a `V3`) correm no arranque e são idempotentes, por isso
-repetir não faz mal. O `ddl-auto: update` do Hibernate é complementado pelos scripts porque
-o Hibernate não consegue adicionar a coluna `active` a uma base já povoada — omite o
-`DEFAULT` e o PostgreSQL recusa o `ALTER TABLE`.
-
-## Testes
-
-**761 testes**, todos a passar, sem falhas nem erros.
-
-```bash
-mvn clean test
-```
-
-A suíte é dividido em testes unitários (regras de sobreposição, serviços, controladores com
-MockMvc) e testes de integração ponta a ponta, que carregam a aplicação inteira contra um
-PostgreSQL real em contentor Testcontainers. As regras de negócio estão fixadas por testes
-de integração, não apenas por unitários: autenticação, autorização por perfil, persistência
-e recusas do servidor só podem ser observadas com a aplicação a correr.
 
 ## Estrutura
 
@@ -164,9 +117,6 @@ src/main/java/
 ├── service/      # Regras de negócio
 └── exception/    # Tradução de exceções em respostas JSON
 ```
-
-As entidades nunca são serializadas diretamente: `User` implementa `UserDetails` e expunha o
-hash da senha. Todos os contratos de saída são DTOs.
 
 ## API
 
@@ -202,9 +152,8 @@ Todas as rotas exigem token, exceto o login e o carregamento do *shell* HTML das
 | `GET` | `/api/v1/shifts`, `/api/v1/assignments` | autenticado |
 
 Criar e publicar uma escala é acessível a qualquer perfil autenticado, por decisão: a
-supervisão tem de poder montar a grelha com o resto da equipe, e reservar a criação a um
-perfil só entregava a essa equipe o trabalho de a pedir. O que a aplicação restringe à
-supervisão é a escrita que afeta os outros — alocações, contas e modalidades de trabalho.
+supervisão tem de poder montar as escalas e outras funcionalidades com o resto da equipe. O que a aplicação restringe à
+supervisão é a escrita que afeta os outros alocações, contas e modalidades de trabalho.
 
 Erros de regra de negócio devolvem `400` com mensagem em português; falta de sessão devolve
 `401` e falta de permissão `403` — este último **não** encerra a sessão, porque o token é
