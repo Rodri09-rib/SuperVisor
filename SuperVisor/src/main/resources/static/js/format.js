@@ -54,6 +54,22 @@ const SuperVisorFormat = (() => {
         EQUIPE_B: 'Equipe B'
     };
 
+    /**
+     * Estados de presença de uma célula. As faltas parciais são amarelas e não
+     * vermelhas de propósito: a diferença entre falta de meio expediente e
+     * falta de dia inteiro é a diferença entre meio ponto e um ponto, e as
+     * duas do mesmo tom fazia a grelha parecer que o estado mais grave era o
+     * habitual.
+     */
+    const PRESENCAS = {
+        PRESENT: { rotulo: 'Presente', classe: 'bg-success' },
+        ABSENT_FULL: { rotulo: 'Falta', classe: 'bg-danger' },
+        ABSENT_MORNING: { rotulo: 'Falta (manhã)', classe: 'bg-warning text-dark' },
+        ABSENT_AFTERNOON: { rotulo: 'Falta (tarde)', classe: 'bg-warning text-dark' }
+    };
+
+    const PRESENCIA_SEM_VALOR = { rotulo: '—', classe: 'bg-light text-dark border' };
+
     /** Rótulos de atribuições, por constante. O servidor é a fonte da verdade
      *  (GET /api/v1/assignments); este mapa é apenas a rede de segurança para
      *  uma constante nova não aparecer crua na tabela. */
@@ -129,6 +145,121 @@ const SuperVisorFormat = (() => {
     function badgeModalidade(valor) {
         const mod = modalidade(valor);
         return '<span class="badge ' + mod.classe + '">' + escapar(mod.rotulo) + '</span>';
+    }
+
+    function presenca(valor) {
+        return PRESENCAS[valor] || PRESENCIA_SEM_VALOR;
+    }
+
+    /**
+     * Badge de presença de uma célula. O rótulo vem do servidor quando existe
+     * — o mapa local é a rede de segurança para uma constante nova, e não a
+     * fonte da verdade.
+     */
+    function badgePresenca(valor, rotuloServidor) {
+        const estado = presenca(valor);
+        const rotulo = rotuloServidor || estado.rotulo;
+        return '<span class="badge ' + estado.classe + '">' + escapar(rotulo) + '</span>';
+    }
+
+    /** "1,5" — números do servidor em texto com vírgula, como a página escreve. */
+    function numero(valor) {
+        if (valor === null || valor === undefined || valor === '') {
+            return '—';
+        }
+        return Number(valor).toLocaleString('pt-BR');
+    }
+
+    /**
+     * Dívida de compensação de um colaborador.
+     *
+     * <p>Zero é um estado e não uma ausência: escrever "—" faria quem não deve
+     * nada parecer não ter informação, e o objetivo da coluna é precisamente
+     * distinguir os dois.
+     */
+    function badgeCompensacao(valor) {
+        const dias = Number(valor || 0);
+        if (dias > 0) {
+            return '<span class="badge bg-danger">Deve '
+                + escapar(numero(dias)) + (dias === 1 ? ' dia' : ' dias') + '</span>';
+        }
+        return '<span class="badge bg-secondary">Sem dívida</span>';
+    }
+
+    /**
+     * Saldo de folgas acumuladas.
+     *
+     * <p>Um saldo negativo é possível e aparece como tal — é o que acontece
+     * quando um supervisor antecipa folgas a quem ainda não acumulou nada — e
+     * não é escondido com um corte em zero, que faria a página dizer "sem
+     * saldo" a quem está devedor.
+     */
+    function badgeSaldoFolgas(valor) {
+        const dias = Number(valor || 0);
+        if (dias > 0) {
+            return '<span class="badge bg-info text-dark">' + escapar(numero(dias))
+                + (dias === 1 ? ' dia' : ' dias') + '</span>';
+        }
+        if (dias < 0) {
+            return '<span class="badge bg-warning text-dark">−'
+                + escapar(numero(Math.abs(dias))) + ' dias</span>';
+        }
+        return '<span class="badge bg-light text-dark border">Sem saldo</span>';
+    }
+
+    /**
+     * Saldo positivo de um colaborador, no cartão «Saldos de Folgas (Equipa)».
+     *
+     * <p>Verde e com o verbo «Tem» porque a lista é de quem tem dias ganhos:
+     * é um destaque de gestão, e não uma segunda leitura neutra do saldo —
+     * essa já existe no cartão individual de quem está a ver.
+     */
+    function badgeSaldoEquipa(valor) {
+        const dias = Number(valor || 0);
+        if (dias > 0) {
+            return '<span class="badge bg-success">Tem '
+                + escapar(numero(dias)) + (dias === 1 ? ' dia' : ' dias') + '</span>';
+        }
+        return '<span class="badge bg-light text-dark border">Sem saldo</span>';
+    }
+
+    /**
+     * Chip do tipo de acontecimento no extrato.
+     *
+     * <p>Falta é amarela e não vermelha, como na grelha de presencialidade:
+     * a mesma cor para o mesmo estado em toda a aplicação é o que deixa a
+     * página ser lida sem legenda.
+     */
+    function badgeTipoEvento(tipo, rotulo) {
+        const classes = {
+            FOLGA: 'bg-secondary',
+            FALTA: 'bg-warning text-dark',
+            RECOMPENSA: 'bg-success'
+        };
+        return '<span class="badge ' + (classes[tipo] || 'bg-light text-dark border') + '">'
+            + escapar(rotulo || tipo || '—') + '</span>';
+    }
+
+    /**
+     * Dias de um acontecimento do extrato, com o sinal do efeito dele.
+     *
+     * <p>O sinal vem do tipo e não do valor, porque o servidor manda a
+     * magnitude: folga consome, recompensa acrescenta, falta é dívida de
+     * compensação e por isso aparece sem sinal — quem lê já sabe que dívida
+     * é para trás, e «−1 dia» ao lado de «Falta» pareceria que a falta tirava
+     * dias do saldo de folgas.
+     */
+    function badgeEventoExtrato(tipo, dias) {
+        const valor = Number(dias || 0);
+        const sinal = tipo === 'FOLGA' ? '−' : (tipo === 'RECOMPENSA' ? '+' : '');
+        const classes = {
+            FOLGA: 'bg-light text-dark border',
+            FALTA: 'bg-warning text-dark',
+            RECOMPENSA: 'bg-success'
+        };
+        return '<span class="badge ' + (classes[tipo] || 'bg-light text-dark border') + '">'
+            + sinal + escapar(numero(valor))
+            + (Math.abs(valor) === 1 ? ' dia' : ' dias') + '</span>';
     }
 
     /** "Equipe A", a partir da constante que o servidor envia. */
@@ -275,6 +406,14 @@ const SuperVisorFormat = (() => {
         badgeAlocacao: badgeAlocacao,
         badgeTroca: badgeTroca,
         badgeModalidade: badgeModalidade,
+        presenca: presenca,
+        badgePresenca: badgePresenca,
+        numero: numero,
+        badgeCompensacao: badgeCompensacao,
+        badgeSaldoFolgas: badgeSaldoFolgas,
+        badgeSaldoEquipa: badgeSaldoEquipa,
+        badgeTipoEvento: badgeTipoEvento,
+        badgeEventoExtrato: badgeEventoExtrato,
         rotuloEquipa: rotuloEquipa,
         dataHora: dataHora,
         rotuloAlocacao: rotuloAlocacao,

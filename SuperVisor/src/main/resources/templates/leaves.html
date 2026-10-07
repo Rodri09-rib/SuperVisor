@@ -16,6 +16,14 @@
             overflow-y: auto !important;
             max-height: calc(85vh - 130px);
         }
+
+        /* A lista de saldos da equipa é variável e o cartão não deve crescer
+           para lá do resto da linha: rola por dentro, como as listas longas
+           dos modais, e o cartão de dívidas continua a caber ao lado. */
+        .saldo-equipa-lista {
+            max-height: 260px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -37,13 +45,63 @@
                     lista mostra todas.
                 </p>
             </div>
-            <div class="d-flex flex-wrap gap-2">
-                <select id="filtroUtilizador" class="form-select form-select-sm" style="width: auto;">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <label class="small text-muted mb-0" for="filtroUtilizador">Colaborador</label>
+                <select id="filtroUtilizador" class="form-select form-select-sm"
+                        style="width: auto;" aria-label="Filtrar por colaborador">
                     <option value="">Toda a equipe</option>
                 </select>
                 <button type="button" class="btn btn-primary btn-sm d-none" id="btnNovaFolga">
                     <i class="bi bi-plus-lg"></i> Registrar folga
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4" id="saldosCartoes">
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <!-- O mesmo cartão tem dois corpos: o individual de quem
+                         consulta e a vista de equipa de quem supervisiona. O
+                         título e a troca são feitos pelo leaves.js a partir do
+                         perfil, porque o que muda é quem está a olhar. -->
+                    <div class="text-muted small fw-semibold text-uppercase" id="saldoTitulo">
+                        <i class="bi bi-wallet2 me-1"></i> O seu saldo de folgas
+                    </div>
+
+                    <div id="saldoIndividual">
+                        <div class="fs-3 fw-bold mt-1" id="saldoFolgasValor">—</div>
+                        <div class="small text-muted" id="saldoFolgasDetalhe">
+                            A carregar o saldo...
+                        </div>
+                    </div>
+
+                    <div id="saldoEquipa" class="d-none">
+                        <div class="small text-muted mt-1 mb-2" id="saldoEquipaResumo">
+                            A carregar os saldos da equipa...
+                        </div>
+                        <div id="listaSaldosEquipa" class="saldo-equipa-lista"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-8 d-none" id="cartaoCompensacao">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                        <div>
+                            <div class="text-muted small fw-semibold text-uppercase">
+                                <i class="bi bi-arrow-repeat me-1"></i> Dívidas de compensação
+                            </div>
+                            <div class="small text-muted mt-1" id="dividasResumo">—</div>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnAjustarCompensacao">
+                            <i class="bi bi-sliders"></i> Ajustar saldo
+                        </button>
+                    </div>
+                    <div class="mt-2" id="listaDividas"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -58,13 +116,14 @@
                         <th scope="col">De</th>
                         <th scope="col">Até</th>
                         <th scope="col">Duração</th>
+                        <th scope="col">Consome</th>
                         <th scope="col">Motivo</th>
                         <th scope="col" class="text-end">Ações</th>
                     </tr>
                     </thead>
                     <tbody id="folgasCorpo">
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Carregando folgas...</span>
                             </div>
@@ -114,6 +173,20 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <label for="folgaDuracao" class="form-label fw-semibold">Duração</label>
+                        <select id="folgaDuracao" class="form-select">
+                            <option value="FULL_DAY">Dia inteiro</option>
+                            <option value="MORNING_SHIFT">Meia jornada — manhã</option>
+                            <option value="AFTERNOON_SHIFT">Meia jornada — tarde</option>
+                        </select>
+                        <div class="form-text" id="folgaDuracaoAjuda">
+                            Dia inteiro consome um dia por cada dia entre as datas. Meia
+                            jornada consome meio dia e só é válida num único dia — de e até
+                            iguais.
+                        </div>
+                    </div>
+
                     <div class="mb-0">
                         <label for="folgaMotivo" class="form-label fw-semibold">Motivo</label>
                         <textarea id="folgaMotivo" class="form-control" rows="2" maxlength="500"
@@ -148,6 +221,73 @@
                 <button type="button" class="btn btn-danger" id="btnConfirmarApagar">
                     <i class="bi bi-trash"></i> Remover
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: ajuste manual de compensação -->
+<div class="modal fade" id="compensacaoModal" tabindex="-1" aria-labelledby="compensacaoTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="compensacaoForm" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="compensacaoTitulo">Ajustar compensação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="compensacaoAviso" class="alert d-none" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label for="compensacaoUtilizador" class="form-label fw-semibold">
+                            Pessoa <span class="text-danger">*</span>
+                        </label>
+                        <select id="compensacaoUtilizador" class="form-select"></select>
+                        <div class="form-text" id="compensacaoSaldo"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="compensacaoValor" class="form-label fw-semibold">
+                            Dias <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" id="compensacaoValor" class="form-control"
+                               step="0.5" placeholder="Ex.: 2 acrescenta dívida, −2 abate">
+                        <div class="form-text">
+                            Valor positivo acrescenta dívida, negativo abate. O saldo nunca
+                            fica abaixo de zero: um abate maior que a dívida deixa tudo em
+                            zero.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnConfirmarCompensacao">
+                        <i class="bi bi-check-lg"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: histórico (extrato) de um colaborador -->
+<div class="modal fade" id="historicoModal" tabindex="-1" aria-labelledby="historicoTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="historicoTitulo">Histórico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="historicoCorpo">
+                <div class="text-center py-4 text-muted">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">A carregar o histórico...</span>
+                    </div>
+                    <div class="mt-2">A carregar o histórico...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>

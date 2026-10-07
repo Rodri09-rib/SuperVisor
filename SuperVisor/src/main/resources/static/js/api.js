@@ -159,6 +159,16 @@ const SuperVisorApi = (() => {
         publicarEscala: (id) => request('/api/v1/scales/' + encodeURIComponent(id) + '/publish', { metodo: 'POST' }),
 
         /**
+         * Conclui a escala e credita os dias de folga que o trabalho dela
+         * rendeu (domingo = 0.5, Celular da Marinas = 1.0).
+         *
+         * <p>O servidor torna a operação idempotente: repetir não credita duas
+         * vezes, por isso um duplo clique ou uma repetição por falha de rede
+         * não mexe nos saldos.
+         */
+        concluirEscala: (id) => request('/api/v1/scales/' + encodeURIComponent(id) + '/complete', { metodo: 'POST' }),
+
+        /**
          * Relatório de cobertura e conflitos de uma escala, numa só resposta.
          *
          * <p>É leitura, como o resto das escalas: qualquer usuário
@@ -266,6 +276,41 @@ const SuperVisorApi = (() => {
             + '?inicio=' + encodeURIComponent(inicio)
             + '&fim=' + encodeURIComponent(fim),
             { metodo: 'DELETE' }),
+
+        /**
+         * Regista uma falta ou observação numa célula da presencialidade.
+         *
+         * <p>O servidor devolve a célula atualizada e não só o OK: a grelha
+         * repinta a linha com o que veio de lá — incluindo o saldo que a falta
+         * movimentou — em vez de recarregar a semana toda e perder o sítio
+         * onde o utilizador estava a trabalhar.
+         */
+        atualizarPresenca: (scheduleId, dados) => request(
+            '/api/v1/work-modality-schedules/' + encodeURIComponent(scheduleId) + '/attendance',
+            { metodo: 'PATCH', corpo: dados }),
+
+        /**
+         * Ajuste manual do saldo de compensação, feito pela supervisão.
+         *
+         * <p>O valor é um delta assinado: negativo quando se abate uma dívida,
+         * positivo quando se acrescenta. Devolve o colaborador atualizado para
+         * a lista do topo se atualizar sem uma nova leitura.
+         */
+        ajustarCompensacao: (userId, deltaDays) => request(
+            '/api/v1/users/' + encodeURIComponent(userId) + '/compensation',
+            { metodo: 'PATCH', corpo: { deltaDays: deltaDays } }),
+
+        /**
+         * Extrato de um colaborador: faltas, folgas e recompensas, do mais
+         * recente para o mais antigo.
+         *
+         * <p>É a origem do botão de histórico da página de folgas. O servidor
+         * restringe a leitura à supervisão — o extrato reconstrói o saldo de
+         * qualquer pessoa —, por isso um analista não chega a fazer este
+         * pedido: recebe 403 e a sessão continua, que é o que um 403 significa.
+         */
+        extratoUtilizador: (id) => request(
+            '/api/v1/users/' + encodeURIComponent(id) + '/extrato'),
 
         listarFolgas: (userId) => request('/api/v1/leaves'
             + (userId ? '?userId=' + encodeURIComponent(userId) : '')),
