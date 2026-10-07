@@ -3,11 +3,16 @@ package controller;
 import domain.dto.ActiveUserDTO;
 import domain.dto.ChangeActiveRequestDTO;
 import domain.dto.ChangePasswordRequestDTO;
+import domain.dto.CompensationAdjustRequestDTO;
 import domain.dto.CreateUserRequestDTO;
 import domain.dto.CurrentUserDTO;
+import domain.dto.ExtratoEventoDTO;
 import domain.dto.UpdateUserRequestDTO;
 import domain.model.entities.User;
+import domain.model.enums.UserProfile;
 import security.ProfileAuthorization;
+import service.CompensationService;
+import service.ExtratoService;
 import service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -45,17 +50,58 @@ public class UserController {
     private UserService userService;
 
     @Autowired
+    private CompensationService compensationService;
+
+    @Autowired
+    private ExtratoService extratoService;
+
+    @Autowired
     private ProfileAuthorization profileAuthorization;
 
     /**
      * Usuários ativos, por ordem de nome. Alimenta o seletor de pessoas
      * do editor de alocações. Fica acima de {@code /me} para não ser
      * interceptada por essa rota.
+     *
+     * <p>Os saldos vêm apenas para quem supervisiona. A rota está aberta a
+     * qualquer perfil autenticado — nomes e e-mails são informação partilhada
+     * — mas o saldo de folgas e a dívida de compensação são gestão, e um
+     * analista que lesse a lista não ia usá-los para nada legítimo. A omissão
+     * é da resposta e não do frontend: esconder a coluna no browser deixava o
+     * valor no JSON de qualquer pessoa que abrisse a consola.
      */
     @GetMapping
     public ResponseEntity<List<ActiveUserDTO>> listarAtivos() {
+        List<ActiveUserDTO> utilizadores = userService.listarAtivos();
 
-        return ResponseEntity.ok(userService.listarAtivos());
+        if (perfilDeQuemPede() != UserProfile.SUPERVISOR) {
+            utilizadores = utilizadores.stream()
+                    .map(ActiveUserDTO::semSaldos)
+                    .toList();
+        }
+
+        return ResponseEntity.ok(utilizadores);
+    }
+
+    /**
+     * Extrato de um colaborador: faltas, folgas e recompensas, do mais
+     * recente para o mais antigo.
+     *
+     * <p>É a resposta ao «de onde vem este saldo?» do botão de histórico da
+     * página de folgas. Restrito à supervisão pela mesma razão de
+     * {@link #ajustarCompensacao}: o extrato reconstrói o saldo de qualquer
+     * pessoa a partir do histórico dela, que é informação de gestão.
+     *
+     * <p>Uma conta inexistente é 400 com a mensagem de serviço e não 404: é
+     * a mesma resposta de «usuário não encontrado» do resto do recurso, e
+     * distinguir os dois códigos só ensinaria o chamador a mapear cada
+     * serviço para o seu favorito.
+     */
+    @GetMapping("/{id}/extrato")
+    public ResponseEntity<List<ExtratoEventoDTO>> extrato(@PathVariable Long id) {
+        profileAuthorization.exigirSupervisor();
+
+        return ResponseEntity.ok(extratoService.listar(id));
     }
 
     @GetMapping("/me")
@@ -143,6 +189,23 @@ public class UserController {
     }
 
     /**
+     * Ajusta o saldo de compensação de um colaborador.
+     *
+     * <p>Restrito à supervisão porque mexe no saldo de outra pessoa, e o saldo
+     * é o que a grelha de presencialidade usa para avisar que alguém deve
+     * compensar. O corpo traz um delta assinado — negativo para abater, quando
+     * o colaborador compensou; positivo para acrescentar, numa troca não
+     * autorizada — e o serviço corta o resultado em zero.
+     */
+    @PatchMapping("/{id}/compensation")
+    public ResponseEntity<ActiveUserDTO> ajustarCompensacao(@PathVariable Long id,
+                                                            @Valid @RequestBody CompensationAdjustRequestDTO dto) {
+        profileAuthorization.exigirSupervisor();
+
+        return ResponseEntity.ok(compensationService.ajustar(id, dto.deltaDays()));
+    }
+
+    /**
      * Exclui definitivamente uma conta.
      *
      * <p>Difere de {@link #alterarEstado} em duas coisas, e ambas são o motivo de
@@ -189,5 +252,24 @@ public class UserController {
                 SecurityContextHolder.getContext().getAuthentication();
 
         return (User) authentication.getPrincipal();
+    }
+
+    /**
+     * Perfil de quem fez o pedido, para a leitura decidir o que omitir.
+     *
+     * <p>Devolve {@code null} quando não há principal ou quando não é um
+     * {@link User} — e um perfil desconhecido não é supervisor, o que fecha a
+     * lista de saldos em vez de a abrir por omissão. É a mesma defesa do
+     * método equivalente de {@code LeaveController}, pela mesma razão: o
+     * caminho seguro é o de mostrar menos.
+     */
+    private UserProfile perfilDeQuemPede() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            return null;
+        }
+
+        return user.getProfile();
     }
 }

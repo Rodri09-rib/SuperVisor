@@ -1,6 +1,7 @@
 package domain.repository;
 
 import domain.model.entities.WorkModalitySchedule;
+import domain.model.enums.AttendanceStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -44,6 +45,30 @@ public interface WorkModalityScheduleRepository extends JpaRepository<WorkModali
                                                                @Param("fim") LocalDate fim);
 
     List<WorkModalitySchedule> findByUserIdAndDate(Long userId, LocalDate date);
+
+    /**
+     * Faltas registadas a uma pessoa, da mais recente para a mais antiga.
+     *
+     * <p>É a parte de faltas do extrato de folgas. Só as células com estado
+     * diferente de presente interessam — uma célula sem registo é uma célula
+     * normal, e listá-las encheria o histórico de acontecimentos que não
+     * aconteceram.
+     *
+     * <p>Comparação por parâmetro e não por literal JPQL: o estado de referência
+     * é o mesmo que a geração da escala escreve ({@code PRESENT}), e repeti-lo
+     * dentro da consulta seria um segundo sítio onde um estado novo podia ser
+     * esquecido.
+     */
+    @Query("""
+            SELECT w FROM WorkModalitySchedule w
+            JOIN FETCH w.user
+            WHERE w.user.id = :userId
+              AND w.attendanceStatus IS NOT NULL
+              AND w.attendanceStatus <> :presente
+            ORDER BY w.date DESC, w.id DESC
+            """)
+    List<WorkModalitySchedule> listarAusenciasDoUtilizador(@Param("userId") Long userId,
+                                                           @Param("presente") AttendanceStatus presente);
 
     /**
      * Apaga a escala de um intervalo.

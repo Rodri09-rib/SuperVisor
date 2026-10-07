@@ -23,6 +23,25 @@ public interface ShiftSchedulingRepository extends JpaRepository <ShiftSchedulin
     List<ShiftScheduling> findByEditionScaleIdAndUserIdOrderByIdAsc(Long editionScaleId, Long userId);
 
     /**
+     * Alocações de uma pessoa em escalas cujo crédito de folgas já foi
+     * aplicado, da mais recente para a mais antiga.
+     *
+     * <p>É a parte de recompensas do extrato de folgas. O filtro é a flag
+     * {@code rewardsProcessed} e não o estado da escala: a flag é escrita na
+     * mesma transação que creditava os dias, por isso é ela que garante que o
+     * que a consulta devolve corresponde a saldo que existe mesmo na conta da
+     * pessoa — um estado sozinho deixaria uma escala marcada como concluída
+     * sem ninguém ter sido creditado a aparecer como recompensa.
+     */
+    @Query("""
+            SELECT a FROM ShiftScheduling a
+            JOIN FETCH a.editionScale escala
+            WHERE a.user.id = :userId AND escala.rewardsProcessed = true
+            ORDER BY a.id DESC
+            """)
+    List<ShiftScheduling> listarRecompensadasDoUtilizador(@Param("userId") Long userId);
+
+    /**
      * Quantos turnos a pessoa tem, em qualquer escala.
      *
      * <p>É o que impede a exclusão de uma conta que deixa turnos marcados. Um
