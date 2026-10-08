@@ -1,8 +1,10 @@
 package domain.dto;
 
 import domain.model.entities.UserLeave;
+import domain.model.enums.LeaveDuration;
 import domain.model.enums.UserProfile;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -19,6 +21,12 @@ import java.time.LocalDate;
  * incluídas. Uma folga de segunda a sexta é de 5 dias e não de 4: quem lê o
  * cartão quer saber o tamanho da ausência, e o número de noites dormidas em
  * casa não é esse número.
+ *
+ * <p>{@code leaveDuration} e {@code costDays} respondem a outra pergunta: o
+ * que a folga consome do saldo. Dia inteiro de segunda a sexta consome cinco
+ * dias; uma folga só de manhã consome meio, e é esse número — e não o de
+ * calendário — que a coluna de duração da página de folgas mostra ao lado do
+ * período.
  */
 public record UserLeaveDTO(
         Long id,
@@ -29,11 +37,15 @@ public record UserLeaveDTO(
         String reason,
         Instant createdAt,
         int durationDays,
+        LeaveDuration leaveDuration,
+        String leaveDurationLabel,
+        BigDecimal costDays,
         boolean canEdit
 ) {
 
     public static UserLeaveDTO from(UserLeave folga, UserProfile perfilDeQuemPede) {
         var utilizador = folga.getUser();
+        var duracao = folga.getLeaveDuration() == null ? LeaveDuration.FULL_DAY : folga.getLeaveDuration();
 
         return new UserLeaveDTO(
                 folga.getId(),
@@ -44,6 +56,9 @@ public record UserLeaveDTO(
                 folga.getReason(),
                 folga.getCreatedAt(),
                 duracaoEmDias(folga.getStartDate(), folga.getEndDate()),
+                duracao,
+                duracao.getRotulo(),
+                folga.custoEmDias(),
                 perfilDeQuemPede == UserProfile.SUPERVISOR);
     }
 

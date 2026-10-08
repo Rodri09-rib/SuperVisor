@@ -303,6 +303,14 @@ class WebUIPagesIntegrationTest extends AbstractApiIntegrationTest {
                         .andExpect(content().contentTypeCompatibleWith("application/javascript"));
             }
         }
+
+        @Test
+        @DisplayName("o mascote do login é servido a partir da pasta de imagens")
+        void mascoteServido() throws Exception {
+            mockMvc.perform(get("/images/mascote-supervisor.png"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentTypeCompatibleWith("image/png"));
+        }
     }
 
     private long contarOcorrencias(String texto, String agulha) {

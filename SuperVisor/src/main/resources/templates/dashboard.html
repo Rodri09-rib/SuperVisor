@@ -39,6 +39,9 @@
                 <button id="btnNovoUsuario" class="btn btn-primary d-none">
                     <i class="bi bi-person-plus"></i> Novo Usuário
                 </button>
+                <button id="btnFeriados" class="btn btn-outline-secondary d-none">
+                    <i class="bi bi-calendar-event"></i> Feriados
+                </button>
                 <button id="btnNovaEscala" class="btn btn-primary d-none">
                     <i class="bi bi-plus-lg"></i> Nova Escala
                 </button>
@@ -92,7 +95,7 @@
                 <div id="detalhesCobertura" class="mb-3"></div>
                 <h6 class="text-secondary text-uppercase small fw-bold">Turnos atribuídos</h6>
                 <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle mb-0">
+                    <table class="table table-sm table-hover align-middle mb-0" id="tabelaTurnosAtribuidos">
                         <thead class="table-light">
                         <tr>
                             <th scope="col">Data</th>
@@ -397,6 +400,74 @@
     </div>
 </div>
 
+<!-- Modal: Feriados (supervisão) -->
+<div class="modal fade" id="feriadosModal" tabindex="-1" aria-labelledby="feriadosTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="feriadosTitulo">Feriados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="feriadosAviso" class="alert d-none" role="alert"></div>
+
+                <div class="alert alert-light border small">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Quem trabalha num feriado ganha 1 dia de folga no fecho da escala — uma vez por dia
+                    trabalhado, independentemente de quantos subturnos fizer. Apagar um feriado não devolve
+                    dias já creditados.
+                </div>
+
+                <form id="feriadoForm" novalidate>
+                    <input type="hidden" id="feriadoId">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-4">
+                            <label for="feriadoData" class="form-label fw-semibold">
+                                Data <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" id="feriadoData" class="form-control" required>
+                        </div>
+                        <div class="col-sm-5">
+                            <label for="feriadoDescricao" class="form-label fw-semibold">
+                                Descrição <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="feriadoDescricao" class="form-control"
+                                   maxlength="120" placeholder="N. Senhora da Aparecida" required>
+                        </div>
+                        <div class="col-sm-3 d-grid">
+                            <button type="submit" class="btn btn-primary" id="btnSubmeterFeriado">
+                                <i class="bi bi-plus-lg"></i> Registar
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm d-none mt-2"
+                            id="btnCancelarEdicaoFeriado">
+                        <i class="bi bi-x-lg"></i> Cancelar edição
+                    </button>
+                </form>
+
+                <hr>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th scope="col">Data</th>
+                            <th scope="col">Descrição</th>
+                            <th scope="col" class="text-end">Ações</th>
+                        </tr>
+                        </thead>
+                        <tbody id="feriadosCorpo"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Editar usuário -->
 <div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioTitulo" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -500,6 +571,36 @@
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-success" id="btnConfirmarPublicacao">
                     <i class="bi bi-send"></i> Publicar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmação de conclusão da escala -->
+<div class="modal fade" id="conclusaoModal" tabindex="-1" aria-labelledby="conclusaoTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="conclusaoTitulo">Concluir escala</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning py-2">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Concluir a escala <strong id="conclusaoEscalaNome"></strong> credita no saldo de cada
+                    pessoa os dias de folga que o trabalho dela rendeu (domingo = 0.5 dia,
+                    Celular da Marinas = 1 dia, feriado trabalhado = 1 dia). O crédito não pode ser
+                    desfeito.
+                </div>
+                <p class="mb-0">
+                    Depois de concluída, a escala já não volta a ser editada nem publicada outra vez.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarConclusao">
+                    <i class="bi bi-check2-circle"></i> Concluir e creditar folgas
                 </button>
             </div>
         </div>

@@ -31,6 +31,9 @@ public class ScaleService {
     @Autowired
     private ExchangeRequestRepository exchangeRequestRepository;
 
+    @Autowired
+    private ScaleRewardsService scaleRewardsService;
+
     @Transactional
     public EditionScale createScale(CreateScaleDTO dto) {
 
@@ -59,6 +62,50 @@ public class ScaleService {
 
         scale.setStatus(EditionStatus.PUBLISHED);
         editionScaleRepository.save(scale);
+    }
+
+    /**
+     * Conclui a escala e credita os dias de folga que ela rendeu.
+     *
+     * <p>É o fecho, e por isso a única transição que mexe em saldos: enquanto
+     * a escala está em rascunho ou publicada, os turnos continuam a ser
+     * editados e trocados, e creditar a cada alteração dava folgas por
+     * trabalho que ainda não aconteceu. {@link ScaleRewardsService} aplica as
+     * regras (domingo = 0.5, Celular da Marinas = 1.0, acumuláveis) sobre as
+     * alocações desta escala.
+     *
+     * <p>Idempotente por construção. A repetição é um erro novo — a escala já
+     * não está publicada — e a flag {@code rewardsProcessed} regista, dentro
+     * da mesma transação, que o crédito já entrou: um duplo clique ou um
+     * repetição por falha de rede não dobra o saldo de ninguém. Ao contrário
+     * da publicação, repetir a conclusão com sucesso não devolve erro — quem
+     * repete acha que o primeiro pedido falhou, e responder 400 a um pedido
+     * que afinal funcionou só empurra a pessoa para tentar outra vez.
+     *
+     * @return {@code true} se esta chamada fechou a escala, {@code false} se
+     *         ela já estava concluída (repetição)
+     */
+    @Transactional
+    public boolean completeSchedule(Long idEdition) {
+
+        EditionScale scale = editionScaleRepository.findById(idEdition).
+                orElseThrow(() -> new RuntimeException("Edição de Escala não encontrada."));
+
+        if (scale.getStatus() == EditionStatus.COMPLETED && scale.isRewardsProcessed()) {
+            return false;
+        }
+
+        if (scale.getStatus() != EditionStatus.PUBLISHED) {
+            throw new RuntimeException("Apenas escalas publicadas podem ser concluídas");
+        }
+
+        scale.setStatus(EditionStatus.COMPLETED);
+        scale.setRewardsProcessed(true);
+        editionScaleRepository.save(scale);
+
+        scaleRewardsService.aplicar(scale);
+
+        return true;
     }
 
     @Transactional(readOnly = true)

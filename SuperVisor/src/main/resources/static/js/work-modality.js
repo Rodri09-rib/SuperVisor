@@ -15,6 +15,19 @@
     let celulas = [];
     let modal = null;
     let modalApagar = null;
+    let modalPresenca = null;
+    let celulaActiva = null;
+    let ehSupervisor = false;
+
+    /**
+     * Dívida de compensação de cada pessoa, por id.
+     *
+     * <p>Vem da lista de utilizadores e não da célula: a dívida é da pessoa e
+     * não do dia, e repeti-la em cada célula da semana faria a grelha mostrar
+     * o mesmo número cinco vezes — além de ficar desatualizada assim que
+     * alguém marcasse uma falta noutro dia.
+     */
+    let pendencias = {};
 
     const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 
@@ -101,38 +114,69 @@
                     dias: {}
                 });
             }
-            porPessoa.get(celula.userId).dias[celula.date] = celula.modality;
+            porPessoa.get(celula.userId).dias[celula.date] = celula;
         });
 
         let html = '';
-        porPessoa.forEach((pessoa) => {
+        porPessoa.forEach((pessoa, userId) => {
             html += '<tr>'
                 + '<th scope="row" class="grelha-celula">'
                 + '<div class="fw-semibold">'
-                + SuperVisorFormat.escapar(pessoa.nome || '—') + '</div>'
+                + SuperVisorFormat.escapar(pessoa.nome || '—')
+                + compensacaoDe(userId) + '</div>'
                 + '<small class="text-muted">'
                 + SuperVisorFormat.escapar(SuperVisorFormat.rotuloEquipa(pessoa.equipa))
                 + '</small></th>';
 
             for (let i = 0; i < DIAS.length; i++) {
                 const chave = iso(somarDias(segunda, i));
-                const modalidade = pessoa.dias[chave];
+                const celula = pessoa.dias[chave];
 
                 // Sem célula, traço. Preencher com o valor que o padrão mandaria
                 // seria inventar uma escala que o servidor não gravou, e o
                 // usuário acabaria por trabalhar a partir de uma grelha que
                 // ninguém confirmou.
-                html += '<td class="text-center">'
-                    + (modalidade
-                        ? SuperVisorFormat.badgeModalidade(modalidade)
-                        : '<span class="text-muted">—</span>')
-                    + '</td>';
+                if (!celula) {
+                    html += '<td class="text-center"><span class="text-muted">—</span></td>';
+                    continue;
+                }
+
+                const falta = celula.attendanceStatus && celula.attendanceStatus !== 'PRESENT';
+                const observacao = celula.notes
+                    ? ' title="' + SuperVisorFormat.escapar(celula.notes) + '"'
+                    : '';
+
+                let conteudo = SuperVisorFormat.badgeModalidade(celula.modality);
+                if (falta) {
+                    conteudo += '<div class="mt-1">'
+                        + SuperVisorFormat.badgePresenca(celula.attendanceStatus, celula.attendanceLabel)
+                        + '</div>';
+                }
+
+                html += '<td class="text-center ' + (falta ? 'celula-falta' : '')
+                    + (ehSupervisor ? ' celula-acessivel' : '') + '"'
+                    + ' data-celula="' + celula.id + '"' + observacao + '>'
+                    + conteudo + '</td>';
             }
 
             html += '</tr>';
         });
 
         el.corpo.innerHTML = html;
+    }
+
+    /**
+     * Badge de dívida ao lado do nome, só para supervisão.
+     *
+     * <p>É informação de gestão de pessoas e não de leitura de escala: quem
+     * só consulta presencialidade continua a ver quem falta, mas não passa a
+     * ver quanto é que alguém deve.
+     */
+    function compensacaoDe(userId) {
+        if (!ehSupervisor || pendencias[userId] === undefined) {
+            return '';
+        }
+        return ' ' + SuperVisorFormat.badgeCompensacao(pendencias[userId]);
     }
 
     function desenhar() {
@@ -168,6 +212,31 @@
     }
 
     /**
+     * Dívida de cada pessoa, lida da lista de utilizadores.
+     *
+     * <p>Corre a par da semana e não dentro dela: os saldos mudam com faltas
+     * noutras semanas, e pedi-los junto das células faria a grelha depender de
+     * duas respostas para desenhar uma linha.
+     */
+    async function carregarPendencias() {
+        if (!ehSupervisor) {
+            pendencias = {};
+            return;
+        }
+
+        try {
+            const utilizadores = (await SuperVisorApi.listarUtilizadores()) || [];
+            pendencias = {};
+            utilizadores.forEach((utilizador) => {
+                pendencias[utilizador.id] = Number(utilizador.pendingCompensationDays || 0);
+            });
+        } catch (erro) {
+            console.warn('Saldos de compensação indisponíveis:', erro);
+            pendencias = {};
+        }
+    }
+
+    /**
      * O botão de gerar só aparece a um supervisor.
      *
      * <p>É a mesma regra do servidor,chega aqui por conveniência visual: escondê-lo
@@ -176,15 +245,18 @@
      *
      * <p>O botão de apagar vem na mesma condição e pelo mesmo motivo, e estão
      * juntos porque são as duas pontas da mesma operação: o que um desfaz é
-     * exatamente o que o outro faz.
+     * exatamente o que o outro faz. E a mesma regra abre as células: registar
+     * uma falta mexe no saldo de compensação de outra pessoa, o que é escrita
+     * de gestão e não de consulta.
      */
     async function carregarPerfil() {
         try {
             const utilizador = await SuperVisorApi.utilizadorAtual();
-            const ehSupervisor = utilizador && utilizador.profile === 'SUPERVISOR';
+            ehSupervisor = !!(utilizador && utilizador.profile === 'SUPERVISOR');
             el.btnGerar.classList.toggle('d-none', !ehSupervisor);
             el.btnApagar.classList.toggle('d-none', !ehSupervisor);
         } catch (erro) {
+            ehSupervisor = false;
             console.warn('Perfil indisponível:', erro);
         }
     }
@@ -257,6 +329,59 @@
     }
 
     /* ------------------------------------------------------------------ */
+    /* Registo de presença                                                 */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Abre o registo de uma célula, com o estado atual já marcado.
+     *
+     * <p>Reabrir uma célula já marcada tem de mostrar o que lá está, e não um
+     * formulário em branco: uma correção de "falta de manhã" para "falta de
+     * dia inteiro" começa por saber que a primeira está lá.
+     */
+    function abrirPresenca(celula) {
+        el.presencaAviso.classList.add('d-none');
+        el.presencaId.value = celula.id;
+        el.presencaPessoa.textContent =
+            (celula.userName || '—') + ' · ' + SuperVisorFormat.data(celula.date);
+        el.presencaEstado.value = celula.attendanceStatus || 'PRESENT';
+        el.presencaObservacao.value = celula.notes || '';
+        modalPresenca.show();
+    }
+
+    async function guardarPresenca() {
+        const celula = celulas.find((c) => String(c.id) === el.presencaId.value);
+        if (!celula) {
+            return;
+        }
+
+        el.btnConfirmarPresenca.disabled = true;
+        try {
+            const atualizada = await SuperVisorApi.atualizarPresenca(celula.id, {
+                attendanceStatus: el.presencaEstado.value,
+                notes: el.presencaObservacao.value
+            });
+
+            // A célula substitui-se na lista local em vez de recarregar a
+            // semana: a resposta é a célula atualizada, e recarregar tudo
+            // perdia o sítio onde o utilizador estava a ler.
+            const indice = celulas.findIndex((c) => c.id === atualizada.id);
+            if (indice >= 0) {
+                celulas[indice] = atualizada;
+            }
+
+            modalPresenca.hide();
+            await carregarPendencias();
+            desenhar();
+        } catch (erro) {
+            el.presencaAviso.textContent = erro.message;
+            el.presencaAviso.className = 'alert alert-danger';
+        } finally {
+            el.btnConfirmarPresenca.disabled = false;
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
     /* Arranque                                                            */
     /* ------------------------------------------------------------------ */
 
@@ -275,6 +400,13 @@
         el.apagarAviso = document.getElementById('apagarAviso');
         el.apagarTexto = document.getElementById('apagarTexto');
         el.btnConfirmarApagar = document.getElementById('btnConfirmarApagar');
+        el.presencaId = document.getElementById('presencaId');
+        el.presencaForm = document.getElementById('presencaForm');
+        el.presencaPessoa = document.getElementById('presencaPessoa');
+        el.presencaEstado = document.getElementById('presencaEstado');
+        el.presencaObservacao = document.getElementById('presencaObservacao');
+        el.presencaAviso = document.getElementById('presencaAviso');
+        el.btnConfirmarPresenca = document.getElementById('btnConfirmarPresenca');
     }
 
     function registarEventos() {
@@ -297,6 +429,25 @@
         el.btnConfirmar.addEventListener('click', gerar);
         el.btnApagar.addEventListener('click', abrirApagar);
         el.btnConfirmarApagar.addEventListener('click', apagar);
+        el.presencaForm.addEventListener('submit', (evento) => {
+            evento.preventDefault();
+            guardarPresenca();
+        });
+
+        el.corpo.addEventListener('click', (evento) => {
+            if (!ehSupervisor) {
+                return;
+            }
+            const alvo = evento.target.closest('[data-celula]');
+            if (!alvo) {
+                return;
+            }
+
+            const celula = celulas.find((c) => String(c.id) === alvo.dataset.celula);
+            if (celula) {
+                abrirPresenca(celula);
+            }
+        });
     }
 
     function iniciar() {
@@ -305,8 +456,15 @@
         segunda = inicioDaSemanaIso(new Date());
         modal = new bootstrap.Modal(document.getElementById('gerarModal'));
         modalApagar = new bootstrap.Modal(document.getElementById('apagarModal'));
-        carregarPerfil();
-        carregar();
+        modalPresenca = new bootstrap.Modal(document.getElementById('presencaModal'));
+
+        // O perfil decide que ações existem, e as células só ficam clicáveis
+        // depois de o perfil responder: por isso a primeira carga segue-o em
+        // vez de correr a par dele.
+        carregarPerfil().then(() => {
+            carregarPendencias();
+            carregar();
+        });
     }
 
     document.addEventListener('DOMContentLoaded', iniciar);

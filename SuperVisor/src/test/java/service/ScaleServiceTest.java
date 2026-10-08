@@ -53,6 +53,9 @@ class ScaleServiceTest {
     @Mock
     private ExchangeRequestRepository exchangeRequestRepository;
 
+    @Mock
+    private ScaleRewardsService scaleRewardsService;
+
     @InjectMocks
     private ScaleService scaleService;
 
@@ -197,6 +200,101 @@ class ScaleServiceTest {
     }
 
     @Nested
+    @DisplayName("completeSchedule")
+    class Complete {
+
+        private EditionScale escala(EditionStatus estado, boolean processada) {
+            EditionScale escala = new EditionScale(1L, "Escala Outubro",
+                    LocalDate.of(2025, 10, 1), LocalDate.of(2025, 10, 31),
+                    estado, criador());
+            escala.setRewardsProcessed(processada);
+            return escala;
+        }
+
+        @Test
+        @DisplayName("fecha a escala, marca a flag de crédito e aplica as recompensas")
+        void fechaECredita() {
+            EditionScale escala = escala(EditionStatus.PUBLISHED, false);
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala));
+
+            boolean fechou = scaleService.completeSchedule(1L);
+
+            assertThat(fechou).isTrue();
+            assertThat(escala.getStatus()).isEqualTo(EditionStatus.COMPLETED);
+            assertThat(escala.isRewardsProcessed()).isTrue();
+            verify(editionScaleRepository).save(escala);
+            verify(scaleRewardsService).aplicar(escala);
+        }
+
+        @Test
+        @DisplayName("grava a escala antes de creditar: o saldo só entra em escala já concluída")
+        void gravaAntesDeCreditar() {
+            EditionScale escala = escala(EditionStatus.PUBLISHED, false);
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala));
+
+            scaleService.completeSchedule(1L);
+
+            InOrder ordem = inOrder(editionScaleRepository, scaleRewardsService);
+            ordem.verify(editionScaleRepository).save(escala);
+            ordem.verify(scaleRewardsService).aplicar(escala);
+        }
+
+        @Test
+        @DisplayName("repetir a conclusão é no-op: não grava nem credita de novo")
+        void repeticaoNaoCreditaNemGrava() {
+            EditionScale escala = escala(EditionStatus.COMPLETED, true);
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala));
+
+            boolean fechou = scaleService.completeSchedule(1L);
+
+            assertThat(fechou).isFalse();
+            assertThat(escala.getStatus()).isEqualTo(EditionStatus.COMPLETED);
+            verify(editionScaleRepository, never()).save(any());
+            verifyNoInteractions(scaleRewardsService);
+        }
+
+        @Test
+        @DisplayName("escala em rascunho não pode ser concluída")
+        void rascunhoNaoConclui() {
+            EditionScale escala = escala(EditionStatus.DRAFT, false);
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala));
+
+            assertThatThrownBy(() -> scaleService.completeSchedule(1L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Apenas escalas publicadas podem ser concluídas");
+
+            verify(editionScaleRepository, never()).save(any());
+            verifyNoInteractions(scaleRewardsService);
+        }
+
+        @Test
+        @DisplayName("concluída mas sem crédito registado não volta a ser concluída: a flag não autoriza reprocessar")
+        void concluidaSemFlagNaoReprocessa() {
+            EditionScale escala = escala(EditionStatus.COMPLETED, false);
+            when(editionScaleRepository.findById(1L)).thenReturn(Optional.of(escala));
+
+            assertThatThrownBy(() -> scaleService.completeSchedule(1L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Apenas escalas publicadas podem ser concluídas");
+
+            verify(scaleRewardsService, never()).aplicar(any());
+        }
+
+        @Test
+        @DisplayName("escala inexistente resulta em erro, como nas outras operações")
+        void escalaInexistente() {
+            when(editionScaleRepository.findById(42L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> scaleService.completeSchedule(42L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Edição de Escala não encontrada.");
+
+            verify(editionScaleRepository, never()).save(any());
+            verifyNoInteractions(scaleRewardsService);
+        }
+    }
+
+    @Nested
     @DisplayName("listAll")
     class ListAll {
 
@@ -235,15 +333,21 @@ class ScaleServiceTest {
     class Transacoes {
 
         @Test
-        @DisplayName("createScale e publishSchedule são transacionais; listAll é somente leitura")
+        @DisplayName("createScale, publishSchedule e completeSchedule são transacionais; listAll é somente leitura")
         void anotacoesTransacionais() throws NoSuchMethodException {
             Method create = ScaleService.class.getMethod("createScale", CreateScaleDTO.class);
             Method publish = ScaleService.class.getMethod("publishSchedule", Long.class);
+            Method complete = ScaleService.class.getMethod("completeSchedule", Long.class);
             Method list = ScaleService.class.getMethod("listAll");
 
             assertThat(create.getAnnotation(Transactional.class)).isNotNull();
             assertThat(create.getAnnotation(Transactional.class).readOnly()).isFalse();
             assertThat(publish.getAnnotation(Transactional.class)).isNotNull();
+            // A conclusão é uma operação única a nível de transação: mudar o
+            // estado e creditar os saldos ou acontecem juntos, ou não acontece
+            // nenhum dos dois.
+            assertThat(complete.getAnnotation(Transactional.class)).isNotNull();
+            assertThat(complete.getAnnotation(Transactional.class).readOnly()).isFalse();
             assertThat(list.getAnnotation(Transactional.class).readOnly()).isTrue();
         }
     }

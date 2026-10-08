@@ -4,10 +4,12 @@
  * <p>A página tem duas responsabilidades que não podem misturar-se: mostrar o
  * histórico, e permitir responder ao que está por responder. Quem pode responder
  * é o colega que vai receber o turno, ou um supervisor — e essa regra está no
- * servidor. Aqui os botões aparecem só nos pedidos que ainda estão pendentes
- * para não haver um botão que devolve 403; mas o botão aparecer não é o que
- * autoriza, e o `try/catch` em volta da resposta existe porque um pedido pode
- * deixar de estar pendente entre a lista ser desenhada e o clique acontecer.
+ * servidor. Aqui os botões aparecem só nos pedidos que ainda estão pendentes e
+ * só para quem pode respondê-los — o requerente não vê o botão do próprio
+ * pedido, porque a quem pediu resta esperar — para não haver um botão que
+ * devolve 403; mas o botão aparecer não é o que autoriza, e o `try/catch` em
+ * volta da resposta existe porque um pedido pode deixar de estar pendente entre
+ * a lista ser desenhada e o clique acontecer.
  */
 (() => {
 
@@ -15,6 +17,7 @@
     let pedidos = [];
     let pedidoEmResposta = null;
     let modal = null;
+    let utilizadorAtual = null;
 
     /* ------------------------------------------------------------------ */
     /* Desenho                                                             */
@@ -37,8 +40,28 @@
             + SuperVisorFormat.escapar(SuperVisorFormat.data(data)) + '</small></td>';
     }
 
+    /**
+     * Quem pode responder, visto daqui: o colega pedido ou a supervisão.
+     *
+     * <p>É só o desenho — quem autoriza é o servidor. Enquanto a página não
+     * sabe quem é o utilizador logado, o botão não aparece: oferecer um botão
+     * que só pode devolver 403 é ruído, e prefere-se falhar para o lado em que
+     * nada acontece. O próprio requerente nunca passa: `requestedId` é o alvo
+     * da solicitação, e quem iniciou o pedido é `requesterId`.
+     */
+    function podeResponder(pedido) {
+        if (!utilizadorAtual) {
+            return false;
+        }
+        if (utilizadorAtual.profile === 'SUPERVISOR') {
+            return true;
+        }
+        return pedido.requestedId != null
+            && String(pedido.requestedId) === String(utilizadorAtual.id);
+    }
+
     function botaoResposta(pedido) {
-        if (pedido.status !== 'PENDING') {
+        if (pedido.status !== 'PENDING' || !podeResponder(pedido)) {
             return '';
         }
         return '<button class="btn btn-sm btn-outline-primary js-responder" data-id="'
@@ -120,6 +143,22 @@
             });
         } catch (erro) {
             console.warn('Lista de usuários indisponível para o filtro:', erro);
+        }
+    }
+
+    /**
+     * Quem está com sessão iniciada.
+     *
+     * <p>O token só diz o e-mail, por isso o perfil e o id vêm de `/users/me`.
+     * Se a chamada falhar, fica `null` e os botões de resposta não aparecem —
+     * a lista continua a servir o histórico, que é o resto da página.
+     */
+    async function carregarSessao() {
+        try {
+            utilizadorAtual = await SuperVisorApi.utilizadorAtual();
+        } catch (erro) {
+            utilizadorAtual = null;
+            console.warn('Sessão indisponível para decidir quem pode responder:', erro);
         }
     }
 
@@ -219,11 +258,14 @@
         el.btnRecusar.addEventListener('click', () => responder(false));
     }
 
-    function iniciar() {
+    async function iniciar() {
         guardarElementos();
         registarEventos();
         modal = new bootstrap.Modal(document.getElementById('respostaModal'));
         carregarUtilizadores();
+        // A sessão primeiro: desenhar antes de saber quem é o utilizador
+        // deixaria os botões de resposta a piscar entre existir e não existir.
+        await carregarSessao();
         carregar();
     }
 

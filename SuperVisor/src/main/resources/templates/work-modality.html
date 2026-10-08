@@ -16,6 +16,22 @@
         .grelha-celula {
             min-width: 7rem;
         }
+        /*
+         * As células são clicáveis para quem pode registar falta, e o realce
+         * é o que o diz sem uma legenda: sem isto, a grelha parecia inerte e
+         * a funcionalidade existia só para quem a adivinhasse.
+         */
+        .celula-acessivel {
+            cursor: pointer;
+        }
+        .celula-acessivel:hover {
+            background-color: var(--bs-tertiary-bg);
+        }
+        /* Falta parcial e falta inteira partilham o tom de aviso, mas a de dia
+           inteiro carrega mais peso visual por ser a que custa mais. */
+        .celula-falta {
+            background-color: #fff3f3;
+        }
     </style>
   <style>
         .modal-dialog-scrollable .modal-content {
@@ -100,12 +116,17 @@
                 A escala alterna por semana ISO. Nas semanas ímpares a equipe A está
                 presencial à segunda, quarta e sexta; nas semanas pares é a equipe B.
                 A escala é reescrita se já existir, por isso gerar duas vezes não duplica.
+                A supervisão pode clicar numa célula para registar uma falta; uma falta
+                de dia inteiro acresce um dia ao saldo de compensação, e uma de meio
+                expediente meio dia.
             </p>
         </div>
         <div class="col-12 col-md-4">
-            <div class="d-flex justify-content-md-end gap-2">
+            <div class="d-flex flex-wrap justify-content-md-end gap-2">
                 <span class="badge bg-success">Presencial</span>
                 <span class="badge bg-info text-dark">Home Office</span>
+                <span class="badge bg-danger">Falta</span>
+                <span class="badge bg-warning text-dark">Falta (meia jornada)</span>
             </div>
         </div>
     </div>
@@ -157,6 +178,54 @@
                     <i class="bi bi-trash"></i> Apagar
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: registo de falta ou ocorrência -->
+<div class="modal fade" id="presencaModal" tabindex="-1" aria-labelledby="presencaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="presencaForm" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="presencaTitulo">Registar presença</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="presencaAviso" class="alert d-none" role="alert"></div>
+                    <input type="hidden" id="presencaId">
+
+                    <p class="fw-semibold mb-3" id="presencaPessoa"></p>
+
+                    <div class="mb-3">
+                        <label for="presencaEstado" class="form-label fw-semibold">Estado do dia</label>
+                        <select id="presencaEstado" class="form-select">
+                            <option value="PRESENT">Presente</option>
+                            <option value="ABSENT_FULL">Falta (dia inteiro)</option>
+                            <option value="ABSENT_MORNING">Falta (manhã)</option>
+                            <option value="ABSENT_AFTERNOON">Falta (tarde)</option>
+                        </select>
+                        <div class="form-text">
+                            Cada falta inteira soma um dia à dívida de compensação; uma
+                            falta de meio expediente soma meio. Voltar a "Presente" devolve o
+                            que a falta tinha somado.
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label for="presencaObservacao" class="form-label fw-semibold">Observação</label>
+                        <textarea id="presencaObservacao" class="form-control" rows="2" maxlength="500"
+                                  placeholder="Opcional. Ex.: atestado entregue no dia seguinte."></textarea>
+                        <div class="form-text">Até 500 caracteres. Fica vazio se não for preenchido.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnConfirmarPresenca">
+                        <i class="bi bi-check-lg"></i> Salvar
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

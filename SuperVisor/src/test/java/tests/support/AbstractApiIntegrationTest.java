@@ -68,6 +68,9 @@ public abstract class AbstractApiIntegrationTest {
     @Autowired
     protected domain.repository.UserLeaveRepository userLeaveRepository;
 
+    @Autowired
+    protected domain.repository.HolidayRepository holidayRepository;
+
     @BeforeEach
     void limparBanco() {
         entityManager.createQuery("DELETE FROM ExchangeRequest").executeUpdate();
@@ -75,6 +78,10 @@ public abstract class AbstractApiIntegrationTest {
         // `tb_user` e têm de ser limpas antes dela.
         entityManager.createQuery("DELETE FROM WorkModalitySchedule").executeUpdate();
         entityManager.createQuery("DELETE FROM UserLeave").executeUpdate();
+        // Feriados não apontam para nada, mas a tabela tem de começar vazia:
+        // o fecho da escala lê-a inteira e um registo de outro teste mudaria
+        // o crédito.
+        entityManager.createQuery("DELETE FROM Holiday").executeUpdate();
         // A tabela das atribuições especiais é uma @ElementCollection e não tem
         // entidade: tem de ser limpa por SQL nativo e antes da tabela-mãe.
         entityManager.createNativeQuery("DELETE FROM tb_shift_scheduling_assignment").executeUpdate();

@@ -1,5 +1,6 @@
 package domain.model.entities;
 
+import domain.model.enums.AttendanceStatus;
 import domain.model.enums.TeamGroup;
 import domain.model.enums.WorkModality;
 import jakarta.persistence.*;
@@ -45,6 +46,28 @@ public class WorkModalitySchedule {
     @Enumerated(EnumType.STRING)
     @Column(name = "team_group", nullable = false, length = 20)
     private TeamGroup teamGroup;
+
+    /**
+     * Estado de presença do colaborador nesse dia.
+     *
+     * <p>Nasce {@code PRESENT} porque a geração assume que quem tem escala
+     * vai aparecer: a ausência é a exceção e tem de ser registada à mão, e
+     * um estado por omissão evita que uma célula recém-criada venha nula e a
+     * grelha não soubia se aquilo é presença ou falta de informação.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "attendance_status", nullable = false, length = 20)
+    private AttendanceStatus attendanceStatus = AttendanceStatus.PRESENT;
+
+    /**
+     * Justificação livre do supervisor para a falta ou troca registada.
+     *
+     * <p>Anulável de propósito: a maioria das células não tem nada a dizer, e
+     * obrigar a um texto transformaria o campo num preenchimento obrigatório
+     * de formalidade.
+     */
+    @Column(name = "notes", length = 500)
+    private String notes;
 
     public WorkModalitySchedule() {
 
@@ -97,5 +120,21 @@ public class WorkModalitySchedule {
 
     public void setTeamGroup(TeamGroup teamGroup) {
         this.teamGroup = teamGroup;
+    }
+
+    public AttendanceStatus getAttendanceStatus() {
+        return attendanceStatus;
+    }
+
+    public void setAttendanceStatus(AttendanceStatus attendanceStatus) {
+        this.attendanceStatus = attendanceStatus;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }
