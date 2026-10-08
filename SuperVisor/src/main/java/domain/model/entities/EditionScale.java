@@ -20,6 +20,17 @@ public class EditionScale {
     @Enumerated(EnumType.STRING)
     private EditionStatus status;
 
+    /**
+     * Indica se as recompensas de folgas desta escala já foram creditadas.
+     *
+     * <p>É a trava de idempotência da conclusão: os dias entram no saldo dos
+     * utilizadores no mesmo instante em que a escala passa a {@code COMPLETED},
+     * e esta flag regista que o crédito já aconteceu. Sem ela, um duplo clique
+     * ou um repetição por falha de rede creditava duas vezes o mesmo trabalho.
+     */
+    @Column(name = "rewards_processed", nullable = false)
+    private boolean rewardsProcessed = false;
+
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "created_by_id")
@@ -76,6 +87,14 @@ public class EditionScale {
 
     public void setStatus(EditionStatus status) {
         this.status = status;
+    }
+
+    public boolean isRewardsProcessed() {
+        return rewardsProcessed;
+    }
+
+    public void setRewardsProcessed(boolean rewardsProcessed) {
+        this.rewardsProcessed = rewardsProcessed;
     }
 
     public User getCreatedBy() {

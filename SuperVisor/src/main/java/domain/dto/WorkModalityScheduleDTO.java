@@ -1,6 +1,7 @@
 package domain.dto;
 
 import domain.model.entities.WorkModalitySchedule;
+import domain.model.enums.AttendanceStatus;
 import domain.model.enums.TeamGroup;
 import domain.model.enums.WorkModality;
 
@@ -14,6 +15,10 @@ import java.time.LocalDate;
  * frontend usa o enum para decidir a cor e o rótulo para o texto legível, e
  * querer que os dois venham da mesma fonte evita a divergência clássica de a
  * aplicação dizer "Home Office" e a grelha escrever "Home-office".
+ *
+ * <p>{@code attendanceStatus} e {@code notes} são o registo de falta da célula:
+ * o estado vem com rótulo como a modalidade, e a observação acompanha a célula
+ * para que a grelha possa mostrá-la sem uma segunda chamada à API.
  *
  * <p>{@code weekdayLabel} e {@code weekNumber} não são dados do domínio: existem
  * para a grelha se orientar sem recalcular a semana em JavaScript e sem
@@ -30,13 +35,19 @@ public record WorkModalityScheduleDTO(
         int weekNumber,
         boolean weekOdd,
         WorkModality modality,
-        String modalityLabel
+        String modalityLabel,
+        AttendanceStatus attendanceStatus,
+        String attendanceLabel,
+        String notes
 ) {
 
     public static WorkModalityScheduleDTO from(WorkModalitySchedule registo) {
         var utilizador = registo.getUser();
         var equipa = registo.getTeamGroup();
         var modalidade = registo.getModality();
+        var presenca = registo.getAttendanceStatus() == null
+                ? AttendanceStatus.PRESENT
+                : registo.getAttendanceStatus();
         LocalDate data = registo.getDate();
         int semana = semanaIsoDe(data);
 
@@ -51,7 +62,10 @@ public record WorkModalityScheduleDTO(
                 semana,
                 semana % 2 == 1,
                 modalidade,
-                modalidade == null ? null : modalidade.getRotulo());
+                modalidade == null ? null : modalidade.getRotulo(),
+                presenca,
+                presenca.getRotulo(),
+                registo.getNotes());
     }
 
     private static int semanaIsoDe(LocalDate data) {

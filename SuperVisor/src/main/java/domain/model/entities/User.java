@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 
@@ -54,6 +55,34 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(name = "team_group", length = 20)
     private TeamGroup teamGroup;
+
+    /**
+     * Dívida de compensação pendente, em dias.
+     *
+     * <p>Cada falta registada na presencialidade soma aqui (um dia completo ou
+     * meio dia parcial) e o supervisor abate quando o colaborador compensa.
+     * O valor nunca fica negativo: uma dívida a menos não é um saldo a favor,
+     * é um registo que ficou a mais, e o serviço de compensação corta-o em
+     * zero.
+     *
+     * <p>{@link BigDecimal} e não {@code double}: os valores andam em passos de
+     * 0.5 e são somados muitas vezes, e a soma de flutuantes acabaria por
+     * mostrar 0.49999999999999994 dias de dívida numa grelha que só tem de
+     * dizer meio dia.
+     */
+    @Column(name = "pending_compensation_days", nullable = false, precision = 10, scale = 1)
+    private BigDecimal pendingCompensationDays = BigDecimal.ZERO;
+
+    /**
+     * Saldo de folgas acumuladas disponível, em dias.
+     *
+     * <p>Registar uma folga deduz do saldo (um dia inteiro ou meio dia para as
+     * folgas parciais) e apagar uma folga repõe o valor. É um saldo e não uma
+     * contagem de folgas pedidas: quem lê a página de folgas quer saber quanto
+     * ainda pode marcar.
+     */
+    @Column(name = "accumulated_leaves", nullable = false, precision = 10, scale = 1)
+    private BigDecimal accumulatedLeaves = BigDecimal.ZERO;
 
     public User (){
 
@@ -117,6 +146,22 @@ public class User implements UserDetails {
 
     public void setTeamGroup(TeamGroup teamGroup) {
         this.teamGroup = teamGroup;
+    }
+
+    public BigDecimal getPendingCompensationDays() {
+        return pendingCompensationDays;
+    }
+
+    public void setPendingCompensationDays(BigDecimal pendingCompensationDays) {
+        this.pendingCompensationDays = pendingCompensationDays;
+    }
+
+    public BigDecimal getAccumulatedLeaves() {
+        return accumulatedLeaves;
+    }
+
+    public void setAccumulatedLeaves(BigDecimal accumulatedLeaves) {
+        this.accumulatedLeaves = accumulatedLeaves;
     }
 
     @Override

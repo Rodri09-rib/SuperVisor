@@ -1,13 +1,17 @@
 package controller;
 
+import domain.dto.AttendanceRequestDTO;
 import domain.dto.GenerateWorkModalityDTO;
 import domain.dto.WorkModalityScheduleDTO;
 import security.ProfileAuthorization;
+import service.AttendanceService;
 import service.WorkModalityAutomationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -32,6 +36,9 @@ public class WorkModalityController {
 
     @Autowired
     private WorkModalityAutomationService workModalityAutomationService;
+
+    @Autowired
+    private AttendanceService attendanceService;
 
     @Autowired
     private ProfileAuthorization profileAuthorization;
@@ -70,6 +77,32 @@ public class WorkModalityController {
                 workModalityAutomationService.gerar(dto == null ? null : dto.dataReferencia());
 
         return ResponseEntity.ok(escala);
+    }
+
+    /**
+     * Regista uma falta ou ocorrência numa célula da escala.
+     *
+     * <p>Restrita à supervisão pela mesma razão de {@link #gerar}: o estado de
+     * presença de alguém move a dívida de compensação dessa mesma pessoa, e um
+     * analista a marcar faltas aos outros seria uma escrita que muda o saldo de
+     * um terceiro. A leitura continua aberta a todos, como o resto da grelha.
+     *
+     * <p>Um PATCH e não um PUT porque a operação altera dois campos de um
+     * recurso que tem mais — modalidade e equipa ficam como estão — e o corpo
+     * não substitui a célula: substituir-levaria embora a modalidade que a
+     * geração calculou.
+     *
+     * <p>Devolve a célula atualizada para a grelha a pintar no sítio sem uma
+     * segunda leitura da semana inteira.
+     */
+    @PatchMapping("/{id}/attendance")
+    public ResponseEntity<WorkModalityScheduleDTO> registarPresenca(
+            @PathVariable Long id,
+            @Valid @RequestBody AttendanceRequestDTO dto) {
+
+        profileAuthorization.exigirSupervisor();
+
+        return ResponseEntity.ok(attendanceService.atualizar(id, dto));
     }
 
     /**

@@ -1,5 +1,6 @@
 package domain.dto;
 
+import domain.model.enums.LeaveDuration;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -17,6 +18,10 @@ import java.time.LocalDate;
  * outra pessoa. Uma escala de ausência que muda de dono por um erro de
  * utilização deixaria de dizer quem falta.
  *
+ * <p>{@code leaveDuration} é opcional e cai em {@code FULL_DAY} quando vem
+ * ausente, o que mantém os clientes antigos — e as folgas já gravadas — com o
+ * comportamento de sempre: folga de dia inteiro.
+ *
  * <p>{@code endDate} continua sem validação declarativa porque a relação com
  * {@code startDate} só pode ser verificada com as duas na mão, e a validação de
  * classe não expresses isso. O serviço trata disso e explica o motivo.
@@ -32,6 +37,16 @@ public record UserLeaveRequestDTO(
         LocalDate endDate,
 
         @Size(max = 500, message = "O motivo não pode ter mais de 500 caracteres.")
-        String reason
+        String reason,
+
+        LeaveDuration leaveDuration
 ) {
+
+    /**
+     * Forma completa. Existe para os testes e para os chamadores que já sabem
+     * a duração, sem obrigar a escrever {@code null} no quinto argumento.
+     */
+    public UserLeaveRequestDTO(Long userId, LocalDate startDate, LocalDate endDate, String reason) {
+        this(userId, startDate, endDate, reason, null);
+    }
 }

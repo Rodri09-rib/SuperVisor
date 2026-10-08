@@ -25,6 +25,8 @@ spring:
         - classpath:db/migration/V1__add_active_to_tb_user.sql
         - classpath:db/migration/V2__exchange_status_and_approval_date.sql
         - classpath:db/migration/V3__add_team_group_to_tb_user.sql
+        - classpath:db/migration/V4__attendance_status_and_balances.sql
+        - classpath:db/migration/V5__scale_rewards_processed.sql
 api:
   security:
     token:

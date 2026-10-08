@@ -442,6 +442,52 @@ class ExchangeApiIntegrationTest extends AbstractApiIntegrationTest {
     }
 
     @Nested
+    @DisplayName("Autorização da resposta")
+    class Autorizacao {
+
+        @Test
+        @DisplayName("o ANALIST que iniciou a troca recebe 403 ao forçar a resposta pela API, sem nada mudar")
+        void requisitanteNaoForcaRespostaViaApi() throws Exception {
+            // O ecrã esconde o botão ao requerente, mas o ecrã não é a regra:
+            // quem conhece a rota pode chamá-la diretamente, com o próprio
+            // token. Quem pediu a troca tem de esperar pela resposta do colega
+            // — ou da supervisão — e o servidor é que tem de recusar, sem
+            // tocar no estado do pedido nem nas alocações.
+            prepararCenario();
+            Long pedido = pedirTroca(tokenJoao, alocacaoJoao.getId(), alocacaoAdmin.getId());
+
+            for (boolean aceitar : new boolean[]{true, false}) {
+                var resposta = mockMvc.perform(
+                                patch("/api/v1/exchanges/" + pedido + "/respond")
+                                        .header("Authorization", "Bearer " + tokenJoao)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(aceitar ? """
+                                                {"isAccepted":true}
+                                                """ : """
+                                                {"isAccepted":false}
+                                                """))
+                        .andExpect(status().isForbidden())
+                        .andExpect(jsonPath("$.error").value("Forbidden"))
+                        .andExpect(jsonPath("$.message").value(
+                                "Apenas a pessoa a quem a troca foi pedida pode responder ao pedido."))
+                        .andReturn();
+
+                assertThat(resposta.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                        .contains("Apenas a pessoa a quem a troca foi pedida pode responder");
+            }
+            sincronizar();
+
+            var pedidoDepois = recarregarSolicitacao(pedido);
+            assertThat(pedidoDepois.getStatus()).isEqualTo(ExchangeStatus.PENDING);
+            assertThat(pedidoDepois.getApprovalDate()).isNull();
+            assertThat(recarregarAlocacao(alocacaoAdmin.getId()).getUser().getId())
+                    .isEqualTo(admin.getId());
+            assertThat(recarregarAlocacao(alocacaoJoao.getId()).getUser().getId())
+                    .isEqualTo(joao.getId());
+        }
+    }
+
+    @Nested
     @DisplayName("Regras de estado da solicitação")
     class Estados {
 

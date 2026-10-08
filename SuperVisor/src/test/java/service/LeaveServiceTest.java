@@ -4,9 +4,11 @@ import domain.dto.UserLeaveDTO;
 import domain.dto.UserLeaveRequestDTO;
 import domain.model.entities.User;
 import domain.model.entities.UserLeave;
+import domain.model.enums.LeaveDuration;
 import domain.model.enums.UserProfile;
 import domain.repository.UserLeaveRepository;
 import domain.repository.UserRepository;
+import exception.RegraDeNegocioException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -391,6 +394,101 @@ class LeaveServiceTest {
                     .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
             assertThat(listar).isNotNull();
             assertThat(listar.readOnly()).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("O saldo de folgas que as operações movem")
+    class Saldos {
+
+        @Test
+        @DisplayName("criar uma folga debita os dias ao saldo de quem a tem")
+        void criarDebitaOsaldo() {
+            when(userRepository.findById(2L)).thenReturn(Optional.of(joao));
+            when(userLeaveRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            UserLeaveDTO dto = leaveService.criar(pedido(2L, INICIO, FIM, null),
+                    UserProfile.SUPERVISOR);
+
+            // A folga de segunda a sexta consome cinco dias, e o saldo nasce
+            // a zero: fica a -5, que é a página a dizer «ainda não compensou
+            // nada do que usou».
+            assertThat(dto.costDays()).isEqualByComparingTo("5");
+            assertThat(dto.leaveDuration()).isEqualTo(LeaveDuration.FULL_DAY);
+            assertThat(joao.getAccumulatedLeaves()).isEqualByComparingTo("-5");
+        }
+
+        @Test
+        @DisplayName("uma folga de meio dia consome meio dia, e não um dia inteiro")
+        void folgaDeMeioDiaConsomeMeio() {
+            when(userRepository.findById(2L)).thenReturn(Optional.of(joao));
+            when(userLeaveRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            UserLeaveDTO dto = leaveService.criar(new UserLeaveRequestDTO(
+                    2L, INICIO, INICIO, null, LeaveDuration.MORNING_SHIFT),
+                    UserProfile.SUPERVISOR);
+
+            assertThat(dto.costDays()).isEqualByComparingTo("0.5");
+            assertThat(dto.leaveDurationLabel()).isEqualTo("Apenas manhã (08h-12h)");
+            assertThat(joao.getAccumulatedLeaves()).isEqualByComparingTo("-0.5");
+        }
+
+        @Test
+        @DisplayName("uma folga de meio dia em vários dias é recusada, e o saldo não se mexe")
+        void folgaParcialTemDeSerNumDia() {
+            when(userRepository.findById(2L)).thenReturn(Optional.of(joao));
+
+            assertThatThrownBy(() -> leaveService.criar(new UserLeaveRequestDTO(
+                            2L, INICIO, FIM, null, LeaveDuration.AFTERNOON_SHIFT),
+                    UserProfile.SUPERVISOR))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessage("Uma folga de meia jornada tem de ser num único dia: "
+                            + "escolha o mesmo dia de início e de fim.");
+
+            verify(userLeaveRepository, never()).save(any());
+            assertThat(joao.getAccumulatedLeaves()).isEqualByComparingTo(BigDecimal.ZERO);
+        }
+
+        @Test
+        @DisplayName("encurtar uma folga devolve os dias que deixaram de ser usados")
+        void atualizarDevolveOsDiasSobrados() {
+            UserLeave folga = folgaDe(joao, INICIO, FIM, null);
+            joao.setAccumulatedLeaves(new BigDecimal("-5"));
+            when(userLeaveRepository.findById(100L)).thenReturn(Optional.of(folga));
+            when(userLeaveRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            leaveService.atualizar(100L, pedido(2L, INICIO, INICIO.plusDays(2), null),
+                    UserProfile.SUPERVISOR);
+
+            // Devolve os 5 e cobra os 3 da folga nova: é uma substituição de
+            // cobrança, não uma cobrança em cima da outra.
+            assertThat(joao.getAccumulatedLeaves()).isEqualByComparingTo("-3");
+        }
+
+        @Test
+        @DisplayName("apagar uma folga devolve os dias ao saldo de quem a tinha")
+        void apagarDevolveOsDias() {
+            UserLeave folga = folgaDe(joao, INICIO, FIM, null);
+            joao.setAccumulatedLeaves(new BigDecimal("-5"));
+            when(userLeaveRepository.findById(100L)).thenReturn(Optional.of(folga));
+
+            leaveService.apagar(100L);
+
+            assertThat(joao.getAccumulatedLeaves()).isEqualByComparingTo(BigDecimal.ZERO);
+            verify(userLeaveRepository).delete(folga);
+        }
+
+        @Test
+        @DisplayName("uma folga de meio dia apagada devolve meio dia, e não um")
+        void apagarFolgaParcialDevolveMeio() {
+            UserLeave folga = folgaDe(joao, INICIO, INICIO, null);
+            folga.setLeaveDuration(LeaveDuration.AFTERNOON_SHIFT);
+            joao.setAccumulatedLeaves(new BigDecimal("-0.5"));
+            when(userLeaveRepository.findById(100L)).thenReturn(Optional.of(folga));
+
+            leaveService.apagar(100L);
+
+            assertThat(joao.getAccumulatedLeaves()).isEqualByComparingTo(BigDecimal.ZERO);
         }
     }
 

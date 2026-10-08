@@ -1,9 +1,12 @@
 package domain.model.entities;
 
+import domain.model.enums.LeaveDuration;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Folga de um colaborador, de {@code startDate} a {@code endDate}, inclusive.
@@ -39,6 +42,17 @@ public class UserLeave {
     private String reason;
 
     /**
+     * Duração da folga dentro do dia: dia inteiro, só a manhã ou só a tarde.
+     *
+     * <p>Nasce {@code FULL_DAY} porque as folgas anteriores a este campo eram
+     * todas de dia inteiro, e uma célula nula numa linha já gravada faria a
+     * leitura antiga devolver "sem duração" para uma folga que existe.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "leave_duration", nullable = false, length = 20)
+    private LeaveDuration leaveDuration = LeaveDuration.FULL_DAY;
+
+    /**
      * Momento do registo. Anotado como {@code Instant} e não {@code OffsetDateTime}
      * porque é um instante, e não uma data com fusos: o que interessa é "quando
      * foi escrito", e a base salva o mesmo formato nos dois casos.
@@ -70,6 +84,34 @@ public class UserLeave {
                 && endDate != null
                 && !data.isBefore(startDate)
                 && !data.isAfter(endDate);
+    }
+
+    /**
+     * Quanto a folga custa ao saldo, em dias.
+     *
+     * <p>Uma folga de dia inteiro custa um dia por cada dia de calendário com
+     * as extremidades incluídas; uma folga de manhã ou de tarde custa sempre
+     * meio dia, porque cobre meio expediente. É esta função que garante que os
+     * meios expedientes entram como 0.5 e não como 1 por arredondamento — e é
+     * aqui, e não na leitura, que o valor é calculado, para o que a base
+     * guarda em saldo e o que a tabela mostra serem o mesmo número.
+     */
+    public BigDecimal custoEmDias() {
+        if (leaveDuration != null && leaveDuration.isMeiaJornada()) {
+            return BigDecimal.valueOf(0.5);
+        }
+        if (startDate == null || endDate == null || endDate.isBefore(startDate)) {
+            return BigDecimal.ZERO;
+        }
+        return BigDecimal.valueOf(ChronoUnit.DAYS.between(startDate, endDate) + 1);
+    }
+
+    public LeaveDuration getLeaveDuration() {
+        return leaveDuration;
+    }
+
+    public void setLeaveDuration(LeaveDuration leaveDuration) {
+        this.leaveDuration = leaveDuration;
     }
 
     public Long getId() {

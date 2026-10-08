@@ -92,13 +92,13 @@ class UserControllerTest {
 
     private ActiveUserDTO criado() {
         return new ActiveUserDTO(7L, "João Silva", "joao.silva@teste.com", UserProfile.ANALIST,
-                null, "Sem equipe", true);
+                null, "Sem equipe", true, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO);
     }
 
     /** O mesmo usuário, mas já desativado, para as respostas de estado. */
     private ActiveUserDTO desativado() {
         return new ActiveUserDTO(7L, "João Silva", "joao.silva@teste.com", UserProfile.ANALIST,
-                null, "Sem equipe", false);
+                null, "Sem equipe", false, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO);
     }
 
     @Nested

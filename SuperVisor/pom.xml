@@ -103,6 +103,13 @@
             <configuration>
                 <systemPropertyVariables>
                     <api.version>1.44</api.version>
+                    <!-- O Byte Buddy do Mockito só conhece as versões de class file
+                         que existiam quando foi compilado; numa máquina com um JDK
+                         mais novo (a 26, por exemplo), sem esta flag ele recusa-se a
+                         instrumentar as classes e todos os testes com mocks falham
+                         antes de correrem. A flag só lhe diz para seguir em frente
+                         com versões desconhecidas — não muda o que é testado. -->
+                    <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
                 </systemPropertyVariables>
             </configuration>
         </plugin>

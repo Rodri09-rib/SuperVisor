@@ -6,7 +6,32 @@
  * tem sempre poucos elementos, pelo que não justifica paginação nem
  * reconciliação manual do DOM.
  */
+
 document.addEventListener('DOMContentLoaded', () => {
+
+    /**
+     * Faz a inicialização acontecer uma única vez.
+     *
+     * <p>Cada avaliação deste ficheiro cria uma cópia sua, com os seus próprios
+     * ouvintes. Com duas cópias associate, um clique num botão de resposta
+     * dispara a ação duas vezes: dois pedidos ao servidor e dois avisos para a
+     * mesma decisão. A guarda está no arranque e não em cada botão porque é aí
+     * que a duplicação nasce — tapar botão a botão deixava a mesma falha
+     * passar por qualquer outra ação da página.
+     *
+     * <p>A marca vive no `window` e a chave é uma constante local a esta
+     * avaliação, não do ficheiro: um `const` ao nível de cima seria partilhado
+     * por todas as cópias do script, e a segunda avaliação do ficheiro — um
+     * `<script>` repetido, por exemplo — rebentava com «already been declared»
+     * antes de a guarda ter hipótese de correr.
+     */
+    const SINALIZADO_DASHBOARD = '__superVisorDashboardIniciado';
+
+    if (window[SINALIZADO_DASHBOARD]) {
+        console.warn('O dashboard já foi inicializado; esta inicialização foi ignorada.');
+        return;
+    }
+    window[SINALIZADO_DASHBOARD] = true;
 
     const PERFIS_ADMIN = ['SUPERVISOR', 'ADMIN'];
     const MOTIVO_MINIMO = 5;
@@ -17,16 +42,30 @@ document.addEventListener('DOMContentLoaded', () => {
         escalas: [],
         alocacoes: [],
         escalaA_Publicar: null,
+        escalaA_Concluir: null,
         escalaA_Apagar: null,
         utilizadorA_Apagar: null,
         escalaEmEdicao: null,
+        escalaEmDetalhes: null,
+        alocacoesEmDetalhes: [],
         utilizadores: [],
         turnos: [],
         atribuicoes: [],
-        todosUtilizadores: []
+        todosUtilizadores: [],
+        feriados: []
     };
 
     const el = {};
+
+    /**
+     * Turnos com uma resposta já enviada e ainda à espera do servidor.
+     *
+     * <p>Um segundo clique no mesmo turno, ou um clique que chegue por dois
+     * caminhos, não pode virar um segundo pedido nem um segundo aviso: a decisão
+     * já foi enviada, e o servidor ou a gravaria por cima de si próprio ou a
+     * recusaria por já estar decidida.
+     */
+    const respostasEmCurso = new Set();
 
     function guardarElementos() {
         // A saudação e o botão de sair são do `layout.js`.
@@ -38,6 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         el.detalhesTitulo = document.getElementById('detalhesTitulo');
         el.detalhesCorpo = document.getElementById('detalhesCorpo');
+        // A tabela inteira e não o <tbody>: o <tbody> é repintado a cada
+        // leitura, e a delegação vive num contentor que não é substituído.
+        el.tabelaTurnos = document.getElementById('tabelaTurnosAtribuidos');
         el.detalhesAlocacoes = document.getElementById('detalhesAlocacoesCorpo');
         el.detalhesCobertura = document.getElementById('detalhesCobertura');
         el.btnTrocarDetalhes = document.getElementById('btnTrocarDaEscala');
@@ -76,6 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
         el.publicacaoNome = document.getElementById('publicacaoEscalaNome');
         el.btnConfirmarPublicacao = document.getElementById('btnConfirmarPublicacao');
 
+        el.conclusaoNome = document.getElementById('conclusaoEscalaNome');
+        el.btnConfirmarConclusao = document.getElementById('btnConfirmarConclusao');
+
         el.exclusaoEscalaNome = document.getElementById('exclusaoEscalaNome');
         el.exclusaoEscalaImpacto = document.getElementById('exclusaoEscalaImpacto');
         el.exclusaoEscalaAviso = document.getElementById('exclusaoEscalaAviso');
@@ -113,6 +158,16 @@ document.addEventListener('DOMContentLoaded', () => {
         el.exclusaoUtilizadorNome = document.getElementById('exclusaoUtilizadorNome');
         el.exclusaoUtilizadorAviso = document.getElementById('exclusaoUtilizadorAviso');
         el.btnConfirmarExclusaoUtilizador = document.getElementById('btnConfirmarExclusaoUtilizador');
+
+        el.btnFeriados = document.getElementById('btnFeriados');
+        el.feriadoFormulario = document.getElementById('feriadoForm');
+        el.feriadoId = document.getElementById('feriadoId');
+        el.feriadoData = document.getElementById('feriadoData');
+        el.feriadoDescricao = document.getElementById('feriadoDescricao');
+        el.feriadoSubmeter = document.getElementById('btnSubmeterFeriado');
+        el.btnCancelarEdicaoFeriado = document.getElementById('btnCancelarEdicaoFeriado');
+        el.feriadosCorpo = document.getElementById('feriadosCorpo');
+        el.feriadosAviso = document.getElementById('feriadosAviso');
     }
 
     /* ------------------------------------------------------------------ */
@@ -236,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // botão que não pode fazer nada.
         el.btnNovoUsuario.classList.toggle('d-none', !ehAdministrador());
         el.btnGerirUtilizadores.classList.toggle('d-none', !ehAdministrador());
+        el.btnFeriados.classList.toggle('d-none', !ehAdministrador());
     }
 
     /* ------------------------------------------------------------------ */
@@ -268,6 +324,14 @@ document.addEventListener('DOMContentLoaded', () => {
               + '<i class="bi bi-send"></i> Publicar</button> '
             : '';
 
+        // Concluir fecha a escala e credita os dias de folga que ela rendeu.
+        // Só aparece numa escala publicada, porque é a única que pode ser
+        // fechada, e só à supervisão, porque é ela que move os saldos.
+        const botaoConcluir = ehAdministrador() && escala.status === 'PUBLISHED'
+            ? '<button class="btn btn-sm btn-outline-primary js-concluir" data-id="' + id + '">'
+              + '<i class="bi bi-check2-circle"></i> Concluir</button> '
+            : '';
+
         // Apagar a escala leva com ela os turnos e os pedidos de troca que os
         // referenciam, e por isso fica atrás de uma confirmação que diz o
         // número. Só o supervisor o vê, pela mesma razão de não o ver a criação.
@@ -290,6 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
             + '<button class="btn btn-sm btn-outline-secondary js-trocar" data-id="' + id + '">'
             + '<i class="bi bi-arrow-left-right"></i> Trocar</button> '
             + botaoPublicar
+            + botaoConcluir
             + botaoApagar
             + '</td>'
             + '</tr>';
@@ -330,8 +395,12 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ------------------------------------------------------------------ */
 
     async function abrirDetalhes(id) {
-        el.btnTrocarDetalhes.dataset.id = encodeURIComponent(id);
-        el.btnEditarAlocacoes.dataset.id = encodeURIComponent(id);
+        // A escala aberta fica no estado e não num atributo do botão do rodapé:
+        // quem precisa de saber de que escala se trata é a resposta a um turno,
+        // e ir buscá-lo ao botão punha o recarregamento dependente de um
+        // elemento que não tem nada a ver com a resposta.
+        estado.escalaEmDetalhes = id;
+        estado.alocacoesEmDetalhes = [];
         el.btnEditarAlocacoes.classList.toggle('d-none', !ehAdministrador());
         el.detalhesTitulo.textContent = 'Detalhes da escala';
         el.detalhesCorpo.innerHTML = '<div class="text-center py-4">'
@@ -342,32 +411,47 @@ document.addEventListener('DOMContentLoaded', () => {
         abrirModal('detalhesModal');
 
         try {
-            const [escala, alocacoes, relatorio] = await Promise.all([
-                SuperVisorApi.obterEscala(id),
-                SuperVisorApi.listarAlocacoes(id),
-                // O relatório falha à parte: uma escala com sobreposições não é
-                // motivo para a lista de turnos e a cobertura desaparecerem.
-                SuperVisorApi.relatorioCoberturaEscala(id).catch((erro) => {
-                    console.warn('Relatório de cobertura indisponível:', erro);
-                    return null;
-                })
-            ]);
-
-            el.detalhesTitulo.textContent = escala.name || 'Escala #' + escala.id;
-            el.detalhesCorpo.innerHTML = [
-                linhaDetalhe('Identificador', escala.id),
-                linhaDetalhe('Período', SuperVisorFormat.periodo(escala.initialDate, escala.endDate)),
-                linhaDetalhe('Estado', SuperVisorFormat.badgeEscala(escala.status))
-            ].join('');
-
-            renderizarCobertura(relatorio);
-            renderizarAlocacoes(alocacoes || []);
+            await carregarDetalhesEscala(id);
         } catch (erro) {
             el.detalhesCorpo.innerHTML = linhaMensagem(1,
                 '<i class="bi bi-exclamation-triangle me-2"></i>'
                 + SuperVisorFormat.escapar(erro.message), 'text-danger');
             el.detalhesCobertura.innerHTML = '';
         }
+    }
+
+    /**
+     * Lê e pinta o modal de detalhes: identificação, cobertura e turnos.
+     *
+     * <p>Separada de {@link abrirDetalhes} porque responder a um turno também
+     * precisa de repintar o modal. Sem isto, a gravação chegava ao servidor e o
+     * modal continuava a mostrar o turno como pendente e a oferecer os botões
+     * de resposta: a pessoa via o aviso de sucesso e a linha inalterada, e
+     * tinha de fechar e reabrir o modal para o estado aparecer.
+     */
+    async function carregarDetalhesEscala(id) {
+        const [escala, alocacoes, relatorio] = await Promise.all([
+            SuperVisorApi.obterEscala(id),
+            SuperVisorApi.listarAlocacoes(id),
+            // O relatório falha à parte: uma escala com sobreposições não é
+            // motivo para a lista de turnos e a cobertura desaparecerem.
+            SuperVisorApi.relatorioCoberturaEscala(id).catch((erro) => {
+                console.warn('Relatório de cobertura indisponível:', erro);
+                return null;
+            })
+        ]);
+
+        estado.alocacoesEmDetalhes = alocacoes || [];
+
+        el.detalhesTitulo.textContent = escala.name || 'Escala #' + escala.id;
+        el.detalhesCorpo.innerHTML = [
+            linhaDetalhe('Identificador', escala.id),
+            linhaDetalhe('Período', SuperVisorFormat.periodo(escala.initialDate, escala.endDate)),
+            linhaDetalhe('Estado', SuperVisorFormat.badgeEscala(escala.status))
+        ].join('');
+
+        renderizarCobertura(relatorio);
+        renderizarAlocacoes(estado.alocacoesEmDetalhes);
     }
 
     /* ------------------------------------------------------------------ */
@@ -476,9 +560,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         el.detalhesAlocacoes.innerHTML = alocacoes.map((alocacao) => {
             const turno = SuperVisorFormat.rotuloTurno(alocacao);
+            const feriado = feriadoDe(alocacao.specificDate);
+            const badgeFeriado = feriado
+                ? ' ' + SuperVisorFormat.badgeFeriado(feriado.description)
+                : '';
 
             return '<tr>'
-                + '<td>' + SuperVisorFormat.data(alocacao.specificDate) + '</td>'
+                + '<td>' + SuperVisorFormat.data(alocacao.specificDate) + badgeFeriado + '</td>'
                 + '<td>' + SuperVisorFormat.escapar(turno) + '</td>'
                 + '<td class="fw-semibold">'
                 + SuperVisorFormat.utilizadorComDetalhes(alocacao) + '</td>'
@@ -489,40 +577,110 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Responder ao turno e repintar a tabela.
+     * Responder ao turno e repintar o modal.
      *
      * <p>O erro do servidor é mostrado tal como vem, e em especial o 400 de uma
      * recusa barrada por troca pendente: é a regra que o usuário precisa de
      * entender, e reescrevê-la em JavaScript seria ter a mesma informação em dois
      * lugares.
+     *
+     * <p>A linha é pintada com a resposta do endpoint, que já traz a alocação
+     * com o estado novo, e só depois o modal é relido do servidor. A pintura
+     * pela resposta é o que faz o badge mudar e os botões desaparecerem no
+     * próprio clique; a releitura é o que traz a cobertura e os conflitos
+     * recalculados, que dependem do turno que acabou de ser respondido.
      */
     async function responderAlocacao(botao) {
         const id = botao.dataset.id;
-        const estado = botao.dataset.estado;
-        const rotulo = estado === 'ACCEPTED' ? 'aceitar' : 'recusar';
+        const decisao = botao.dataset.estado;
+        const rotulo = decisao === 'ACCEPTED' ? 'aceitar' : 'recusar';
 
-        if (!window.confirm(estado === 'REJECTED'
+        if (respostasEmCurso.has(id)) {
+            return;
+        }
+
+        if (!window.confirm(decisao === 'REJECTED'
             ? 'Recusar este turno? Se existir uma troca pendente para este turno, a recusa vai ser recusada.'
             : 'Aceitar este turno?')) {
             return;
         }
 
+        respostasEmCurso.add(id);
         ocupado(botao, true, 'Salvando...');
 
         try {
-            await SuperVisorApi.responderAlocacao(id, estado);
-            notificar(estado === 'ACCEPTED'
+            const atualizada = await SuperVisorApi.responderAlocacao(id, decisao);
+            // Uma vez, por resposta. O aviso nasce aqui e em mais lado nenhum:
+            // a recarga que se segue é silenciosa por não ser uma segunda
+            // resposta, mas sim a leitura do estado em que ela deixou a escala.
+            notificar(decisao === 'ACCEPTED'
                 ? 'Turno aceite.'
                 : 'Turno recusado.', 'sucesso');
-            await recarregarAlocacoesDaEscala(el.btnTrocarDetalhes.dataset.id);
+            atualizarAlocacaoEmDetalhes(atualizada);
+            await recarregarAposResposta();
         } catch (erro) {
             if (erro.message.indexOf('Sessão') === 0) {
                 return;
             }
             notificar('Não foi possível ' + rotulo + ': ' + erro.message, 'erro');
         } finally {
-            ocupado(botao, false);
+            respostasEmCurso.delete(id);
+            // O botão só volta ao estado normal se a linha onde estava ainda
+            // existir. Uma resposta bem succedida repinta a tabela, e o botão
+            // original deixa de estar no documento.
+            if (botao.isConnected) {
+                ocupado(botao, false);
+            }
         }
+    }
+
+    /**
+     * Troca a alocação na lista do modal pelo estado que o servidor devolveu e
+     * repinta a tabela.
+     *
+     * <p>Se a alocação não estiver na lista — o modal pode estar a mostrar outra
+     * escala, se a pessoa tiver aberto outra entretanto — não há linha para
+     * corrigir, e a releitura que vem a seguir trata do assunto.
+     */
+    function atualizarAlocacaoEmDetalhes(alocacao) {
+        if (!alocacao || alocacao.id === undefined || alocacao.id === null) {
+            return;
+        }
+
+        const alvo = String(alocacao.id);
+        const posicao = estado.alocacoesEmDetalhes.findIndex(
+            (item) => String(item.id) === alvo);
+
+        if (posicao === -1) {
+            return;
+        }
+
+        estado.alocacoesEmDetalhes[posicao] = alocacao;
+        renderizarAlocacoes(estado.alocacoesEmDetalhes);
+    }
+
+    /**
+     * O que é relido depois de uma resposta: o modal, para a cobertura e os
+     * conflitos refletirem o turno respondido, e a lista de escalas, que está
+     * por trás do modal.
+     *
+     * <p>Nada disto é transformado em aviso de erro. A resposta já foi gravada
+     * pelo servidor e o modal já mostra o estado novo; dizer que a operação
+     * falhou seria mentira, e a leitura seguinte volta a pôr as coisas no lugar
+     * de qualquer maneira.
+     */
+    async function recarregarAposResposta() {
+        const id = estado.escalaEmDetalhes;
+        const recargas = [
+            id ? carregarDetalhesEscala(id) : Promise.resolve(),
+            carregarEscalas()
+        ];
+
+        (await Promise.allSettled(recargas)).forEach((resultado) => {
+            if (resultado.status === 'rejected') {
+                console.warn('Recarga depois da resposta ficou incompleta:', resultado.reason);
+            }
+        });
     }
 
     /* ------------------------------------------------------------------ */
@@ -1016,6 +1174,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Confirmação da conclusão de uma escala.
+     *
+     * <p>É a ação que move saldos, e o aviso diz isso antes de confirmar: os
+     * dias de folga de cada pessoa entram no saldo nesse momento e não há
+     * botão para os tirar daí. Dizer «vai fechar a escala» sem dizer o que
+     * fica feito transformava a confirmação num clique a mais.
+     */
+    function confirmarConclusao(id) {
+        const escala = escalaPorId(id);
+        estado.escalaA_Concluir = escala;
+        el.conclusaoNome.textContent = escala && escala.name ? escala.name : 'Escala #' + id;
+        abrirModal('conclusaoModal');
+    }
+
+    /**
+     * Fecha a escala e credita os dias de folga.
+     *
+     * <p>O servidor é idempotente: um repetição não credita duas vezes. Daí o
+     * aviso de erro da falha de rede já ter sido tratado do lado de lá — aqui
+     * basta dizer o que correu mal e repintar a tabela, que o estado verdadeiro
+     * é o do servidor.
+     */
+    async function concluirEscala() {
+        if (!estado.escalaA_Concluir) {
+            return;
+        }
+        const nome = estado.escalaA_Concluir.name;
+        ocupado(el.btnConfirmarConclusao, true, 'A concluir...');
+
+        try {
+            await SuperVisorApi.concluirEscala(estado.escalaA_Concluir.id);
+            fecharModal('conclusaoModal');
+            notificar('Escala "' + nome + '" concluída. Folgas creditadas.', 'sucesso');
+            await carregarEscalas();
+        } catch (erro) {
+            fecharModal('conclusaoModal');
+            notificar(erro.message, 'erro');
+        } finally {
+            ocupado(el.btnConfirmarConclusao, false);
+            estado.escalaA_Concluir = null;
+        }
+    }
+
+    /**
      * Confirmação da exclusão de uma escala.
      *
      * <p>A confirmação diz quantos turnos e quantos pedidos de troca vão atrás
@@ -1479,6 +1681,179 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ------------------------------------------------------------------ */
+    /* Feriados (supervisão)                                                */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Calendário de feriados, carregado para todos os perfis.
+     *
+     * <p>É uma leitura e corre em silêncio no arranque: o badge de feriado na
+     * escala tem de aparecer para quem quer que veja a escala, e uma falha no
+     * carregamento não pode barrar o dashboard — fica-se é sem badges, como
+     * antes de existirem feriados. O gestor de administração usa esta mesma
+     * lista; é daqui que nascem as feriados que o fecho da escala consulta.
+     */
+    async function carregarFeriados() {
+        estado.feriados = await SuperVisorApi.listarFeriados() || [];
+    }
+
+    /** O feriado desta data, se existir. A entrada vem serializada como "2025-12-25". */
+    function feriadoDe(data) {
+        if (!data) {
+            return null;
+        }
+        const iso = String(data);
+        return estado.feriados.find((f) => String(f.date) === iso) || null;
+    }
+
+    function linhaFeriado(feriado) {
+        const id = encodeURIComponent(feriado.id);
+        return '<tr>'
+            + '<td>' + SuperVisorFormat.data(feriado.date) + '</td>'
+            + '<td>' + SuperVisorFormat.escapar(feriado.description || '—') + '</td>'
+            + '<td class="text-end text-nowrap">'
+            + '<button class="btn btn-sm btn-outline-secondary js-editar-feriado" '
+            + 'data-id="' + id + '"><i class="bi bi-pencil"></i> Editar</button> '
+            + '<button class="btn btn-sm btn-outline-danger js-apagar-feriado" '
+            + 'data-id="' + id + '"><i class="bi bi-trash"></i> Apagar</button> '
+            + '</td>'
+            + '</tr>';
+    }
+
+    function renderizarFeriados() {
+        if (!estado.feriados.length) {
+            el.feriadosCorpo.innerHTML = linhaMensagem(3,
+                'Não há feriados registados.', 'text-muted');
+            return;
+        }
+        mostrarAviso(el.feriadosAviso, null);
+        el.feriadosCorpo.innerHTML = estado.feriados.map(linhaFeriado).join('');
+    }
+
+    async function abrirGestaoFeriados() {
+        if (!ehAdministrador()) {
+            return;
+        }
+        el.feriadosCorpo.innerHTML = linhaMensagem(3,
+            '<div class="spinner-border text-primary" role="status">'
+            + '<span class="visually-hidden">Carregando feriados...</span></div>',
+            '');
+        abrirModal('feriadosModal');
+        try {
+            await carregarFeriados();
+            renderizarFeriados();
+        } catch (erro) {
+            if (erro.message.indexOf('Sessão') === 0) {
+                return;
+            }
+            estado.feriados = [];
+            mostrarAviso(el.feriadosAviso, erro.message, 'danger');
+        }
+    }
+
+    function limparFormularioFeriado() {
+        el.feriadoFormulario.reset();
+        el.feriadoId.value = '';
+        el.btnCancelarEdicaoFeriado.classList.add('d-none');
+        el.feriadoSubmeter.innerHTML = '<i class="bi bi-plus-lg"></i> Registar';
+        mostrarAviso(el.feriadosAviso, null);
+    }
+
+    function editarFeriado(id) {
+        const alvo = estado.feriados.find((f) => String(f.id) === String(id));
+        if (!alvo) {
+            return;
+        }
+        el.feriadoId.value = alvo.id;
+        el.feriadoData.value = String(alvo.date).slice(0, 10);
+        el.feriadoDescricao.value = alvo.description || '';
+        el.btnCancelarEdicaoFeriado.classList.remove('d-none');
+        el.feriadoSubmeter.innerHTML = '<i class="bi bi-check-lg"></i> Guardar';
+        mostrarAviso(el.feriadosAviso, null);
+        el.feriadoData.focus();
+    }
+
+    async function submeterFeriado(evento) {
+        evento.preventDefault();
+
+        const id = el.feriadoId.value;
+        const data = el.feriadoData.value;
+        const descricao = el.feriadoDescricao.value.trim();
+
+        if (!data) {
+            mostrarAviso(el.feriadosAviso, 'A data do feriado é obrigatória.', 'warning');
+            return;
+        }
+        if (!descricao) {
+            mostrarAviso(el.feriadosAviso, 'A descrição do feriado é obrigatória.', 'warning');
+            return;
+        }
+
+        mostrarAviso(el.feriadosAviso, null);
+        ocupado(el.feriadoSubmeter, true, 'A guardar...');
+
+        const corpo = { date: data, description: descricao };
+        try {
+            if (id) {
+                await SuperVisorApi.atualizarFeriado(id, corpo);
+                notificar('Feriado atualizado.', 'sucesso');
+            } else {
+                await SuperVisorApi.criarFeriado(corpo);
+                notificar('Feriado registado.', 'sucesso');
+            }
+            // O calendário é relido para a tabela e os badges da escala ficarem
+            // a falar de coisas iguais.
+            limparFormularioFeriado();
+            await carregarFeriados();
+            renderizarFeriados();
+        } catch (erro) {
+            // O 400 de data duplicada chega com a frase do servidor, e é ela
+            // que se mostra: reescrevê-la aqui seria ter a regra em dois sítios.
+            mostrarAviso(el.feriadosAviso, erro.message, 'danger');
+        } finally {
+            ocupado(el.feriadoSubmeter, false);
+        }
+    }
+
+    /**
+     * Apagar um feriado tira-o dos fechos futuros; os dias que já creditou
+     * não são devolvidos, como acontece com qualquer crédito consumado do
+     * fecho. A confirmação diz isso para ninguém esperar a devolução.
+     */
+    async function apagarFeriado(botao) {
+        const id = botao.dataset.id;
+        const alvo = estado.feriados.find((f) => String(f.id) === String(id));
+        const nomeDoDia = alvo ? alvo.description : 'deste dia';
+
+        if (!window.confirm('Apagar o feriado "' + nomeDoDia
+            + '" (' + SuperVisorFormat.data(alvo && alvo.date) + ')?')) {
+            return;
+        }
+
+        ocupado(botao, true, 'A apagar...');
+        try {
+            await SuperVisorApi.apagarFeriado(id);
+            if (String(el.feriadoId.value) === String(id)) {
+                limparFormularioFeriado();
+            } else {
+                mostrarAviso(el.feriadosAviso, null);
+            }
+            await carregarFeriados();
+            renderizarFeriados();
+            notificar('Feriado apagado.', 'sucesso');
+        } catch (erro) {
+            mostrarAviso(el.feriadosAviso, erro.message, 'danger');
+        } finally {
+            // Depois de um apagamento bem sucedido a linha é repintada e o
+            // botão antigo deixa de existir; em erro, continua e tem de ser
+            // reposto.
+            if (botao.isConnected) {
+                ocupado(botao, false);
+            }
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
     /* Eventos                                                             */
     /* ------------------------------------------------------------------ */
 
@@ -1490,6 +1865,21 @@ document.addEventListener('DOMContentLoaded', () => {
         el.btnGerirUtilizadores.addEventListener('click', abrirGestaoUtilizadores);
         el.editarUsuarioFormulario.addEventListener('submit', submeterEdicaoUtilizador);
         el.senhaFormulario.addEventListener('submit', submeterSenha);
+
+        el.btnFeriados.addEventListener('click', abrirGestaoFeriados);
+        el.feriadoFormulario.addEventListener('submit', submeterFeriado);
+        el.btnCancelarEdicaoFeriado.addEventListener('click', limparFormularioFeriado);
+
+        el.feriadosCorpo.addEventListener('click', (evento) => {
+            const editar = evento.target.closest('.js-editar-feriado');
+            const apagar = evento.target.closest('.js-apagar-feriado');
+
+            if (editar) {
+                editarFeriado(editar.dataset.id);
+            } else if (apagar) {
+                apagarFeriado(apagar);
+            }
+        });
 
         el.utilizadoresCorpo.addEventListener('click', (evento) => {
             const editar = evento.target.closest('.js-editar-utilizador');
@@ -1512,6 +1902,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const detalhes = evento.target.closest('.js-detalhes');
             const trocar = evento.target.closest('.js-trocar');
             const publicar = evento.target.closest('.js-publicar');
+            const concluir = evento.target.closest('.js-concluir');
             const apagar = evento.target.closest('.js-apagar-escala');
 
             if (detalhes) {
@@ -1520,21 +1911,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 abrirPedidoTroca(trocar.dataset.id);
             } else if (publicar) {
                 confirmarPublicacao(publicar.dataset.id);
+            } else if (concluir) {
+                confirmarConclusao(concluir.dataset.id);
             } else if (apagar) {
                 confirmarExclusaoEscala(apagar.dataset.id);
             }
         });
 
         el.btnTrocarDetalhes.addEventListener('click', () => {
-            const id = el.btnTrocarDetalhes.dataset.id;
             fecharModal('detalhesModal');
-            abrirPedidoTroca(id);
+            abrirPedidoTroca(estado.escalaEmDetalhes);
         });
 
         el.btnEditarAlocacoes.addEventListener('click', () => {
-            const id = el.btnTrocarDetalhes.dataset.id;
             fecharModal('detalhesModal');
-            abrirGestaoAlocacoes(id);
+            abrirGestaoAlocacoes(estado.escalaEmDetalhes);
         });
 
         el.alocacaoTurno.addEventListener('change', atualizarAjudaTurno);
@@ -1554,7 +1945,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        el.detalhesAlocacoes.addEventListener('click', (evento) => {
+        // Delegação no <table>, e não um ouviente por botão. As linhas são
+        // repintadas a cada leitura do modal, por isso um ouviente ligado ao
+        // botão nascia e morria com a linha: ou deixava de valer depois do
+        // primeiro repaint, ou ficava em duplicado quando o botão antigo
+        // continuava no documento. O <table> não é substituído, pelo que o
+        // ouvinte vive uma vez e para sempre.
+        el.tabelaTurnos.addEventListener('click', (evento) => {
             const botao = evento.target.closest('.js-responder-alocacao');
             if (botao) {
                 responderAlocacao(botao);
@@ -1565,6 +1962,7 @@ document.addEventListener('DOMContentLoaded', () => {
         el.trocaFormulario.addEventListener('submit', submeterTroca);
         el.escalaFormulario.addEventListener('submit', submeterNovaEscala);
         el.btnConfirmarPublicacao.addEventListener('click', publicarEscala);
+        el.btnConfirmarConclusao.addEventListener('click', concluirEscala);
         el.btnConfirmarExclusaoEscala.addEventListener('click', apagarEscala);
         el.btnConfirmarExclusaoUtilizador.addEventListener('click', apagarUtilizador);
     }
@@ -1580,6 +1978,19 @@ document.addEventListener('DOMContentLoaded', () => {
         registarEventos();
         await carregarSessao();
         await carregarEscalas();
+
+        // O calendário de feriados alimenta os badges da escala, que são de
+        // todos os perfis, por isso é carregado antes dos detalhes poderem ser
+        // abertos. Em falha, o arranque continua sem ele.
+        try {
+            await carregarFeriados();
+        } catch (erro) {
+            if (erro.message.indexOf('Sessão') === 0) {
+                return;
+            }
+            console.warn('Feriados indisponíveis:', erro);
+            estado.feriados = [];
+        }
 
         if (ehAdministrador()) {
             await carregarVocabularioAlocacoes();

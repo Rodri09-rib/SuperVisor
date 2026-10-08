@@ -318,6 +318,20 @@ const SuperVisorApi = (() => {
         atualizarFolga: (id, folga) => request('/api/v1/leaves/' + encodeURIComponent(id),
             { metodo: 'PUT', corpo: folga }),
         apagarFolga: (id) => request('/api/v1/leaves/' + encodeURIComponent(id),
+            { metodo: 'DELETE' }),
+
+        /**
+         * Dias registados como feriado.
+         *
+         * <p>É leitura para qualquer perfil — o badge de feriado na escala é de
+         * quem vê a escala —, mas a escrita é da supervisão, como nas folgas e
+         * nos turnos: são os registos que passam a render folga extra no fecho.
+         */
+        listarFeriados: () => request('/api/v1/holidays'),
+        criarFeriado: (feriado) => request('/api/v1/holidays', { metodo: 'POST', corpo: feriado }),
+        atualizarFeriado: (id, feriado) => request('/api/v1/holidays/' + encodeURIComponent(id),
+            { metodo: 'PUT', corpo: feriado }),
+        apagarFeriado: (id) => request('/api/v1/holidays/' + encodeURIComponent(id),
             { metodo: 'DELETE' })
     };
 })();

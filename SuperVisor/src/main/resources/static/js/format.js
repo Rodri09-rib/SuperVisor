@@ -298,6 +298,15 @@ const SuperVisorFormat = (() => {
         return '<span class="badge ' + estado.classe + '">' + escapar(estado.rotulo) + '</span>';
     }
 
+    /**
+     * Badge "[Feriado]" que se cola a uma data na escala, com a descrição no
+     * atributo title — a tooltip mostra o nome do dia sem encher a linha.
+     */
+    function badgeFeriado(descricao) {
+        const titulo = descricao ? ' title="' + escapar(descricao) + '"' : '';
+        return '<span class="badge bg-warning text-dark"' + titulo + '>Feriado</span>';
+    }
+
     /** Texto legível de uma alocação, usado nos <option> e nas listas. */
     function rotuloAlocacao(alocacao) {
         const partes = [];
@@ -422,6 +431,7 @@ const SuperVisorFormat = (() => {
         rotuloAtribuicao: rotuloAtribuicao,
         horarioCustom: horarioCustom,
         utilizadorComDetalhes: utilizadorComDetalhes,
-        rotuloTurno: rotuloTurno
+        rotuloTurno: rotuloTurno,
+        badgeFeriado: badgeFeriado
     };
 })();

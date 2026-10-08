@@ -40,6 +40,25 @@ public class ScaleController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Conclui a escala e credita, no saldo de cada utilizador, os dias de
+     * folga que o trabalho dela rendeu (domingo = 0.5, Celular da Marinas =
+     * 1.0).
+     *
+     * <p>Restrito à supervisão, ao contrário de criar e publicar: publicar
+     * muda quem vê a escala, concluir movimenta saldos, e um saldo creditado
+     * não se desfaz apagando a escala. A regra das contas está em
+     * {@link ScaleService#completeSchedule}.
+     */
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<Void> completeScale(@PathVariable Long id) {
+        profileAuthorization.exigirSupervisor();
+
+        scaleService.completeSchedule(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     public ResponseEntity<List<EditionScale>> listAll() {
 
