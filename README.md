@@ -97,7 +97,7 @@ muda de forma.
 | --- | --- |
 | Backend | Java 21, Spring Boot 3.3.5, Spring Web, Spring Data JPA, Spring Security, Bean Validation |
 | Autenticação | JWT stateless (java-jwt 4.4.0), `BCryptPasswordEncoder` |
-| Base de dados | PostgreSQL 16, migrações SQL idempotentes executadas no arranque |
+| Base de dados | PostgreSQL 16, migrações SQL idempotentes.|
 | Frontend | Thymeleaf, Bootstrap 5.3, Vanilla JS, `fetch` com token em `localStorage` |
 | Testes | JUnit 5, Mockito, MockMvc, Spring Security Test, Testcontainers (PostgreSQL real) |
 
