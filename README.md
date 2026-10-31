@@ -13,18 +13,19 @@
 
 ## Sobre
 
-O SuperVisor é uma plataforma web que nasceu da nescessidade de uma equipe de SAC
-que trabalho, onde utilizavam-se apenas planilhas de excel. Comecei a desenvolve-lo pela diversão
-e também por ser um projeto acadêmico, mas com o tempo foi tomando uma forma mais complexa, e estou deixando publico 
-para equipes de trabalho operacional que precisam de um modelo mais atual e moderno de
-montar escalas de fim de semana ou gerais, gerir ausências...
+O SuperVisor é uma plataforma web que nasceu da necessidade de uma equipe de SAC
+que trabalhava apenas com planilhas de Excel. Comecei a desenvolvê-lo pela diversão
+e também por ser um projeto acadêmico, mas com o tempo foi tomando uma forma mais
+complexa, e estou deixando-o público para equipes de trabalho operacional que
+precisam de um modelo mais atual e moderno de montar escalas de fim de semana ou
+gerais, gerir ausências...
 
 
 O nome vem do **`SuperVisor`**, o perfil de supervisão: é quem cria escalas, gere
 alocações e responde pelo estado das contas.
 
-Basicamente o programa soluciona a necessidade de planilhas e centraliza a função
-que o supervisor da equipe tem. Como a gestão dos horários, folgas, controles da presencialidade e etc. 
+O programa substitui as planilhas e centraliza a função do supervisor da equipe:
+gestão de horários, folgas, controlo de presencialidade e muito mais.
 
 ## Funcionalidades
 
@@ -91,6 +92,45 @@ muda de forma.
   número de semana ISO e da equipe de cada pessoa. Só dias úteis: sábado e domingo ficam de
   fora porque a grelha de home office se aplica à semana de trabalho.
 
+## Como executar
+
+Pré-requisitos: Java 21, Docker e Docker Compose.
+
+1. Crie o ficheiro de ambiente a partir do modelo e preencha os valores:
+
+   ```bash
+   cp SuperVisor/.env.example SuperVisor/.env
+   ```
+
+   Gere `JWT_SECRET` com `openssl rand -base64 48` (ou com o comando PowerShell
+   indicado no modelo) e defina também `DB_PASSWORD`.
+
+2. Suba o PostgreSQL:
+
+   ```bash
+   docker compose -f SuperVisor/docker-compose.yml --env-file SuperVisor/.env up -d
+   ```
+
+3. Carregue as variáveis e arranque a aplicação:
+
+   ```bash
+   set -a; . SuperVisor/.env; set +a
+   ./mvnw -f SuperVisor/pom.xml spring-boot:run
+   ```
+
+   No PowerShell:
+
+   ```powershell
+   Get-Content SuperVisor\.env | Where-Object { $_ -match '\S' -and $_ -notmatch '^#' } | ForEach-Object { $k, $v = $_ -split '=', 2; Set-Item -Path "env:$k" -Value $v }
+   .\mvnw.cmd -f SuperVisor\pom.xml spring-boot:run
+   ```
+
+4. A aplicação fica disponível em `http://localhost:8080`.
+
+> `JWT_SECRET` e `DB_PASSWORD` não têm valores por omissão: a aplicação falha ao
+> arrancar se faltarem. Isto é intencional, para nunca usar credenciais
+> previsíveis.
+
 ## Stack
 
 | Camada | Tecnologias |
@@ -105,7 +145,7 @@ muda de forma.
 ## Estrutura
 
 ```
-src/main/java/
+SuperVisor/src/main/java/
 ├── controller/   # Rotas REST e páginas
 ├── domain/
 │   ├── dto/      # Contratos de entrada e saída (nunca entidades)

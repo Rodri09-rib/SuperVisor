@@ -31,3 +31,26 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Secrets / Environment ###
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+### Logs / Dependencies ###
+*.log
+node_modules/
+
+### OS ###
+.DS_Store
+Thumbs.db

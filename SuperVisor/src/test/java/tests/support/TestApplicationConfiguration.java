@@ -12,10 +12,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * Réplica da configuração de {@link SupervisorApplication} usada pelos testes.
  *
  * <p>A diferença intencional é excluir {@code SupervisorApplication} do
- * {@code @ComponentScan}, o que impede o {@code CommandLineRunner} que semeia
- * dados ({@code admin@teste.com}, {@code joao@teste.com}, "Escala Outubro" e duas
- * alocações) de rodar em todos os contextos de teste. O seed é testado
- * isoladamente em {@code SupervisorApplicationSeedDataTest}.
+ * {@code @ComponentScan}, para que a classe de arranque não seja carregada em
+ * todos os contextos de teste.
  *
  * <p>Todos os testes referenciam esta classe explicitamente via
  * {@code @ContextConfiguration(classes = ...)}, já que o layout de pacotes do
